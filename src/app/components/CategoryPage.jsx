@@ -352,9 +352,16 @@ export function CategoryPage({
   toggleWishlist,
   addToCart,
   addedIds,
-  onProductClick
+  onProductClick,
+  dynamicBanner
 }) {
   const data = catalogue[category];
+
+  // Override static data with dynamic banner if it matches
+  const displayTitle = dynamicBanner?.title || category;
+  const displaySubtitle = dynamicBanner?.subtitle || data.subtitle;
+  const displayHero = dynamicBanner?.imageUrl || data.hero;
+  const displayEditorial = dynamicBanner?.description ? 'CURATED EDIT' : data.editorial;
   const [sort, setSort] = useState('Featured');
   const [sortOpen, setSortOpen] = useState(false);
   const [metalFilter, setMetalFilter] = useState('All Materials');
@@ -396,9 +403,8 @@ export function CategoryPage({
     fontFamily: "'Cormorant Garamond', serif"
   }}>
 
-      {/* ── HERO ─────────────────────────────────────────── */}
       <section className="relative h-[70vh] min-h-[520px] overflow-hidden">
-        <ImageWithFallback src={data.hero} alt={category} className="absolute inset-0 w-full h-full object-cover scale-105 transition-transform duration-[3000ms]" />
+        <ImageWithFallback src={displayHero} alt={category} className="absolute inset-0 w-full h-full object-cover scale-105 transition-transform duration-[3000ms]" />
         {/* No darkening overlay — full colour as per brief */}
 
         {/* Breadcrumb */}
@@ -421,7 +427,7 @@ export function CategoryPage({
         }} transition={{
           duration: 0.8
         }} className="text-white/60 text-[10px] tracking-[0.5em] uppercase mb-4">
-            {data.editorial}
+            {displayEditorial}
           </motion.p>
           <motion.h1 initial={{
           opacity: 0,
@@ -436,7 +442,7 @@ export function CategoryPage({
           fontWeight: 300,
           letterSpacing: '-0.01em'
         }}>
-            {category}
+            {displayTitle}
           </motion.h1>
           <motion.p initial={{
           opacity: 0
@@ -449,7 +455,7 @@ export function CategoryPage({
           fontWeight: 300,
           lineHeight: 1.7
         }}>
-            {data.subtitle}
+            {displaySubtitle}
           </motion.p>
         </div>
       </section>

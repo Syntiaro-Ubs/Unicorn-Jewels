@@ -158,9 +158,16 @@ export function CollectionPage({
   toggleWishlist,
   addToCart,
   addedIds,
-  onProductClick
+  onProductClick,
+  dynamicBanner
 }) {
   const data = collectionsData[collectionName];
+  
+  // Override static data with dynamic banner
+  const displayTitle = dynamicBanner?.title || collectionName;
+  const displaySubtitle = dynamicBanner?.subtitle || data?.subtitle;
+  const displayHero = dynamicBanner?.imageUrl || data?.hero;
+  const displayEditorial = dynamicBanner?.description ? 'CURATED COLLECTION' : data?.editorial;
   const [sort, setSort] = useState('Featured');
   const [sortOpen, setSortOpen] = useState(false);
   const [metalFilter, setMetalFilter] = useState('All Materials');
@@ -221,9 +228,8 @@ export function CollectionPage({
   return <div className="bg-white min-h-screen" style={{
     fontFamily: "'Cormorant Garamond', serif"
   }}>
-      {/* Hero Section */}
       <section className="relative h-[60vh] min-h-[500px] w-full overflow-hidden bg-[#0a0a0a]">
-        <ImageWithFallback src={data.hero} alt={collectionName} className="w-full h-full object-cover opacity-70" />
+        <ImageWithFallback src={displayHero} alt={collectionName} className="w-full h-full object-cover opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white px-6 text-center z-10 pt-16">
           <motion.span initial={{
@@ -235,7 +241,7 @@ export function CollectionPage({
         }} transition={{
           duration: 0.6
         }} className="text-[10px] tracking-[0.4em] uppercase text-gray-300 mb-6 block">
-            {data.editorial}
+            {displayEditorial}
           </motion.span>
           <motion.h1 initial={{
           opacity: 0,
@@ -250,7 +256,7 @@ export function CollectionPage({
           fontWeight: 300,
           letterSpacing: '0.05em'
         }}>
-            {collectionName}
+            {displayTitle}
           </motion.h1>
           <motion.p initial={{
           opacity: 0,
@@ -265,7 +271,7 @@ export function CollectionPage({
           fontWeight: 300,
           lineHeight: 1.8
         }}>
-            {data.subtitle}
+            {displaySubtitle}
           </motion.p>
         </div>
       </section>

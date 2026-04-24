@@ -1,0 +1,10 @@
+<svg width="400" height="200" viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- UNICORN text -->
+  <text x="200" y="90" font-family="Arial, sans-serif" font-size="60" font-weight="300" letter-spacing="8" text-anchor="middle" fill="currentColor">UNICORN</text>
+  
+  <!-- JEWELS text -->
+  <text x="200" y="125" font-family="Arial, sans-serif" font-size="20" font-weight="300" letter-spacing="12" text-anchor="middle" fill="currentColor">JEWELS</text>
+  
+  <!-- Tagline -->
+  <text x="200" y="155" font-family="Arial, sans-serif" font-size="12" font-weight="300" letter-spacing="2" text-anchor="middle" fill="currentColor" opacity="0.6">Sustainable Sparkle, Soulful Shine</text>
+</svg>

@@ -1,0 +1,139 @@
+/* Responsive Design Utilities for UnicornJewels */
+
+/* Prevent horizontal scroll on all devices */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Ensure all containers respect viewport width */
+* {
+  box-sizing: border-box;
+}
+
+/* Mobile-first responsive breakpoints */
+/* xs: 320px - Extra small phones */
+/* sm: 640px - Small phones/tablets */
+/* md: 768px - Tablets */
+/* lg: 1024px - Desktops */
+/* xl: 1280px - Large desktops */
+
+/* Touch-friendly tap targets */
+@layer utilities {
+  .tap-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  /* Responsive padding scale */
+  .responsive-padding {
+    @apply px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16;
+  }
+  
+  .responsive-padding-y {
+    @apply py-4 sm:py-6 md:py-8 lg:py-12 xl:py-16;
+  }
+  
+  /* Responsive text sizing */
+  .hero-text {
+    @apply text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl;
+  }
+  
+  .section-title {
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+  }
+  
+  .body-text {
+    @apply text-sm sm:text-base md:text-lg;
+  }
+  
+  /* Responsive grid gaps */
+  .grid-gap-responsive {
+    @apply gap-4 sm:gap-6 md:gap-8 lg:gap-12;
+  }
+  
+  /* Mobile-optimized containers */
+  .container-mobile {
+    @apply max-w-full sm:max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl mx-auto;
+  }
+}
+
+/* Mobile navigation improvements */
+@media (max-width: 640px) {
+  /* Ensure mobile menu is full width on small screens */
+  .mobile-menu {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+  
+  /* Reduce padding on mobile */
+  .mobile-padding {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Stack buttons vertically on mobile */
+  .mobile-stack {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  
+  /* Optimize image sizes for mobile */
+  .mobile-image {
+    max-height: 50vh !important;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1023px) {
+  /* Tablet-specific grid layouts */
+  .tablet-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Adjust drawer widths for tablets */
+  .tablet-drawer {
+    width: 80vw !important;
+    max-width: 600px !important;
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 1023px) and (orientation: landscape) {
+  /* Reduce hero heights in landscape */
+  .hero-landscape {
+    min-height: 400px !important;
+    height: 80vh !important;
+  }
+  
+  /* Adjust modal heights */
+  .modal-landscape {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Smooth scrolling for all devices */
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+/* Touch-friendly interactive elements */
+@media (hover: none) and (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Increase spacing between interactive elements */
+  .interactive-group > * + * {
+    margin-left: 0.75rem;
+  }
+}

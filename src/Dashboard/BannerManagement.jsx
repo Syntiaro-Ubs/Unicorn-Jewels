@@ -373,8 +373,8 @@ export default function BannerManagement() {
                             {previewUrl ? (
                               <>
                                 <ImageWithFallback src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-3 backdrop-blur-sm">
-                                  <label className="cursor-pointer bg-white text-slate-800 p-3 rounded-xl hover:scale-105 transition-all shadow-lg font-bold flex items-center gap-2 text-[10px] uppercase">
+                                <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center gap-2 backdrop-blur-sm">
+                                  <label className="cursor-pointer bg-white text-slate-800 px-4 py-2 rounded-xl hover:scale-105 transition-all shadow-lg font-bold flex items-center gap-2 text-[10px] uppercase w-32 justify-center">
                                     <Upload size={14} />
                                     Change
                                     <input type="file" className="hidden" accept="image/*" onChange={(e) => {
@@ -382,6 +382,20 @@ export default function BannerManagement() {
                                       if (file) { setSelectedFile(file); setPreviewUrl(URL.createObjectURL(file)); }
                                     }} />
                                   </label>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setPreviewUrl('');
+                                      setSelectedFile(null);
+                                      setFormData(prev => ({ ...prev, imageUrl: '' }));
+                                    }}
+                                    className="bg-white text-red-600 px-4 py-2 rounded-xl hover:scale-105 transition-all shadow-lg font-bold flex items-center gap-2 text-[10px] uppercase w-32 justify-center"
+                                  >
+                                    <Trash2 size={14} />
+                                    Remove
+                                  </button>
                                 </div>
                               </>
                             ) : (

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, 
   Home, 
+  ShoppingBag,
   LogOut, 
   ChevronLeft, 
   ChevronRight,
@@ -35,8 +36,9 @@ export default function DashboardLayout() {
   };
 
   const navItems = [
-    { name: 'Overview', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
+    { name: 'Home Page', icon: <Home size={20} />, path: '/dashboard/home' },
     { name: 'Banner Management', icon: <Home size={20} />, path: '/dashboard/banner' },
+    { name: 'Products', icon: <ShoppingBag size={20} />, path: '/dashboard/products' },
   ];
 
   if (!adminUser) return null;

@@ -24,7 +24,7 @@ const diamondEdit3 = "https://images.unsplash.com/photo-1612437830721-4f8eab90c5
 const hauteJoaillerieImg = "https://images.unsplash.com/photo-1614999612412-3b1dbcd68e40?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoaWdoJTIwamV3ZWxyeSUyMGRpYW1vbmQlMjBuZWNrbGFjZSUyMGNsb3NlJTIwdXB8ZW58MXx8fHwxNzc2NzY1MzM2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 const logoImage = "/images/unicorn-logo.svg";
 import { motion } from 'motion/react';
-import { Menu, X, ShoppingBag, Search, User, Heart, ChevronRight, Instagram, Mail, Calendar, ArrowRight, Sparkles } from 'lucide-react';
+import { Menu, X, ShoppingBag, Search, User, Heart, ChevronRight, ChevronLeft, Instagram, Mail, Calendar, ArrowRight, Sparkles } from 'lucide-react';
 import { ImageWithFallback } from './components/figma/ImageWithFallback';
 import { LoginPage } from './components/LoginPage';
 import { SignUpPage } from './components/SignUpPage';
@@ -115,6 +115,16 @@ export default function App() {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [collectionsDropdownOpen, setCollectionsDropdownOpen] = useState(false);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
+  const [dbProducts, setDbProducts] = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
+  const [dbCollections, setDbCollections] = useState([]);
+  const [dbEditorials, setDbEditorials] = useState([]);
+  const [dbDiamondEdit, setDbDiamondEdit] = useState([]);
+  const [dbServices, setDbServices] = useState([]);
+  const [dbInstagramPosts, setDbInstagramPosts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sliderIndex, setSliderIndex] = useState(0);
+  const [featuredSliderIndex, setFeaturedSliderIndex] = useState(0);
   const [dynamicBanner, setDynamicBanner] = useState({
     title: 'Unicorn Jewels',
     subtitle: 'Sustainable spark. Soulful shine.',
@@ -164,7 +174,57 @@ export default function App() {
       });
   }, [currentPage, activeCategory, activeCollection]);
 
-  const productIndex = useMemo(() => buildProductIndex([...Object.entries(catalogue).filter(([name]) => name !== 'Jewelry').flatMap(([, section]) => section.products), ...Object.values(collectionsData).flatMap(section => section.products), ...featuredCollectionCards, ...homeNewArrivals]), []);
+  useEffect(() => {
+    // Fetch products, categories, and collections
+    const fetchStoreData = async () => {
+      try {
+        const [prodRes, catRes, collRes, editRes, diamondRes] = await Promise.all([
+          fetch('http://localhost:5000/api/products'),
+          fetch('http://localhost:5000/api/categories'),
+          fetch('http://localhost:5000/api/collections'),
+          fetch('http://localhost:5000/api/editorials'),
+          fetch('http://localhost:5000/api/diamond-edit')
+        ]);
+
+        const [prods, cats, colls, edits, diamondItems] = await Promise.all([
+          prodRes.json(),
+          catRes.json(),
+          collRes.json(),
+          editRes.json(),
+          diamondRes.json()
+        ]);
+
+        const servicesRes = await fetch('http://localhost:5000/api/services');
+        const servicesItems = await servicesRes.json();
+        
+        const instaRes = await fetch('http://localhost:5000/api/instagram');
+        const instaPosts = await instaRes.json();
+
+        setDbProducts(prods);
+        setDbCategories(cats);
+        setDbCollections(colls);
+        setDbEditorials(edits);
+        setDbDiamondEdit(diamondItems);
+        setDbServices(servicesItems);
+        setDbInstagramPosts(instaPosts);
+      } catch (error) {
+        console.error('Error fetching store data:', error);
+      }
+    };
+
+    fetchStoreData();
+  }, []);
+
+  const productIndex = useMemo(() => {
+    const allProducts = [
+      ...dbProducts,
+      ...Object.entries(catalogue).filter(([name]) => name !== 'Jewelry').flatMap(([, section]) => section.products),
+      ...Object.values(collectionsData).flatMap(section => section.products),
+      ...featuredCollectionCards,
+      ...homeNewArrivals
+    ];
+    return buildProductIndex(allProducts);
+  }, [dbProducts]);
   const wishlistItems = useMemo(() => Array.from(wishlist).map(id => productIndex.get(id)).filter(Boolean), [wishlist, productIndex]);
   useEffect(() => {
     const handleScroll = () => {
@@ -488,6 +548,7 @@ export default function App() {
           addedIds={addedIds} 
           onProductClick={p => openProductPage(p, 'collection')} 
           dynamicBanner={dynamicBanner}
+          dbProducts={dbProducts}
         />
 
         <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} items={cartItems} addedIds={addedIds} updateQty={updateQty} removeFromCart={removeFromCart} wishlist={wishlist} toggleWishlist={toggleWishlist} onCheckout={() => setCurrentPage('checkout')} onProductClick={openCartProductPage} />
@@ -564,6 +625,7 @@ export default function App() {
           addedIds={addedIds} 
           onProductClick={p => openProductPage(p, 'category')} 
           dynamicBanner={dynamicBanner}
+          dbProducts={dbProducts}
         />
 
         <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} items={cartItems} addedIds={addedIds} updateQty={updateQty} removeFromCart={removeFromCart} wishlist={wishlist} toggleWishlist={toggleWishlist} onCheckout={() => setCurrentPage('checkout')} onProductClick={openCartProductPage} />
@@ -642,7 +704,16 @@ export default function App() {
         <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} items={cartItems} addedIds={addedIds} updateQty={updateQty} removeFromCart={removeFromCart} wishlist={wishlist} toggleWishlist={toggleWishlist} onCheckout={() => setCurrentPage('checkout')} onProductClick={openCartProductPage} />
       </>;
   }
-  const categories = [{
+  const categories = dbCategories.length > 0 ? dbCategories.map(cat => ({
+    name: cat.name,
+    image: cat.image_url ? (cat.image_url.startsWith('http') ? cat.image_url : `http://localhost:5000${cat.image_url}`) : (
+      cat.name === 'Rings' ? catRings : 
+      cat.name === 'Necklaces' ? catNecklaces :
+      cat.name === 'Bracelets' ? catBracelets :
+      cat.name === 'Earrings' ? catEarrings :
+      cat.name === 'Engagement' ? catEngagement : catSets
+    )
+  })) : [{
     name: 'Rings',
     image: catRings
   }, {
@@ -661,7 +732,13 @@ export default function App() {
     name: 'Sets',
     image: catSets
   }];
-  const products = [{
+
+  const products = dbProducts.filter(p => p.is_featured).length > 0 
+    ? dbProducts.filter(p => p.is_featured).map(p => ({
+        ...p,
+        image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : eternallyDesired1
+      }))
+    : [{
     id: 'home-featured-collections-1',
     name: 'Promise Bloom',
     price: '$12,500',
@@ -690,8 +767,20 @@ export default function App() {
     metal: 'Platinum',
     image: eternallyDesired4
   }];
-  const instagramImages = [catRings, catNecklaces, catBracelets, catEarrings, catEngagement, catSets];
-  const newArrivals = [{
+
+  const instagramImages = dbInstagramPosts.length > 0 
+    ? dbInstagramPosts.map(post => ({
+        image: post.image_url ? (post.image_url.startsWith('http') ? post.image_url : `http://localhost:5000${post.image_url}`) : catRings,
+        link: post.post_url
+      }))
+    : [catRings, catNecklaces, catBracelets, catEarrings, catEngagement, catSets].map(img => ({ image: img, link: 'https://instagram.com' }));
+
+  const newArrivals = dbProducts.filter(p => p.is_new_arrival).length > 0
+    ? dbProducts.filter(p => p.is_new_arrival).map(p => ({
+        ...p,
+        image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : justUnveiledBlue
+      }))
+    : [{
     id: 'home-new-arrivals-10',
     name: 'Sapphire Cushion Ring',
     price: '$4,800',
@@ -1119,103 +1208,33 @@ export default function App() {
         </div>
       </section>
 
-      {/* Editorial Section - The Silver Collection */}
-      <section className="py-12 sm:py-16 md:py-20 w-full overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
-          <div className="grid md:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center">
-            <motion.div initial={{
-            opacity: 0,
-            x: -50
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} transition={{
-            duration: 0.8
-          }} viewport={{
-            once: true
-          }} className="relative w-full h-[400px] sm:h-[500px] md:h-[600px] cursor-pointer overflow-hidden bg-gray-50" onClick={() => setIsSilverModalOpen(true)}>
-              <ImageWithFallback src={silverCollectionFrontImg} alt="The Silver Collection - Ring" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-in-out hover:scale-105" />
-            </motion.div>
-            <motion.div initial={{
-            opacity: 0,
-            x: 50
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} transition={{
-            duration: 0.8
-          }} viewport={{
-            once: true
-          }} className="space-y-4 sm:space-y-6">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl" style={{
-              fontWeight: 300,
-              letterSpacing: '0.05em'
-            }}>
-                The Silver Collection
-              </h2>
-              <p className="text-base sm:text-lg text-gray-600" style={{
-              fontWeight: 300,
-              lineHeight: 1.8
-            }}>
-                Our signature silver pieces embody modern sophistication. Each design is meticulously crafted by master artisans who bring decades of expertise to every detail, creating heirlooms for generations to come.
-              </p>
-              <button className="flex items-center gap-2 text-black border-b-2 border-black pb-1 hover:text-gray-600 hover:border-gray-600 transition-colors text-sm sm:text-base tap-target">
-                <span className="tracking-wider">DISCOVER MORE</span>
-                <ChevronRight size={18} className="sm:w-[20px] sm:h-[20px]" />
-              </button>
-            </motion.div>
+      {/* Dynamic Editorial Sections */}
+      {dbEditorials.map((editorial, index) => (
+        <section key={editorial.id} className={`py-12 sm:py-16 md:py-20 w-full overflow-hidden ${index % 2 !== 0 ? 'bg-gray-50' : ''}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
+            <div className="grid md:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center">
+              
+              <motion.div initial={{ opacity: 0, x: editorial.is_reversed ? 50 : -50 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className={`relative w-full h-[400px] sm:h-[500px] md:h-[600px] cursor-pointer overflow-hidden ${editorial.is_reversed ? 'order-1 md:order-2' : ''}`}>
+                <ImageWithFallback src={editorial.image_url ? (editorial.image_url.startsWith('http') ? editorial.image_url : `http://localhost:5000${editorial.image_url}`) : ''} alt={editorial.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-in-out hover:scale-105" />
+              </motion.div>
+              
+              <motion.div initial={{ opacity: 0, x: editorial.is_reversed ? -50 : 50 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className={`space-y-4 sm:space-y-6 ${editorial.is_reversed ? 'order-2 md:order-1' : ''}`}>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl" style={{ fontWeight: 300, letterSpacing: '0.05em' }}>
+                  {editorial.title}
+                </h2>
+                <p className="text-base sm:text-lg text-gray-600" style={{ fontWeight: 300, lineHeight: 1.8 }}>
+                  {editorial.description}
+                </p>
+                <button className="flex items-center gap-2 text-black border-b-2 border-black pb-1 hover:text-gray-600 hover:border-gray-600 transition-colors text-sm sm:text-base tap-target">
+                  <span className="tracking-wider">{editorial.button_text}</span>
+                  <ChevronRight size={18} className="sm:w-[20px] sm:h-[20px]" />
+                </button>
+              </motion.div>
+              
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* Editorial Section - Platinum Perfection */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gray-50 w-full overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
-          <div className="grid md:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center">
-            <motion.div initial={{
-            opacity: 0,
-            x: -50
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} transition={{
-            duration: 0.8
-          }} viewport={{
-            once: true
-          }} className="space-y-4 sm:space-y-6 order-2 md:order-1">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl" style={{
-              fontWeight: 300,
-              letterSpacing: '0.05em'
-            }}>
-                Platinum Perfection
-              </h2>
-              <p className="text-base sm:text-lg text-gray-600" style={{
-              fontWeight: 300,
-              lineHeight: 1.8
-            }}>
-                The rarest and most precious of metals, platinum represents the pinnacle of luxury. Our platinum collection showcases extraordinary diamonds set in designs that celebrate life's most meaningful moments.
-              </p>
-              <button className="flex items-center gap-2 text-black border-b-2 border-black pb-1 hover:text-gray-600 hover:border-gray-600 transition-colors text-sm sm:text-base tap-target">
-                <span className="tracking-wider">EXPLORE COLLECTION</span>
-                <ChevronRight size={18} className="sm:w-[20px] sm:h-[20px]" />
-              </button>
-            </motion.div>
-            <motion.div initial={{
-            opacity: 0,
-            x: 50
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} transition={{
-            duration: 0.8
-          }} viewport={{
-            once: true
-          }} className="order-1 md:order-2">
-              <ImageWithFallback src={platinumPerfectionImg} alt="Platinum Perfection" className="w-full h-[400px] sm:h-[500px] md:h-[600px] object-contain" />
-            </motion.div>
-          </div>
-        </div>
-      </section>
+        </section>
+      ))}
 
       {/* Just Unveiled */}
       <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 w-full overflow-hidden">
@@ -1252,45 +1271,59 @@ export default function App() {
               </p>
             </motion.div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 md:gap-10">
-            {newArrivals.map((item, index) => <motion.div key={item.id} initial={{
-            opacity: 0,
-            y: 40
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.7,
-            delay: index * 0.15
-          }} viewport={{
-            once: true
-          }} className="group cursor-pointer">
-                <div className="relative mb-4 sm:mb-5 overflow-hidden">
-                  <ImageWithFallback src={item.image} alt={item.name} className="w-full h-64 sm:h-80 md:h-96 object-contain bg-gray-50 p-6 sm:p-8 group-hover:scale-105 transition-transform duration-700" />
-                  <button onClick={e => {
-                e.stopPropagation();
-                toggleWishlist(item.id);
-              }} className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors z-10 tap-target">
-                    <Heart size={16} className={`sm:w-[18px] sm:h-[18px] ${wishlist.has(item.id) ? 'fill-black' : 'fill-none'}`} stroke="black" />
-                  </button>
-                  {/* Tiffany-style Add to Bag */}
-                  <button onClick={e => {
-                e.stopPropagation();
-                addToCart(item);
-              }} className="absolute bottom-0 left-0 right-0 z-10 py-3 sm:py-4 text-[10px] sm:text-xs tracking-[0.25em] uppercase transition-all duration-300 translate-y-full group-hover:translate-y-0" style={{
-                fontFamily: "'Cormorant Garamond', serif",
-                fontWeight: 400,
-                background: addedIds.has(item.id) ? '#1a1a1a' : '#000',
-                color: '#fff'
-              }}>
-                    {addedIds.has(item.id) ? '✓ Added to Bag' : 'Add to Bag'}
-                  </button>
+          
+          {(() => {
+            const sliderProducts = dbProducts.filter(p => p.is_new_arrival);
+            if (sliderProducts.length === 0) return null;
+            
+            const maxIndex = Math.max(0, sliderProducts.length - 3); // Assumes 3 items per view on desktop
+            
+            return (
+              <div className="relative group px-4 sm:px-12">
+                <div className="overflow-hidden">
+                  <motion.div 
+                    className="flex transition-transform duration-500 ease-out"
+                    style={{ transform: `translateX(-${sliderIndex * (100 / 3)}%)` }}
+                  >
+                    {sliderProducts.map((item, index) => (
+                      <div key={item.id} className="w-full sm:w-1/2 md:w-1/3 flex-shrink-0 px-3 sm:px-4 md:px-5">
+                        <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: index * 0.15 }} viewport={{ once: true }} className="group cursor-pointer h-full">
+                          <div className="relative mb-4 sm:mb-5 overflow-hidden">
+                            <ImageWithFallback src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : ''} alt={item.name} className="w-full h-64 sm:h-80 md:h-96 object-cover bg-gray-50 group-hover:scale-105 transition-transform duration-700" />
+                            <button onClick={e => { e.stopPropagation(); toggleWishlist(item.id); }} className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors z-10 tap-target">
+                              <Heart size={16} className={`sm:w-[18px] sm:h-[18px] ${wishlist.has(item.id) ? 'fill-black' : 'fill-none'}`} stroke="black" />
+                            </button>
+                            {/* Tiffany-style Add to Bag */}
+                            <button onClick={e => { e.stopPropagation(); addToCart(item); }} className="absolute bottom-0 left-0 right-0 z-10 py-3 sm:py-4 text-[10px] sm:text-xs tracking-[0.25em] uppercase transition-all duration-300 translate-y-full group-hover:translate-y-0" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, background: addedIds.has(item.id) ? '#1a1a1a' : '#000', color: '#fff' }}>
+                              {addedIds.has(item.id) ? '✓ Added to Bag' : 'Add to Bag'}
+                            </button>
+                          </div>
+                          <h3 className="text-lg sm:text-xl mb-2" style={{ fontWeight: 400 }}>{item.name}</h3>
+                          <p className="text-sm text-gray-500">${item.price}</p>
+                        </motion.div>
+                      </div>
+                    ))}
+                  </motion.div>
                 </div>
-                <h3 className="text-lg sm:text-xl mb-2" style={{
-              fontWeight: 400
-            }}>{item.name}</h3>
-              </motion.div>)}
-          </div>
+                
+                {/* Navigation Arrows */}
+                <button 
+                  onClick={() => setSliderIndex(Math.max(0, sliderIndex - 1))}
+                  disabled={sliderIndex === 0}
+                  className={`absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur border border-slate-200 p-2 sm:p-3 rounded-full shadow-sm transition-all z-10 ${sliderIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:scale-110'}`}
+                >
+                  <ChevronLeft size={20} className="text-slate-800" />
+                </button>
+                <button 
+                  onClick={() => setSliderIndex(Math.min(maxIndex, sliderIndex + 1))}
+                  disabled={sliderIndex >= maxIndex}
+                  className={`absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur border border-slate-200 p-2 sm:p-3 rounded-full shadow-sm transition-all z-10 ${sliderIndex >= maxIndex ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:scale-110'}`}
+                >
+                  <ChevronRight size={20} className="text-slate-800" />
+                </button>
+              </div>
+            );
+          })()}
         </div>
       </section>
 
@@ -1385,39 +1418,70 @@ export default function App() {
               <span className="w-8 h-[1px] bg-black group-hover:w-12 transition-all duration-300"></span>
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-16">
-            {products.map((product, index) => <motion.div key={product.id} initial={{
-            opacity: 0,
-            y: 40
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.8,
-            delay: index * 0.1
-          }} viewport={{
-            once: true
-          }} className="group cursor-pointer flex flex-col" onClick={() => {
-            setActiveCollection(product.name);
-            setCurrentPage('collection');
-            window.scrollTo(0, 0);
-          }}>
-                <div className="relative mb-6 overflow-hidden bg-[#f0f0f0] aspect-[4/5]">
-                  <ImageWithFallback src={product.image} alt={product.name} className="w-full h-full object-cover p-4 group-hover:scale-110 transition-transform duration-1000 ease-out" />
-                  <button onClick={e => {
-                e.stopPropagation();
-                toggleWishlist(product.id);
-              }} className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2">
-                    <Heart size={20} className={wishlist.has(product.id) ? 'fill-black' : 'fill-none'} stroke="black" strokeWidth={1} />
-                  </button>
+          {(() => {
+            const featuredProducts = dbProducts.filter(p => p.is_featured);
+            if (featuredProducts.length === 0) return null;
+            
+            const maxIndex = Math.max(0, featuredProducts.length - 4); // Assumes 4 items per view on desktop
+            
+            return (
+              <div className="relative group px-2 sm:px-8">
+                <div className="overflow-hidden">
+                  <motion.div 
+                    className="flex transition-transform duration-500 ease-out"
+                    style={{ transform: `translateX(-${featuredSliderIndex * (100 / 4)}%)` }}
+                  >
+                    {featuredProducts.map((product, index) => (
+                      <div key={product.id} className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 flex-shrink-0 px-3">
+                        <motion.div 
+                          initial={{ opacity: 0, y: 40 }} 
+                          whileInView={{ opacity: 1, y: 0 }} 
+                          transition={{ duration: 0.8, delay: index * 0.1 }} 
+                          viewport={{ once: true }} 
+                          className="group cursor-pointer flex flex-col h-full" 
+                          onClick={() => {
+                            setActiveCollection(product.name);
+                            setCurrentPage('collection');
+                            window.scrollTo(0, 0);
+                          }}
+                        >
+                          <div className="relative mb-6 overflow-hidden bg-[#f0f0f0] aspect-[4/5]">
+                            <ImageWithFallback src={product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `http://localhost:5000${product.image_url}`) : ''} alt={product.name} className="w-full h-full object-cover p-4 group-hover:scale-110 transition-transform duration-1000 ease-out" />
+                            <button onClick={e => { e.stopPropagation(); toggleWishlist(product.id); }} className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2">
+                              <Heart size={20} className={wishlist.has(product.id) ? 'fill-black' : 'fill-none'} stroke="black" strokeWidth={1} />
+                            </button>
+                          </div>
+                          <h3 className="text-sm uppercase tracking-widest mb-2 text-black" style={{ fontWeight: 400 }}>
+                            {product.name}
+                          </h3>
+                        </motion.div>
+                      </div>
+                    ))}
+                  </motion.div>
                 </div>
-                <h3 className="text-sm uppercase tracking-widest mb-2 text-black" style={{
-              fontWeight: 400
-            }}>
-                  {product.name}
-                </h3>
-              </motion.div>)}
-          </div>
+                
+                {/* Navigation Arrows (Only show if there are more than 4 items) */}
+                {featuredProducts.length > 4 && (
+                  <>
+                    <button 
+                      onClick={() => setFeaturedSliderIndex(Math.max(0, featuredSliderIndex - 1))}
+                      disabled={featuredSliderIndex === 0}
+                      className={`absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur border border-slate-200 p-2 sm:p-3 rounded-full shadow-sm transition-all z-10 ${featuredSliderIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:scale-110'}`}
+                    >
+                      <ChevronLeft size={20} className="text-slate-800" />
+                    </button>
+                    <button 
+                      onClick={() => setFeaturedSliderIndex(Math.min(maxIndex, featuredSliderIndex + 1))}
+                      disabled={featuredSliderIndex >= maxIndex}
+                      className={`absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur border border-slate-200 p-2 sm:p-3 rounded-full shadow-sm transition-all z-10 ${featuredSliderIndex >= maxIndex ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:scale-110'}`}
+                    >
+                      <ChevronRight size={20} className="text-slate-800" />
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </section>
 
@@ -1444,47 +1508,33 @@ export default function App() {
           </motion.div>
           
           <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
-            {[{
-            name: 'Red Diamond Pendant',
-            subtitle: 'The Eternal Flame',
-            image: diamondEdit1,
-            offset: 'mt-0'
-          }, {
-            name: 'Red Diamond Bracelet',
-            subtitle: 'Passion Captured',
-            image: diamondEdit2,
-            offset: 'md:mt-32'
-          }, {
-            name: 'Red Diamond Ring',
-            subtitle: 'Rare Romance',
-            image: diamondEdit3,
-            offset: 'md:mt-16'
-          }].map((stone, index) => <motion.div key={stone.name} initial={{
-            opacity: 0,
-            y: 50
-          }} whileInView={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 1,
-            delay: index * 0.2
-          }} viewport={{
-            once: true
-          }} className={`flex-1 group cursor-pointer ${stone.offset}`}>
-                <div className="aspect-[3/4] overflow-hidden mb-8 relative bg-[#f8f8f8]">
-                  <ImageWithFallback src={stone.image} alt={stone.name} className="w-full h-full object-contain p-8 group-hover:scale-105 transition-transform duration-1000 ease-out" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
-                </div>
-                <div className="flex justify-between items-end">
-                  <div>
-                    <h3 className="text-3xl text-black mb-2" style={{
-                  fontWeight: 300
-                }}>{stone.name}</h3>
-                    <span className="text-[10px] tracking-[0.2em] text-gray-400 uppercase">{stone.subtitle}</span>
+            {dbDiamondEdit.map((stone, index) => {
+              const offsets = ['mt-0', 'md:mt-32', 'md:mt-16'];
+              const offset = offsets[index % 3];
+              
+              return (
+                <motion.div 
+                  key={stone.id || stone.name} 
+                  initial={{ opacity: 0, y: 50 }} 
+                  whileInView={{ opacity: 1, y: 0 }} 
+                  transition={{ duration: 1, delay: index * 0.2 }} 
+                  viewport={{ once: true }} 
+                  className={`flex-1 group cursor-pointer ${offset}`}
+                >
+                  <div className="aspect-[3/4] overflow-hidden mb-8 relative bg-[#f8f8f8]">
+                    <ImageWithFallback src={stone.image_url ? (stone.image_url.startsWith('http') ? stone.image_url : `http://localhost:5000${stone.image_url}`) : ''} alt={stone.title} className="w-full h-full object-contain p-8 group-hover:scale-105 transition-transform duration-1000 ease-out" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
                   </div>
-                  <ArrowRight size={16} className="text-gray-400 group-hover:text-black transition-colors -translate-x-4 group-hover:translate-x-0 opacity-0 group-hover:opacity-100 duration-500" />
-                </div>
-              </motion.div>)}
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <h3 className="text-3xl text-black mb-2" style={{ fontWeight: 300 }}>{stone.title}</h3>
+                      <span className="text-[10px] tracking-[0.2em] text-gray-400 uppercase">{stone.subtitle}</span>
+                    </div>
+                    <ArrowRight size={16} className="text-gray-400 group-hover:text-black transition-colors -translate-x-4 group-hover:translate-x-0 opacity-0 group-hover:opacity-100 duration-500" />
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1492,105 +1542,63 @@ export default function App() {
       {/* Personal Styling & Art of Giving - Combined Editorial Spread */}
       <section className="py-32 px-6 bg-[#fafafa]">
         <div className="max-w-[1400px] mx-auto">
-          {/* Styling */}
-          <div className="flex flex-col md:flex-row items-center gap-12 lg:gap-24 mb-40">
-            <motion.div initial={{
-            opacity: 0,
-            x: -40
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} transition={{
-            duration: 1
-          }} viewport={{
-            once: true
-          }} className="w-full md:w-5/12 order-2 md:order-1">
-              <span className="text-[10px] tracking-[0.4em] uppercase text-gray-400 mb-8 block">Concierge</span>
-              <h2 className="text-5xl lg:text-6xl mb-10 text-black leading-tight" style={{
-              fontWeight: 300
-            }}>
-                Personal <br /><span className="italic text-gray-500">Styling</span>
-              </h2>
-              <p className="text-lg text-gray-600 mb-12 max-w-md" style={{
-              fontWeight: 300,
-              lineHeight: 1.8
-            }}>
-                Our style consultants curate a personalized selection based on your taste, occasion, and wardrobe — whether for a gala, a wedding, or everyday elegance.
-              </p>
-              <button onClick={() => {
-              openAppointment();
-            }} className="group flex items-center gap-4 text-xs uppercase tracking-[0.2em] hover:text-gray-500 transition-colors w-max">
-                <span>Book a Session</span>
-                <span className="w-8 h-[1px] bg-black group-hover:w-12 transition-all duration-300"></span>
-              </button>
-            </motion.div>
-            <motion.div initial={{
-            opacity: 0,
-            clipPath: 'inset(100% 0 0 0)'
-          }} whileInView={{
-            opacity: 1,
-            clipPath: 'inset(0% 0 0 0)'
-          }} transition={{
-            duration: 1.2,
-            ease: [0.16, 1, 0.3, 1]
-          }} viewport={{
-            once: true
-          }} className="w-full md:w-7/12 aspect-[4/3] md:aspect-[16/9] overflow-hidden order-1 md:order-2">
-              <ImageWithFallback src={personalStylingImg} alt="Personal Styling" className="w-full h-full object-cover" />
-            </motion.div>
-          </div>
-
-          {/* Gifting */}
-          <div className="flex flex-col md:flex-row items-center gap-12 lg:gap-24">
-            <motion.div initial={{
-            opacity: 0,
-            clipPath: 'inset(0 0 0 100%)'
-          }} whileInView={{
-            opacity: 1,
-            clipPath: 'inset(0 0 0 0%)'
-          }} transition={{
-            duration: 1.2,
-            ease: [0.16, 1, 0.3, 1]
-          }} viewport={{
-            once: true
-          }} className="w-full md:w-6/12 aspect-[3/4] overflow-hidden">
-              <ImageWithFallback src={catEngagement} alt="The Art of Giving" className="w-full h-full object-cover" />
-            </motion.div>
-            <motion.div initial={{
-            opacity: 0,
-            x: 40
-          }} whileInView={{
-            opacity: 1,
-            x: 0
-          }} transition={{
-            duration: 1
-          }} viewport={{
-            once: true
-          }} className="w-full md:w-5/12 lg:pl-16">
-              <span className="text-[10px] tracking-[0.4em] uppercase text-gray-400 mb-8 block">Services</span>
-              <h2 className="text-5xl lg:text-6xl mb-10 text-black leading-tight" style={{
-              fontWeight: 300
-            }}>
-                The Art of <br /><span className="italic text-gray-500">Giving</span>
-              </h2>
-              <p className="text-lg text-gray-600 mb-12 max-w-md" style={{
-              fontWeight: 300,
-              lineHeight: 1.8
-            }}>
-                Every piece arrives in our signature presentation box, hand-tied with a silk ribbon. Complimentary engraving and personal shopping assistance ensure a gift as memorable as the jewel itself.
-              </p>
-              <button 
-                onClick={() => {
-                  setCurrentPage('gift-guide');
-                  window.scrollTo(0, 0);
-                }}
-                className="group flex items-center gap-4 text-xs uppercase tracking-[0.2em] hover:text-gray-500 transition-colors w-max"
+          {dbServices.map((service, index) => (
+            <div key={service.id} className={`flex flex-col md:flex-row items-center gap-12 lg:gap-24 ${index < dbServices.length - 1 ? 'mb-40' : ''}`}>
+              
+              {/* Text Content */}
+              <motion.div 
+                initial={{ opacity: 0, x: service.is_reversed ? 40 : -40 }} 
+                whileInView={{ opacity: 1, x: 0 }} 
+                transition={{ duration: 1 }} 
+                viewport={{ once: true }} 
+                className={`w-full md:w-5/12 ${service.is_reversed ? 'order-2' : 'order-2 md:order-1'}`}
               >
-                <span>Explore Gift Guide</span>
-                <span className="w-8 h-[1px] bg-black group-hover:w-12 transition-all duration-300"></span>
-              </button>
-            </motion.div>
-          </div>
+                <span className="text-[10px] tracking-[0.4em] uppercase text-gray-400 mb-8 block font-medium">{service.tag}</span>
+                <h2 className="text-5xl lg:text-6xl mb-10 text-black leading-tight" style={{ fontWeight: 300 }}>
+                  {service.title.split(' ').length > 1 ? (
+                    <>
+                      {service.title.split(' ').slice(0, -1).join(' ')} <br />
+                      <span className="italic text-gray-500">{service.title.split(' ').slice(-1)}</span>
+                    </>
+                  ) : service.title}
+                </h2>
+                <p className="text-lg text-gray-600 mb-12 max-w-md" style={{ fontWeight: 300, lineHeight: 1.8 }}>
+                  {service.description}
+                </p>
+                <button 
+                  onClick={() => {
+                    if (service.button_link === 'appointment') openAppointment();
+                    else {
+                      setCurrentPage(service.button_link);
+                      window.scrollTo(0, 0);
+                    }
+                  }} 
+                  className="group flex items-center gap-4 text-xs uppercase tracking-[0.2em] hover:text-gray-500 transition-colors w-max"
+                >
+                  <span>{service.button_text}</span>
+                  <span className="w-8 h-[1px] bg-black group-hover:w-12 transition-all duration-300"></span>
+                </button>
+              </motion.div>
+
+              {/* Image Content */}
+              <motion.div 
+                initial={{ 
+                  opacity: 0, 
+                  clipPath: service.is_reversed ? 'inset(0 0 0 100%)' : 'inset(100% 0 0 0)' 
+                }} 
+                whileInView={{ 
+                  opacity: 1, 
+                  clipPath: 'inset(0% 0 0 0%)' 
+                }} 
+                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} 
+                viewport={{ once: true }} 
+                className={`w-full md:w-7/12 overflow-hidden ${service.is_reversed ? 'order-1 md:aspect-[3/4]' : 'order-1 md:order-2 aspect-[4/3] md:aspect-[16/9]'}`}
+              >
+                <ImageWithFallback src={service.image_url ? (service.image_url.startsWith('http') ? service.image_url : `http://localhost:5000${service.image_url}`) : ''} alt={service.title} className="w-full h-full object-cover" />
+              </motion.div>
+
+            </div>
+          ))}
         </div>
       </section>
 
@@ -1677,20 +1685,26 @@ export default function App() {
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            {instagramImages.map((image, index) => <motion.div key={index} initial={{
-            opacity: 0,
-            scale: 0.9
-          }} whileInView={{
-            opacity: 1,
-            scale: 1
-          }} transition={{
-            duration: 0.5,
-            delay: index * 0.05
-          }} viewport={{
-            once: true
-          }} className="aspect-square overflow-hidden cursor-pointer group">
-                <ImageWithFallback src={image} alt={`Instagram ${index + 1}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-              </motion.div>)}
+            {instagramImages.map((item, index) => (
+              <motion.div 
+                key={index} 
+                initial={{ opacity: 0, scale: 0.9 }} 
+                whileInView={{ opacity: 1, scale: 1 }} 
+                transition={{ duration: 0.5, delay: index * 0.05 }} 
+                viewport={{ once: true }} 
+                className="aspect-square overflow-hidden cursor-pointer group relative"
+                onClick={() => window.open(item.link, '_blank')}
+              >
+                <ImageWithFallback 
+                  src={item.image} 
+                  alt={`Instagram ${index + 1}`} 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                />
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Instagram size={20} className="text-white" />
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>

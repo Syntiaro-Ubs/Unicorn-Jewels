@@ -352,10 +352,30 @@ export function CategoryPage({
   toggleWishlist,
   addToCart,
   addedIds,
-  onProductClick,
-  dynamicBanner
-}) {
-  const data = catalogue[category];
+   onProductClick,
+   dynamicBanner,
+   dbProducts = []
+ }) {
+   const data = catalogue[category] || { products: [], hero: '', subtitle: '', editorial: '' };
+ 
+   // Merge dynamic products with static catalogue for this category
+   const categoryProducts = useMemo(() => {
+     const dbFiltered = dbProducts.filter(p => 
+       p.category_name && p.category_name.toLowerCase() === category.toLowerCase()
+     ).map(p => ({
+       ...p,
+       priceNum: p.price_num,
+       image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : (data.products[0]?.image || '')
+     }));
+ 
+     // If we have DB products, we might want to prioritize them or merge them.
+     // For now, if DB products exist for this category, let's use them exclusively OR append them.
+     // User said "not display", so they probably expect the new ones to show up.
+     if (dbFiltered.length > 0) {
+       return dbFiltered;
+     }
+     return data.products;
+   }, [category, dbProducts, data.products]);
 
   // Override static data with dynamic banner if it matches
   const displayTitle = dynamicBanner?.title || category;
@@ -376,15 +396,15 @@ export function CategoryPage({
     setFilterDrawerOpen(false);
   }, [category]);
   const availableMetals = useMemo(() => {
-    if (!data) return ['All Materials'];
-    const metals = new Set(data.products.map(p => {
-      const parts = p.metal.split('·');
+    if (!categoryProducts) return ['All Materials'];
+    const metals = new Set(categoryProducts.map(p => {
+      const parts = (p.metal || '').split('·');
       return parts[0].trim();
     }));
     return ['All Materials', ...Array.from(metals).sort()];
-  }, [data]);
+  }, [categoryProducts]);
   const filtered = useMemo(() => {
-    let list = [...data.products];
+    let list = [...categoryProducts];
     if (metalFilter !== 'All Materials') {
       list = list.filter(p => p.metal.includes(metalFilter));
     }

@@ -4,6 +4,9 @@ import DashboardLogin from '../Dashboard/DashboardLogin';
 import DashboardLayout from '../Dashboard/DashboardLayout';
 import Overview from '../Dashboard/Overview';
 import BannerManagement from '../Dashboard/BannerManagement';
+import ProductManagement from '../Dashboard/ProductManagement';
+
+import HomeManagement from '../Dashboard/HomeManagement';
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('adminToken');
@@ -27,8 +30,10 @@ export default function App() {
           <DashboardLayout />
         </ProtectedRoute>
       }>
-        <Route index element={<Overview />} />
+        <Route index element={<Navigate to="home" replace />} />
+        <Route path="home" element={<HomeManagement />} />
         <Route path="banner" element={<BannerManagement />} />
+        <Route path="products" element={<ProductManagement />} />
       </Route>
 
       {/* Fallback */}

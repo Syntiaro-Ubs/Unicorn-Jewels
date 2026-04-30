@@ -56,6 +56,10 @@ function inferProductFamily(product) {
 }
 
 export function getProductHoverImage(product) {
+  if (product.hover_image_url) {
+    return product.hover_image_url.startsWith('http') ? product.hover_image_url : `http://localhost:5000${product.hover_image_url}`;
+  }
+
   if (product.hoverImage) {
     return product.hoverImage;
   }

@@ -150,18 +150,36 @@ Object.keys(collectionsData).forEach(name => {
     products: withScopedProductIds(collectionsData[name].products, `collection-${name}`)
   };
 });
+
 export function CollectionPage({
-  collectionName,
-  onBack,
-  onCollectionChange,
-  wishlist,
-  toggleWishlist,
-  addToCart,
-  addedIds,
-  onProductClick,
-  dynamicBanner
-}) {
-  const data = collectionsData[collectionName];
+   collectionName,
+   onBack,
+   onCollectionChange,
+   wishlist,
+   toggleWishlist,
+   addToCart,
+   addedIds,
+   onProductClick,
+   dynamicBanner,
+   dbProducts = []
+ }) {
+   const data = collectionsData[collectionName] || { products: [], hero: '', subtitle: '', editorial: '' };
+ 
+   // Merge dynamic products with static collections for this collection
+   const collectionProducts = useMemo(() => {
+     const dbFiltered = dbProducts.filter(p => 
+       p.collection_name && p.collection_name.toLowerCase() === collectionName.toLowerCase()
+     ).map(p => ({
+       ...p,
+       priceNum: p.price_num,
+       image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : (data.products[0]?.image || '')
+     }));
+ 
+     if (dbFiltered.length > 0) {
+       return dbFiltered;
+     }
+     return data.products;
+   }, [collectionName, dbProducts, data.products]);
   
   // Override static data with dynamic banner
   const displayTitle = dynamicBanner?.title || collectionName;
@@ -184,25 +202,26 @@ export function CollectionPage({
     setFilterDrawerOpen(false);
   }, [collectionName]);
   const availableMetals = useMemo(() => {
-    if (!data) return ['All Materials'];
-    const metals = new Set(data.products.map(p => p.metal));
+    if (!collectionProducts) return ['All Materials'];
+    const metals = new Set(collectionProducts.map(p => p.metal || ''));
     return ['All Materials', ...Array.from(metals).sort()];
-  }, [data]);
+  }, [collectionProducts]);
   const filteredAndSortedProducts = useMemo(() => {
-    if (!data) return [];
-    let list = [...data.products];
+    if (!collectionProducts) return [];
+    let list = [...collectionProducts];
     if (categoryFilter !== 'All Categories') {
       list = list.filter(p => {
-        const nameLower = p.name.toLowerCase();
-        if (categoryFilter === 'Rings') return nameLower.includes('ring');
-        if (categoryFilter === 'Necklaces') return nameLower.includes('necklace') || nameLower.includes('pendant') || nameLower.includes('chain');
-        if (categoryFilter === 'Earrings') return nameLower.includes('earring') || nameLower.includes('studs');
-        if (categoryFilter === 'Bracelets') return nameLower.includes('bracelet') || nameLower.includes('cuff') || nameLower.includes('bangle');
+        const nameLower = (p.name || '').toLowerCase();
+        const catLower = (p.category_name || '').toLowerCase();
+        if (categoryFilter === 'Rings') return nameLower.includes('ring') || catLower === 'rings';
+        if (categoryFilter === 'Necklaces') return nameLower.includes('necklace') || nameLower.includes('pendant') || nameLower.includes('chain') || catLower === 'necklaces';
+        if (categoryFilter === 'Earrings') return nameLower.includes('earring') || nameLower.includes('studs') || catLower === 'earrings';
+        if (categoryFilter === 'Bracelets') return nameLower.includes('bracelet') || nameLower.includes('cuff') || nameLower.includes('bangle') || catLower === 'bracelets';
         return true;
       });
     }
     if (metalFilter !== 'All Materials') {
-      list = list.filter(p => p.metal.includes(metalFilter));
+      list = list.filter(p => (p.metal || '').includes(metalFilter));
     }
     if (priceFilter !== 'All Prices') {
       if (priceFilter === 'Under $2,000') list = list.filter(p => p.priceNum < 2000);else if (priceFilter === '$2,000 - $5,000') list = list.filter(p => p.priceNum >= 2000 && p.priceNum <= 5000);else if (priceFilter === 'Over $5,000') list = list.filter(p => p.priceNum > 5000);

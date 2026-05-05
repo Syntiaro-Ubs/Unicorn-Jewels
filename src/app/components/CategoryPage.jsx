@@ -360,6 +360,15 @@ export function CategoryPage({
  
    // Merge dynamic products with static catalogue for this category
    const categoryProducts = useMemo(() => {
+     if (category === 'Jewelry') {
+       const dbAll = dbProducts.map(p => ({
+         ...p,
+         priceNum: p.price_num,
+         image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : (data.products[0]?.image || '')
+       }));
+       return [...dbAll, ...data.products];
+     }
+
      const dbFiltered = dbProducts.filter(p => 
        p.category_name && p.category_name.toLowerCase() === category.toLowerCase()
      ).map(p => ({
@@ -367,10 +376,8 @@ export function CategoryPage({
        priceNum: p.price_num,
        image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : (data.products[0]?.image || '')
      }));
- 
+
      // If we have DB products, we might want to prioritize them or merge them.
-     // For now, if DB products exist for this category, let's use them exclusively OR append them.
-     // User said "not display", so they probably expect the new ones to show up.
      if (dbFiltered.length > 0) {
        return dbFiltered;
      }

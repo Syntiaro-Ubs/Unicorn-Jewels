@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { jsPDF } from 'jspdf';
 const heroImage = "https://images.unsplash.com/photo-1729641246245-64405c363263?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2RlbCUyMHdlYXJpbmclMjBsdXh1cnklMjBkaWFtb25kJTIwamV3ZWxyeSUyMGF2YW50LWdhcmRlfGVufDF8fHx8MTc3Njc2NTMxOXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 const catRings = "https://images.unsplash.com/photo-1662434921251-a6eba45ac40c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBkaWFtb25kJTIwcmluZyUyMHdoaXRlJTIwYmFja2dyb3VuZHxlbnwxfHx8fDE3NzY3NjUzMTl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 const catNecklaces = "https://images.unsplash.com/photo-1590845947379-6c663322efea?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBkaWFtb25kJTIwbmVja2xhY2UlMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MXx8fHwxNzc2NzY1MzE5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
@@ -38,6 +39,7 @@ import { OurStoryPage } from './components/OurStoryPage';
 import { ProductPage } from './components/ProductPage';
 import { buildProductIndex, withScopedProductIds } from './components/productIdentity';
 import GiftGuidePage from './components/GiftGuidePage';
+import { TrackOrderPage } from './components/TrackOrderPage';
 
 const featuredCollectionCards = withScopedProductIds([{
   id: 1,
@@ -101,7 +103,8 @@ export default function App() {
   const [productHistory, setProductHistory] = useState([]);
   const [savedScrollPos, setSavedScrollPos] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userInitial, setUserInitial] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userInitial, setUserInitial] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [wishlist, setWishlist] = useState(new Set());
   const [menuOpen, setMenuOpen] = useState(false);
@@ -109,6 +112,22 @@ export default function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [addedIds, setAddedIds] = useState(new Set());
+  const [orders, setOrders] = useState([{
+    id: "ORD-993-841",
+    date: "October 12, 2025",
+    status: "Delivered",
+    total: "$12,450",
+    item: "Lumière Diamond Choker",
+    image: "https://images.unsplash.com/photo-1770721478216-3e5dbbe8dcc2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBkaWFtb25kJTIwbmVja2xhY2UlMjBvbiUyMG1vZGVsfGVufDF8fHx8MTc3NTczMzIxMnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+  }, {
+    id: "ORD-842-109",
+    date: "July 04, 2025",
+    status: "Delivered",
+    total: "$8,900",
+    item: "Eclipse Onyx Ring",
+    image: "https://images.unsplash.com/photo-1737314418233-c61ff046e647?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBvbnl4JTIwcmluZyUyMG9uJTIwZmluZ2VyfGVufDF8fHx8MTc3NTczMzIxMnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+  }]);
+  const [userAddresses, setUserAddresses] = useState([]);
   const [profileInitialTab, setProfileInitialTab] = useState('overview');
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeCollection, setActiveCollection] = useState(null);
@@ -124,6 +143,7 @@ export default function App() {
   const [dbInstagramPosts, setDbInstagramPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sliderIndex, setSliderIndex] = useState(0);
+  const [categorySliderIndex, setCategorySliderIndex] = useState(0);
   const [featuredSliderIndex, setFeaturedSliderIndex] = useState(0);
   const [dynamicBanner, setDynamicBanner] = useState({
     title: 'Unicorn Jewels',
@@ -131,6 +151,20 @@ export default function App() {
     description: 'Discover our newest collection of handcrafted jewelry, where every piece tells a story of exceptional artistry and enduring beauty.',
     imageUrl: heroImage
   });
+
+  // Restore session on mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('unicorn_jewels_user');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        handleAuthSuccess(user);
+      } catch (err) {
+        console.error("Failed to restore session:", err);
+        localStorage.removeItem('unicorn_jewels_user');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const getPageKey = () => {
@@ -344,19 +378,136 @@ export default function App() {
   };
 
   // Render auth pages
+  const handleAuthSuccess = async (user) => {
+    setIsLoggedIn(true);
+    setCurrentUser(user);
+    setUserInitial(user.firstName[0].toUpperCase());
+    localStorage.setItem('unicorn_jewels_user', JSON.stringify(user));
+    setCurrentPage('home');
+    
+    // Fetch orders from backend
+    try {
+      const response = await fetch(`http://localhost:5000/api/auth/user-orders/${user.id}`);
+      if (response.ok) {
+        const backendOrders = await response.json();
+        const formattedOrders = backendOrders.map(o => ({
+          id: o.order_id,
+          date: new Date(o.order_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+          status: o.status,
+          total: o.price,
+          item: o.product_name,
+          image: o.image_url,
+          timestamp: new Date(o.order_date).getTime()
+        }));
+        setOrders(formattedOrders);
+      }
+    } catch (err) {
+      console.error("Failed to fetch orders:", err);
+    }
+
+    // Fetch addresses from backend
+    try {
+      const response = await fetch(`http://localhost:5000/api/auth/user-addresses/${user.id}`);
+      if (response.ok) {
+        const backendAddresses = await response.json();
+        setUserAddresses(backendAddresses);
+      }
+    } catch (err) {
+      console.error("Failed to fetch addresses:", err);
+    }
+  };
+
+  const handleUpdateProfile = async (updatedData) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/update-profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          ...updatedData
+        })
+      });
+      if (response.ok) {
+        setCurrentUser(prev => ({ ...prev, ...updatedData }));
+        setUserInitial(updatedData.firstName[0].toUpperCase());
+        return { success: true };
+      }
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+    }
+    return { success: false };
+  };
+
+  const handleAddAddress = async (addressData) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/user-addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          ...addressData
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Re-fetch addresses to ensure state is correct (especially primary flag)
+        const refreshResponse = await fetch(`http://localhost:5000/api/auth/user-addresses/${currentUser.id}`);
+        if (refreshResponse.ok) {
+          const freshAddresses = await refreshResponse.json();
+          setUserAddresses(freshAddresses);
+        }
+        return { success: true };
+      }
+    } catch (err) {
+      console.error("Failed to add address:", err);
+    }
+    return { success: false };
+  };
+
+  const handleUpdateAddress = async (addressId, addressData) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/auth/user-addresses/${addressId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          ...addressData
+        })
+      });
+      if (response.ok) {
+        const refreshResponse = await fetch(`http://localhost:5000/api/auth/user-addresses/${currentUser.id}`);
+        if (refreshResponse.ok) {
+          const freshAddresses = await refreshResponse.json();
+          setUserAddresses(freshAddresses);
+        }
+        return { success: true };
+      }
+    } catch (err) {
+      console.error("Failed to update address:", err);
+    }
+    return { success: false };
+  };
+
+  const handleDeleteAddress = async (addressId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/auth/user-addresses/${addressId}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        setUserAddresses(prev => prev.filter(a => a.id !== addressId));
+        return { success: true };
+      }
+    } catch (err) {
+      console.error("Failed to delete address:", err);
+    }
+    return { success: false };
+  };
+
   if (currentPage === 'login') {
-    return <LoginPage onBack={() => setCurrentPage('home')} onGoToSignup={() => setCurrentPage('signup')} onSuccess={initial => {
-      setIsLoggedIn(true);
-      setUserInitial(initial);
-      setCurrentPage('home');
-    }} />;
+    return <LoginPage onBack={() => setCurrentPage('home')} onGoToSignup={() => setCurrentPage('signup')} onSuccess={handleAuthSuccess} />;
   }
   if (currentPage === 'signup') {
-    return <SignUpPage onBack={() => setCurrentPage('home')} onGoToLogin={() => setCurrentPage('login')} onSuccess={initial => {
-      setIsLoggedIn(true);
-      setUserInitial(initial);
-      setCurrentPage('home');
-    }} />;
+    return <SignUpPage onBack={() => setCurrentPage('home')} onGoToLogin={() => setCurrentPage('login')} onSuccess={handleAuthSuccess} />;
   }
 
   if (currentPage === 'product' && selectedProduct) {
@@ -445,13 +596,74 @@ export default function App() {
       setCurrentPage('home');
     }} />;
   }
+  const handleDownloadReceipt = (order) => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("UNICORN JEWELS", 105, 30, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Sustainable spark. Soulful shine.", 105, 38, { align: "center" });
+    
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, 45, 190, 45);
+    
+    // Order Info
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("RECEIPT", 20, 60);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Order Number: ${order.id}`, 20, 70);
+    doc.text(`Date: ${order.date}`, 20, 77);
+    doc.text(`Status: ${order.status}`, 20, 84);
+    
+    doc.line(20, 95, 190, 95);
+    
+    // Item Info
+    doc.setFont("helvetica", "bold");
+    doc.text("ITEM", 20, 110);
+    doc.text("TOTAL", 170, 110);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(order.item, 20, 120);
+    doc.text(order.total, 170, 120);
+    
+    doc.line(20, 135, 190, 135);
+    
+    // Footer
+    doc.setFontSize(10);
+    doc.text("Thank you for choosing Unicorn Jewels.", 105, 150, { align: "center" });
+    doc.text("For any inquiries, please contact concierge@unicornjewels.com", 105, 157, { align: "center" });
+    
+    doc.save(`Receipt_${order.id}.pdf`);
+  };
+
   if (currentPage === 'profile') {
     return <>
         <ProfilePage onBack={() => setCurrentPage('home')} onLogout={() => {
         setIsLoggedIn(false);
+        setCurrentUser(null);
+        setOrders([]);
+        localStorage.removeItem('unicorn_jewels_user');
         setAccountDropdownOpen(false);
         setCurrentPage('home');
-      }} userInitial={userInitial || 'E'} initialTab={profileInitialTab} wishlist={wishlist} wishlistItems={wishlistItems} toggleWishlist={toggleWishlist} addToCart={addToCart} onProductClick={p => openProductPage(p, 'profile')} />
+      }} userInitial={userInitial || 'E'} user={currentUser} initialTab={profileInitialTab} wishlist={wishlist} wishlistItems={wishlistItems} toggleWishlist={toggleWishlist} addToCart={addToCart} onProductClick={p => openProductPage(p, 'profile')} orders={orders} addresses={userAddresses} onUpdateProfile={async (data) => {
+        const res = await handleUpdateProfile(data);
+        if (res.success) {
+          // Update localStorage with new user data
+          const updatedUser = { ...currentUser, ...data };
+          localStorage.setItem('unicorn_jewels_user', JSON.stringify(updatedUser));
+        }
+        return res;
+      }} onAddAddress={handleAddAddress} onUpdateAddress={handleUpdateAddress} onDeleteAddress={handleDeleteAddress} onTrackShipment={() => {
+        setCurrentPage('track-order');
+        window.scrollTo(0, 0);
+      }} onDownloadReceipt={handleDownloadReceipt} />
 
         <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} items={cartItems} addedIds={addedIds} updateQty={updateQty} removeFromCart={removeFromCart} wishlist={wishlist} toggleWishlist={toggleWishlist} onCheckout={() => setCurrentPage('checkout')} onProductClick={openCartProductPage} />
       </>;
@@ -462,11 +674,52 @@ export default function App() {
       setCurrentPage('home');
     }} />;
   }
+  if (currentPage === 'track-order') {
+    return <TrackOrderPage onBack={() => {
+      window.scrollTo(0, 0);
+      setCurrentPage('home');
+    }} />;
+  }
   if (currentPage === 'checkout') {
-    return <CheckoutPage items={cartItems} onBack={() => setCurrentPage('home')} onCompletePurchase={() => {
+    return <CheckoutPage items={cartItems} onBack={() => setCurrentPage('home')} onCompletePurchase={async () => {
+      const newOrders = cartItems.map(item => ({
+        id: `ORD-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 900) + 100}`,
+        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        status: "Processing",
+        total: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(item.priceNum * item.quantity),
+        item: item.name,
+        image: item.image,
+        timestamp: Date.now()
+      }));
+
+      // If user is logged in, save to backend
+      if (isLoggedIn && currentUser) {
+        for (const order of newOrders) {
+          try {
+            await fetch('http://localhost:5000/api/auth/user-orders', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: currentUser.id,
+                orderId: order.id,
+                productName: order.item,
+                price: order.total,
+                imageUrl: order.image
+              })
+            });
+          } catch (err) {
+            console.error("Failed to save order to backend:", err);
+          }
+        }
+      }
+
+      setOrders(prev => [...newOrders, ...prev]);
       setCartItems([]);
       setAddedIds(new Set());
-    }} onViewTracking={() => openProfileTab('orders')} onContinueShopping={() => setCurrentPage('home')} />;
+    }} onViewTracking={() => {
+      setCurrentPage('track-order');
+      window.scrollTo(0, 0);
+    }} onContinueShopping={() => setCurrentPage('home')} />;
   }
   if (currentPage === 'collection' && activeCollection) {
     return <>
@@ -874,19 +1127,15 @@ export default function App() {
             overflow: 'hidden'
           }}>
                 <div className="bg-gray-50 pl-6 pr-4 py-2">
-                  {[{
-                label: 'The Vanguard',
-                key: 'The Vanguard'
+                  {(dbCollections.length > 0 ? dbCollections : [{
+                name: 'The Vanguard'
               }, {
-                label: 'Lumina Letter',
-                key: 'Lumina Letter'
+                name: 'Lumina Letter'
               }, {
-                label: 'Promise Bloom',
-                key: 'Promise Bloom'
+                name: 'Promise Bloom'
               }, {
-                label: 'Aura Everyday',
-                key: 'Aura Everyday'
-              }].map(sub => <button key={sub.key} type="button" className="flex items-center justify-between w-full py-2.5 text-sm tracking-[0.2em] text-gray-500 hover:text-black transition-colors text-left" style={{
+                name: 'Aura Everyday'
+              }]).map(sub => <button key={sub.id || sub.name} type="button" className="flex items-center justify-between w-full py-2.5 text-sm tracking-[0.2em] text-gray-500 hover:text-black transition-colors text-left" style={{
                 fontWeight: 300,
                 pointerEvents: 'auto',
                 background: 'none',
@@ -895,11 +1144,11 @@ export default function App() {
               }} onClick={() => {
                 setMenuOpen(false);
                 setCollectionsDropdownOpen(false);
-                setActiveCollection(sub.key);
+                setActiveCollection(sub.name);
                 setCurrentPage('collection');
                 window.scrollTo(0, 0);
               }}>
-                      <span>{sub.label.toUpperCase()}</span>
+                      <span>{sub.name.toUpperCase()}</span>
                       <ChevronRight size={12} className="text-gray-300" />
                     </button>)}
                 </div>
@@ -935,25 +1184,19 @@ export default function App() {
               overflow: 'hidden'
             }}>
                   <div className="bg-gray-50 pl-6 pr-4 py-2">
-                    {[{
-                  label: 'Rings',
-                  key: 'Rings'
+                    {(dbCategories.length > 0 ? dbCategories : [{
+                  name: 'Rings'
                 }, {
-                  label: 'Earrings',
-                  key: 'Earrings'
+                  name: 'Earrings'
                 }, {
-                  label: 'Necklaces',
-                  key: 'Necklaces'
+                  name: 'Necklaces'
                 }, {
-                  label: 'Sets',
-                  key: 'Sets'
+                  name: 'Sets'
                 }, {
-                  label: 'Bracelets',
-                  key: 'Bracelets'
+                  name: 'Bracelets'
                 }, {
-                  label: 'Engagement',
-                  key: 'Engagement'
-                }].map(sub => <button key={sub.key} type="button" className="flex items-center justify-between w-full py-2.5 text-sm tracking-[0.2em] text-gray-500 hover:text-black transition-colors text-left" style={{
+                  name: 'Engagement'
+                }]).map(sub => <button key={sub.id || sub.name} type="button" className="flex items-center justify-between w-full py-2.5 text-sm tracking-[0.2em] text-gray-500 hover:text-black transition-colors text-left" style={{
                   fontWeight: 300,
                   pointerEvents: 'auto',
                   background: 'none',
@@ -962,14 +1205,14 @@ export default function App() {
                 }} onClick={() => {
                   setMenuOpen(false);
                   setCategoryDropdownOpen(false);
-                  setActiveCategory(sub.key);
+                  setActiveCategory(sub.name);
                   setCurrentPage('category');
                   window.scrollTo({
                     top: 0,
                     behavior: 'instant'
                   });
                 }}>
-                        <span>{sub.label.toUpperCase()}</span>
+                        <span>{sub.name.toUpperCase()}</span>
                         <ChevronRight size={12} className="text-gray-300" />
                       </button>)}
                   </div>
@@ -1184,27 +1427,80 @@ export default function App() {
         }}>
             Curated Collections
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6 md:gap-8">
-            {categories.map(category => <div key={category.name} className="text-center">
-                <button type="button" className="group cursor-pointer w-full text-center bg-transparent border-none outline-none" onClick={() => {
-              setActiveCategory(category.name);
-              setCurrentPage('category');
-              window.scrollTo({
-                top: 0,
-                behavior: 'instant'
-              });
-            }}>
-                  <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 mx-auto mb-3 sm:mb-4 rounded-full overflow-hidden">
-                    <ImageWithFallback src={category.image} alt={category.name} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" />
-                  </div>
-                  <h3 className="text-sm sm:text-base md:text-lg tracking-wider" style={{
-                fontWeight: 400
-              }}>
-                    {category.name}
-                  </h3>
-                </button>
-              </div>)}
-          </div>
+          
+          {(() => {
+            const isSlider = categories.length > 6;
+            const itemsPerView = {
+              mobile: 2,
+              tablet: 3,
+              desktop: 6
+            };
+            
+            // On desktop we show 6, so max index is length - 6
+            const maxIndex = Math.max(0, categories.length - 6);
+
+            return (
+              <div className="relative group px-0 sm:px-4 md:px-8">
+                <div className={isSlider ? "overflow-hidden" : ""}>
+                  <motion.div 
+                    className={`grid ${isSlider ? 'flex' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6'} gap-4 sm:gap-6 md:gap-8 transition-transform duration-500 ease-out`}
+                    style={isSlider ? { 
+                      display: 'flex',
+                      transform: `translateX(-${categorySliderIndex * (100 / 6)}%)`,
+                      gap: '0',
+                      width: `${(categories.length / 6) * 100}%`
+                    } : {}}
+                  >
+                    {categories.map((category, index) => (
+                      <div 
+                        key={category.name} 
+                        className={`text-center ${isSlider ? 'flex-shrink-0' : ''}`}
+                        style={isSlider ? { width: `${100 / categories.length}%`, padding: '0 12px' } : {}}
+                      >
+                        <button type="button" className="group cursor-pointer w-full text-center bg-transparent border-none outline-none" onClick={() => {
+                          setActiveCategory(category.name);
+                          setCurrentPage('category');
+                          window.scrollTo({
+                            top: 0,
+                            behavior: 'instant'
+                          });
+                        }}>
+                          <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 mx-auto mb-3 sm:mb-4 rounded-full overflow-hidden">
+                            <ImageWithFallback src={category.image} alt={category.name} className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110" />
+                          </div>
+                          <h3 className="text-sm sm:text-base md:text-lg tracking-wider" style={{
+                            fontWeight: 400
+                          }}>
+                            {category.name}
+                          </h3>
+                        </button>
+                      </div>
+                    ))}
+                  </motion.div>
+                </div>
+
+                {isSlider && (
+                  <>
+                    {/* Navigation Arrows */}
+                    <button 
+                      onClick={() => setCategorySliderIndex(Math.max(0, categorySliderIndex - 1))}
+                      disabled={categorySliderIndex === 0}
+                      className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 sm:-translate-x-4 bg-white/80 backdrop-blur border border-gray-200 p-2 rounded-full shadow-sm transition-all z-10 ${categorySliderIndex === 0 ? 'opacity-0 pointer-events-none' : 'hover:bg-white hover:scale-110'}`}
+                    >
+                      <ChevronLeft size={20} className="text-gray-800" />
+                    </button>
+                    <button 
+                      onClick={() => setCategorySliderIndex(Math.min(maxIndex, categorySliderIndex + 1))}
+                      disabled={categorySliderIndex >= maxIndex}
+                      className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-4 bg-white/80 backdrop-blur border border-gray-200 p-2 rounded-full shadow-sm transition-all z-10 ${categorySliderIndex >= maxIndex ? 'opacity-0 pointer-events-none' : 'hover:bg-white hover:scale-110'}`}
+                    >
+                      <ChevronRight size={20} className="text-gray-800" />
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </section>
 
@@ -1765,7 +2061,10 @@ export default function App() {
             }}>
                 <li><a href="#" className="hover:text-black">Contact Us</a></li>
                 <li><a href="#" className="hover:text-black">Book Appointment</a></li>
-                <li><button onClick={() => setCurrentPage('profile')} className="hover:text-black text-left w-full">Track Order</button></li>
+                <li><button onClick={() => {
+                  setCurrentPage('track-order');
+                  window.scrollTo(0, 0);
+                }} className="hover:text-black text-left w-full">Track Order</button></li>
                 <li><a href="#" className="hover:text-black">Shipping & Returns</a></li>
                 <li><a href="#" className="hover:text-black">Care & Repair</a></li>
                 <li><a href="#" className="hover:text-black">Size Guide</a></li>

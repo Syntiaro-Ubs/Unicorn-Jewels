@@ -9,7 +9,10 @@ import {
   ChevronRight,
   User,
   Settings,
-  Bell
+  Bell,
+  Image as ImageIcon,
+  FolderTree,
+  ShieldAlert
 } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router';
 
@@ -36,10 +39,17 @@ export default function DashboardLayout() {
   };
 
   const navItems = [
-    { name: 'Home Page', icon: <Home size={20} />, path: '/dashboard/home' },
-    { name: 'Banner Management', icon: <Home size={20} />, path: '/dashboard/banner' },
-    { name: 'Products', icon: <ShoppingBag size={20} />, path: '/dashboard/products' },
-  ];
+    { id: 'home', name: 'Home Page', icon: <Home size={20} />, path: '/dashboard/home' },
+    { id: 'banner', name: 'Banner Management', icon: <ImageIcon size={20} />, path: '/dashboard/banner' },
+    { id: 'products', name: 'Products', icon: <ShoppingBag size={20} />, path: '/dashboard/products' },
+    { id: 'taxonomy', name: 'Collections & Categories', icon: <FolderTree size={20} />, path: '/dashboard/taxonomy' },
+    { id: 'users', name: 'Customer Directory', icon: <User size={20} />, path: '/dashboard/users' },
+    { id: 'team', name: 'Team Management', icon: <ShieldAlert size={20} />, path: '/dashboard/team' },
+  ].filter(item => {
+    // Check if user has permission for this item
+    const userPermissions = adminUser?.permissions || [];
+    return userPermissions.includes(item.id);
+  });
 
   if (!adminUser) return null;
 

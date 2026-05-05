@@ -31,6 +31,7 @@ export function SignUpPage({
     }
   });
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const validate = () => {
     const newErrors = {};
     if (!fields.firstName.value.trim()) {
@@ -54,6 +55,55 @@ export function SignUpPage({
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+  const handleSubmit = async e => {
+    e.preventDefault();
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      const signupResponse = await fetch('http://localhost:5000/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          firstName: fields.firstName.value,
+          lastName: fields.lastName.value,
+          email: fields.email.value,
+          password: fields.password.value
+        })
+      });
+      const signupData = await signupResponse.json();
+      if (signupResponse.ok) {
+        // Automatically login after signup
+        const loginResponse = await fetch('http://localhost:5000/api/auth/user-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: fields.email.value,
+            password: fields.password.value
+          })
+        });
+        const loginData = await loginResponse.json();
+        if (loginResponse.ok) {
+          onSuccess?.(loginData.user);
+        } else {
+          onGoToLogin?.();
+        }
+      } else {
+        setErrors({
+          form: signupData.message || 'Signup failed'
+        });
+      }
+    } catch (err) {
+      setErrors({
+        form: 'Network error. Please try again later.'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   const updateField = (key, value) => {
     setFields(f => ({
@@ -211,12 +261,14 @@ export function SignUpPage({
             </div>
 
             {/* Form */}
-            <form className="space-y-8" onSubmit={e => {
-            e.preventDefault();
-            if (validate() && onSuccess) {
-              onSuccess(fields.firstName.value ? fields.firstName.value[0].toUpperCase() : 'U');
-            }
-          }}>
+            <form className="space-y-8" onSubmit={handleSubmit}>
+              {errors.form && <motion.p initial={{
+              opacity: 0
+            }} animate={{
+              opacity: 1
+            }} className="text-sm text-red-500 bg-red-50 p-4 border-l-2 border-red-500 tracking-wide">
+                  {errors.form}
+                </motion.p>}
               {/* Name Row */}
               <div className="grid grid-cols-2 gap-8">
                 <div className="relative">
@@ -356,15 +408,15 @@ export function SignUpPage({
               </div>
 
               {/* Submit */}
-              <motion.button whileHover={{
-              backgroundColor: '#1a1a1a'
+              <motion.button disabled={loading} whileHover={{
+              backgroundColor: loading ? '#000' : '#1a1a1a'
             }} whileTap={{
               scale: 0.99
-            }} type="submit" className="w-full bg-black text-white py-4 tracking-[0.25em] uppercase text-xs transition-colors duration-300 mt-2" style={{
+            }} type="submit" className={`w-full bg-black text-white py-4 tracking-[0.25em] uppercase text-xs transition-colors duration-300 mt-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`} style={{
               fontFamily: "'Cormorant Garamond', serif",
               fontWeight: 400
             }}>
-                Create Account
+                {loading ? 'Creating Account...' : 'Create Account'}
               </motion.button>
             </form>
 

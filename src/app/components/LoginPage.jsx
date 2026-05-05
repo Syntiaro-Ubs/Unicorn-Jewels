@@ -14,6 +14,7 @@ export function LoginPage({
   const [password, setPassword] = useState('');
   const [focused, setFocused] = useState(null);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const validate = () => {
     const newErrors = {};
     if (!email) {
@@ -23,11 +24,40 @@ export function LoginPage({
     }
     if (!password) {
       newErrors.password = 'Password is required';
-    } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+  const handleSubmit = async e => {
+    e.preventDefault();
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/user-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email,
+          password
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        onSuccess?.(data.user);
+      } else {
+        setErrors({
+          form: data.message || 'Login failed'
+        });
+      }
+    } catch (err) {
+      setErrors({
+        form: 'Network error. Please try again later.'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   return <div className="min-h-screen flex bg-white" style={{
     fontFamily: "'Cormorant Garamond', serif"
@@ -89,12 +119,15 @@ export function LoginPage({
             </div>
 
             {/* Form */}
-            <form className="space-y-8" onSubmit={e => {
-            e.preventDefault();
-            if (validate() && onSuccess) {
-              onSuccess(email[0].toUpperCase());
-            }
-          }}>
+            <form className="space-y-8" onSubmit={handleSubmit}>
+              {errors.form && <motion.p initial={{
+              opacity: 0
+            }} animate={{
+              opacity: 1
+            }} className="text-sm text-red-500 bg-red-50 p-4 border-l-2 border-red-500 tracking-wide">
+                  {errors.form}
+                </motion.p>}
+
               {/* Email */}
               <div className="relative">
                 <label className={`absolute left-0 transition-all duration-300 pointer-events-none ${focused === 'email' || email ? '-top-5 text-[10px] tracking-[0.25em]' : 'top-3 text-base'} ${errors.email ? 'text-red-500' : 'text-gray-400'}`} style={{
@@ -171,15 +204,15 @@ export function LoginPage({
               </div>
 
               {/* Sign In Button */}
-              <motion.button whileHover={{
-              backgroundColor: '#1a1a1a'
+              <motion.button disabled={loading} whileHover={{
+              backgroundColor: loading ? '#000' : '#1a1a1a'
             }} whileTap={{
               scale: 0.99
-            }} type="submit" className="w-full bg-black text-white py-4 tracking-[0.25em] uppercase text-xs transition-colors duration-300 mt-4" style={{
+            }} type="submit" className={`w-full bg-black text-white py-4 tracking-[0.25em] uppercase text-xs transition-colors duration-300 mt-4 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`} style={{
               fontFamily: "'Cormorant Garamond', serif",
               fontWeight: 400
             }}>
-                Sign In
+                {loading ? 'Authenticating...' : 'Sign In'}
               </motion.button>
 
               {/* Divider */}

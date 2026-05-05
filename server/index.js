@@ -12,6 +12,8 @@ const editorialsRoutes = require('./routes/editorials');
 const diamondEditRoutes = require('./routes/diamond_edit');
 const serviceRoutes = require('./routes/services');
 const instagramRouter = require('./routes/instagram');
+const usersRoutes = require('./routes/users');
+const adminsMgmtRoutes = require('./routes/admins_mgmt');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,6 +33,8 @@ app.use('/api/editorials', editorialsRoutes);
 app.use('/api/diamond-edit', diamondEditRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/instagram', instagramRouter);
+app.use('/api/users', usersRoutes);
+app.use('/api/admins-mgmt', adminsMgmtRoutes);
 
 // Start server
 app.listen(PORT, () => {

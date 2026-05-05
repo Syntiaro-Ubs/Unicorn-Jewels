@@ -1,27 +1,43 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
-import { Package, Heart, MapPin, User, LogOut, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Package, Heart, MapPin, User, LogOut, ArrowLeft, X } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+
 const imgNecklace = "https://images.unsplash.com/photo-1770721478216-3e5dbbe8dcc2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBkaWFtb25kJTIwbmVja2xhY2UlMjBvbiUyMG1vZGVsfGVufDF8fHx8MTc3NTczMzIxMnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 const imgRing = "https://images.unsplash.com/photo-1737314418233-c61ff046e647?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBvbnl4JTIwcmluZyUyMG9uJTIwZmluZ2VyfGVufDF8fHx8MTc3NTczMzIxMnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 const imgPendant = "https://images.unsplash.com/photo-1623448585160-48b86b876b32?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBzYXBwaGlyZSUyMHBlbmRhbnR8ZW58MXx8fHwxNzc1NzMzMjEyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 const imgEarrings = "https://images.unsplash.com/photo-1774504347388-3d01f7cac097?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwc3R1ZCUyMGVhcnJpbmdzfGVufDF8fHx8MTc3NTY5NzYzM3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 const imgPortrait = "https://images.unsplash.com/photo-1694463814421-5eff6fd605c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoYW5kc29tZSUyMG1hbiUyMHN1aXQlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzU2ODIwMjh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
+
 export function ProfilePage({
   onBack,
   onLogout,
   userInitial,
+  user,
   initialTab = 'overview',
   wishlist = new Set(),
   wishlistItems = [],
   toggleWishlist,
   addToCart,
-  onProductClick
+  onProductClick,
+  orders = [],
+  addresses = [],
+  onUpdateProfile,
+  onAddAddress,
+  onUpdateAddress,
+  onDeleteAddress,
+  onTrackShipment,
+  onDownloadReceipt
 }) {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
+
   const tabs = [{
     id: 'overview',
     label: 'Overview',
@@ -39,6 +55,7 @@ export function ProfilePage({
     label: 'Saved Addresses',
     icon: MapPin
   }];
+
   return <div className="min-h-screen bg-white text-black pt-32 pb-24 px-6 md:px-12">
       <div className="max-w-[1400px] mx-auto">
         {/* Header */}
@@ -48,7 +65,9 @@ export function ProfilePage({
             Back to Home
           </button>
           <h1 className="text-5xl md:text-7xl font-serif text-black mb-6 tracking-wide">My Account</h1>
-          <p className="text-gray-500 text-[10px] tracking-[0.2em] uppercase">Welcome back, {userInitial}</p>
+          <p className="text-gray-500 text-[10px] tracking-[0.2em] uppercase">
+            Welcome back, {user ? `${user.firstName} ${user.lastName}` : userInitial}
+          </p>
         </div>
 
         {/* Layout */}
@@ -75,16 +94,46 @@ export function ProfilePage({
 
           {/* Main Content Area */}
           <div className="w-full lg:w-3/4 min-h-[600px]">
-            {activeTab === 'overview' && <OverviewTab />}
-            {activeTab === 'orders' && <OrdersTab />}
+            {activeTab === 'overview' && <OverviewTab user={user} onEdit={() => setIsEditingProfile(true)} />}
+            {activeTab === 'orders' && <OrdersTab orders={orders} onTrackShipment={onTrackShipment} onDownloadReceipt={onDownloadReceipt} />}
             {activeTab === 'wishlist' && <WishlistTab items={wishlistItems} wishlist={wishlist} toggleWishlist={toggleWishlist} addToCart={addToCart} onProductClick={onProductClick} />}
-            {activeTab === 'addresses' && <AddressesTab />}
+            {activeTab === 'addresses' && (
+              <AddressesTab 
+                user={user} 
+                addresses={addresses} 
+                onAdd={() => { setEditingAddress(null); setIsAddressModalOpen(true); }}
+                onEdit={(addr) => { setEditingAddress(addr); setIsAddressModalOpen(true); }}
+                onDelete={onDeleteAddress}
+              />
+            )}
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <AnimatePresence>
+        {isEditingProfile && (
+          <EditProfileModal 
+            user={user} 
+            onClose={() => setIsEditingProfile(false)} 
+            onSave={onUpdateProfile} 
+          />
+        )}
+        {isAddressModalOpen && (
+          <AddressModal 
+            address={editingAddress} 
+            onClose={() => setIsAddressModalOpen(false)} 
+            onSave={(data) => editingAddress ? onUpdateAddress(editingAddress.id, data) : onAddAddress(data)} 
+          />
+        )}
+      </AnimatePresence>
     </div>;
 }
-function OverviewTab() {
+
+function OverviewTab({ user, onEdit }) {
+  const fullName = user ? `${user.firstName} ${user.lastName}` : 'Guest User';
+  const email = user ? user.email : 'guest@example.com';
+  const phone = user?.phone || '+1 (555) 123-4567';
   return <motion.div initial={{
     opacity: 0,
     y: 10
@@ -103,18 +152,18 @@ function OverviewTab() {
             <div className="space-y-10 flex-1">
               <div>
                 <p className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-3">Name</p>
-                <p className="text-sm tracking-wide">Elara Vance</p>
+                <p className="text-sm tracking-wide">{fullName}</p>
               </div>
               <div>
                 <p className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-3">Email</p>
-                <p className="text-sm tracking-wide">elara.vance@example.com</p>
+                <p className="text-sm tracking-wide">{email}</p>
               </div>
               <div>
                 <p className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-3">Phone</p>
-                <p className="text-sm tracking-wide">+1 (555) 123-4567</p>
+                <p className="text-sm tracking-wide">{phone}</p>
               </div>
               <div className="pt-12 mt-auto">
-                <button className="text-[10px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
+                <button onClick={onEdit} className="text-[10px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
                   Edit Details
                 </button>
               </div>
@@ -152,22 +201,8 @@ function OverviewTab() {
       </div>
     </motion.div>;
 }
-function OrdersTab() {
-  const mockOrders = [{
-    id: "ORD-993-841",
-    date: "October 12, 2025",
-    status: "Delivered",
-    total: "$12,450",
-    item: "Lumière Diamond Choker",
-    image: imgNecklace
-  }, {
-    id: "ORD-842-109",
-    date: "July 04, 2025",
-    status: "Delivered",
-    total: "$8,900",
-    item: "Eclipse Onyx Ring",
-    image: imgRing
-  }];
+
+function OrdersTab({ orders = [], onTrackShipment, onDownloadReceipt }) {
   return <motion.div initial={{
     opacity: 0,
     y: 10
@@ -186,7 +221,11 @@ function OrdersTab() {
       </div>
       
       <div className="flex flex-col gap-12">
-        {mockOrders.map(order => <div key={order.id} className="border border-gray-200 p-8 flex flex-col md:flex-row gap-10 items-center md:items-start group hover:border-black transition-colors duration-700">
+        {orders.length === 0 ? (
+          <div className="text-center py-20 border border-gray-100">
+            <p className="text-gray-500 tracking-wider">No orders found.</p>
+          </div>
+        ) : orders.map(order => <div key={order.id} className="border border-gray-200 p-8 flex flex-col md:flex-row gap-10 items-center md:items-start group hover:border-black transition-colors duration-700">
             {/* Image */}
             <div className="w-full md:w-56 aspect-[4/5] bg-[#fcfcfc] overflow-hidden shrink-0 relative">
               <ImageWithFallback src={order.image} alt={order.item} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
@@ -206,10 +245,10 @@ function OrdersTab() {
               </div>
               
               <div className="flex flex-wrap items-center gap-8 mt-auto pt-4">
-                <button className="text-[9px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
+                <button onClick={() => onDownloadReceipt?.(order)} className="text-[9px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
                   View Digital Receipt
                 </button>
-                <button className="text-[9px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
+                <button onClick={() => onTrackShipment?.(order)} className="text-[9px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
                   Track Shipment
                 </button>
                 <button className="text-[9px] uppercase tracking-[0.2em] border-b border-gray-300 text-gray-500 pb-1 hover:text-black hover:border-black transition-colors xl:ml-auto">
@@ -221,6 +260,7 @@ function OrdersTab() {
       </div>
     </motion.div>;
 }
+
 function WishlistTab({
   items,
   wishlist,
@@ -274,7 +314,9 @@ function WishlistTab({
         </div>}
     </motion.div>;
 }
-function AddressesTab() {
+
+function AddressesTab({ user, addresses = [], onAdd, onEdit, onDelete }) {
+  const fullName = user ? `${user.firstName} ${user.lastName}` : 'Guest User';
   return <motion.div initial={{
     opacity: 0,
     y: 10
@@ -287,42 +329,165 @@ function AddressesTab() {
   }}>
       <div className="flex justify-between items-end mb-12 border-b border-gray-100 pb-6">
         <h2 className="font-serif text-4xl">Saved Addresses</h2>
-        <button className="text-[10px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
+        <button onClick={onAdd} className="text-[10px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
           Add New Address
         </button>
       </div>
       
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <div className="border border-black p-10 relative flex flex-col min-h-[320px]">
-          <span className="absolute top-10 right-10 text-[9px] uppercase tracking-[0.2em] bg-black text-white px-4 py-1.5">Primary</span>
-          <h3 className="font-serif text-2xl mb-8">Home</h3>
-          <div className="space-y-3 text-sm text-gray-500 mb-12 tracking-wide leading-relaxed flex-1">
-            <p className="text-black font-medium tracking-widest uppercase text-[10px] mb-6">Elara Vance</p>
-            <p>1040 Fifth Avenue</p>
-            <p>Apt 14B</p>
-            <p>New York, NY 10028</p>
-            <p>United States</p>
+        {addresses.length === 0 ? (
+          <div className="col-span-full border border-gray-100 py-20 text-center">
+            <p className="text-gray-500 tracking-wider uppercase text-[10px]">No saved addresses yet.</p>
           </div>
-          <div className="flex gap-8 mt-auto pt-8 border-t border-gray-100">
-            <button className="text-[9px] uppercase tracking-[0.2em] border-b border-gray-300 pb-1 hover:border-black transition-colors">Edit</button>
-            <button className="text-[9px] uppercase tracking-[0.2em] border-b border-gray-300 pb-1 hover:border-black transition-colors">Delete</button>
+        ) : addresses.map(addr => (
+          <div key={addr.id} className={`border p-10 relative flex flex-col min-h-[320px] transition-colors duration-500 ${addr.is_primary ? 'border-black' : 'border-gray-200 hover:border-gray-400'}`}>
+            {addr.is_primary && (
+              <span className="absolute top-10 right-10 text-[9px] uppercase tracking-[0.2em] bg-black text-white px-4 py-1.5">Primary</span>
+            )}
+            <h3 className="font-serif text-2xl mb-8">{addr.type}</h3>
+            <div className="space-y-3 text-sm text-gray-500 mb-12 tracking-wide leading-relaxed flex-1">
+              <p className="text-black font-medium tracking-widest uppercase text-[10px] mb-6">{fullName}</p>
+              <p>{addr.street}</p>
+              {addr.apartment && <p>{addr.apartment}</p>}
+              <p>{addr.city}, {addr.state} {addr.zip}</p>
+              <p>{addr.country}</p>
+            </div>
+            <div className="flex gap-8 mt-auto pt-8 border-t border-gray-100">
+              <button onClick={() => onEdit(addr)} className="text-[9px] uppercase tracking-[0.2em] border-b border-gray-300 pb-1 hover:border-black transition-colors">Edit</button>
+              <button onClick={() => onDelete(addr.id)} className="text-[9px] uppercase tracking-[0.2em] border-b border-gray-300 pb-1 hover:border-black transition-colors">Delete</button>
+            </div>
           </div>
-        </div>
-
-        <div className="border border-gray-200 p-10 flex flex-col min-h-[320px] hover:border-gray-400 transition-colors duration-500">
-          <h3 className="font-serif text-2xl mb-8">Office</h3>
-          <div className="space-y-3 text-sm text-gray-500 mb-12 tracking-wide leading-relaxed flex-1">
-            <p className="text-black font-medium tracking-widest uppercase text-[10px] mb-6">Elara Vance</p>
-            <p>Vance Media Group</p>
-            <p>1 World Trade Center</p>
-            <p>New York, NY 10007</p>
-            <p>United States</p>
-          </div>
-          <div className="flex gap-8 mt-auto pt-8 border-t border-gray-100">
-            <button className="text-[9px] uppercase tracking-[0.2em] border-b border-gray-300 pb-1 hover:border-black transition-colors">Edit</button>
-            <button className="text-[9px] uppercase tracking-[0.2em] border-b border-gray-300 pb-1 hover:border-black transition-colors">Delete</button>
-          </div>
-        </div>
+        ))}
       </div>
     </motion.div>;
+}
+
+function AddressModal({ address, onClose, onSave }) {
+  const [formData, setFormData] = useState(address || {
+    type: 'Home',
+    is_primary: false,
+    street: '',
+    apartment: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: 'United States'
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    const result = await onSave(formData);
+    setLoading(false);
+    if (result.success) onClose();
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-xl p-10 md:p-12 relative">
+        <button onClick={onClose} className="absolute top-8 right-8 text-gray-400 hover:text-black transition-colors">
+          <X size={20} />
+        </button>
+        <h2 className="font-serif text-3xl mb-10">{address ? 'Edit Address' : 'New Address'}</h2>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Address Type</label>
+              <input value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full border-b border-gray-200 py-3 text-sm focus:border-black outline-none transition-colors" placeholder="Home, Office, etc." required />
+            </div>
+            <div className="flex items-end pb-3">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input type="checkbox" checked={formData.is_primary} onChange={e => setFormData({...formData, is_primary: e.target.checked})} className="w-4 h-4 accent-black" />
+                <span className="text-[9px] uppercase tracking-[0.2em] text-gray-500 group-hover:text-black transition-colors">Set as Primary</span>
+              </label>
+            </div>
+          </div>
+          <div>
+            <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Street Address</label>
+            <input value={formData.street} onChange={e => setFormData({...formData, street: e.target.value})} className="w-full border-b border-gray-200 py-3 text-sm focus:border-black outline-none transition-colors" placeholder="1040 Fifth Avenue" required />
+          </div>
+          <div>
+            <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Apartment, Suite, etc. (Optional)</label>
+            <input value={formData.apartment} onChange={e => setFormData({...formData, apartment: e.target.value})} className="w-full border-b border-gray-200 py-3 text-sm focus:border-black outline-none transition-colors" placeholder="Apt 14B" />
+          </div>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">City</label>
+              <input value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full border-b border-gray-200 py-3 text-sm focus:border-black outline-none transition-colors" placeholder="New York" required />
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">State / Province</label>
+              <input value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} className="w-full border-b border-gray-200 py-3 text-sm focus:border-black outline-none transition-colors" placeholder="NY" required />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">ZIP / Postal Code</label>
+              <input value={formData.zip} onChange={e => setFormData({...formData, zip: e.target.value})} className="w-full border-b border-gray-200 py-3 text-sm focus:border-black outline-none transition-colors" placeholder="10028" required />
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Country</label>
+              <input value={formData.country} onChange={e => setFormData({...formData, country: e.target.value})} className="w-full border-b border-gray-200 py-3 text-sm focus:border-black outline-none transition-colors" placeholder="United States" required />
+            </div>
+          </div>
+          <button disabled={loading} type="submit" className="w-full bg-black text-white py-4 text-[10px] uppercase tracking-[0.2em] hover:bg-gray-800 transition-colors disabled:opacity-50">
+            {loading ? 'Saving...' : 'Save Address'}
+          </button>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function EditProfileModal({ user, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || '',
+    phone: user?.phone || ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    const result = await onSave(formData);
+    setLoading(false);
+    if (result.success) onClose();
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-lg p-10 md:p-12 relative">
+        <button onClick={onClose} className="absolute top-8 right-8 text-gray-400 hover:text-black transition-colors">
+          <X size={20} />
+        </button>
+        <h2 className="font-serif text-3xl mb-10">Edit Profile</h2>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="grid grid-cols-2 gap-8">
+            <div>
+              <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">First Name</label>
+              <input value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="w-full border-b border-gray-200 py-3 text-sm focus:border-black outline-none transition-colors" required />
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Last Name</label>
+              <input value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="w-full border-b border-gray-200 py-3 text-sm focus:border-black outline-none transition-colors" required />
+            </div>
+          </div>
+          <div>
+            <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Email Address</label>
+            <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full border-b border-gray-200 py-3 text-sm focus:border-black outline-none transition-colors" required />
+          </div>
+          <div>
+            <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Phone Number</label>
+            <input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full border-b border-gray-200 py-3 text-sm focus:border-black outline-none transition-colors" placeholder="+1 (555) 000-0000" />
+          </div>
+          <button disabled={loading} type="submit" className="w-full bg-black text-white py-4 text-[10px] uppercase tracking-[0.2em] hover:bg-gray-800 transition-colors disabled:opacity-50">
+            {loading ? 'Saving...' : 'Save Changes'}
+          </button>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
 }

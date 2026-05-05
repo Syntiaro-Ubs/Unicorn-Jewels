@@ -5,8 +5,11 @@ import DashboardLayout from '../Dashboard/DashboardLayout';
 import Overview from '../Dashboard/Overview';
 import BannerManagement from '../Dashboard/BannerManagement';
 import ProductManagement from '../Dashboard/ProductManagement';
+import TaxonomyManagement from '../Dashboard/TaxonomyManagement';
 
 import HomeManagement from '../Dashboard/HomeManagement';
+import UserManagement from '../Dashboard/UserManagement';
+import TeamManagement from '../Dashboard/TeamManagement';
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('adminToken');
@@ -34,6 +37,9 @@ export default function App() {
         <Route path="home" element={<HomeManagement />} />
         <Route path="banner" element={<BannerManagement />} />
         <Route path="products" element={<ProductManagement />} />
+        <Route path="taxonomy" element={<TaxonomyManagement />} />
+        <Route path="users" element={<UserManagement />} />
+        <Route path="team" element={<TeamManagement />} />
       </Route>
 
       {/* Fallback */}

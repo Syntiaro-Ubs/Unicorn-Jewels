@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS admins (
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    permissions TEXT, -- JSON array of allowed paths
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -30,6 +31,6 @@ VALUES (
 ) ON DUPLICATE KEY UPDATE title=title;
 
 -- Insert a default admin (password: admin123)
-INSERT INTO admins (username, email, password) 
-VALUES ('admin', 'admin@unicornjewels.com', '$2b$10$t3YvehjrcmRvsRwJSuqlcuZGb/NpmcO.jZIp.KK6wFuK1/ssBPIT.')
-ON DUPLICATE KEY UPDATE password=VALUES(password);
+INSERT INTO admins (username, email, password, permissions) 
+VALUES ('admin', 'admin@unicornjewels.com', '$2b$10$t3YvehjrcmRvsRwJSuqlcuZGb/NpmcO.jZIp.KK6wFuK1/ssBPIT.', '["home", "banner", "products", "taxonomy", "users", "team"]')
+ON DUPLICATE KEY UPDATE password=VALUES(password), permissions=VALUES(permissions);

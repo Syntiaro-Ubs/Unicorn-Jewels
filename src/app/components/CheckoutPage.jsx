@@ -58,7 +58,7 @@ export function CheckoutPage({
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <button onClick={onViewTracking} className="w-full sm:w-auto group flex items-center justify-between border border-black p-5 hover:bg-black hover:text-white transition-all duration-500 min-w-[240px]">
               <span className="text-[10px] tracking-[0.3em] uppercase font-sans">
-                View Orders
+                Track Order
               </span>
               <ArrowRight size={16} className="transform transition-transform duration-500 group-hover:translate-x-2" />
             </button>

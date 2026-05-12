@@ -1,84 +1,94 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Gift, Package, Sparkles, Star } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import defaultPageContent from '../../../shared/pageContentDefaults.json';
 
-const giftCategories = [
-  {
-    title: 'For Her',
-    subtitle: 'Elegant and timeless pieces for every celebration.',
-    pieces: '42 pieces',
-    range: '$500 - $5,000',
-    image:
-      'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  },
-  {
-    title: 'For Him',
-    subtitle: 'Bold silhouettes with a refined, modern finish.',
-    pieces: '28 pieces',
-    range: '$800 - $8,000',
-    image:
-      'https://images.unsplash.com/photo-1617038220319-276d3cfab638?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  },
-  {
-    title: 'Anniversary',
-    subtitle: 'Celebrate love with statement heirlooms.',
-    pieces: '31 pieces',
-    range: '$1,000 - $15,000',
-    image:
-      'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  },
-  {
-    title: 'Birthday',
-    subtitle: 'Meaningful gifts with everyday brilliance.',
-    pieces: '36 pieces',
-    range: '$300 - $3,000',
-    image:
-      'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  },
-  {
-    title: 'Graduation',
-    subtitle: 'Milestone-worthy keepsakes for a new chapter.',
-    pieces: '24 pieces',
-    range: '$400 - $2,500',
-    image:
-      'https://images.unsplash.com/photo-1611652022419-a9419f74343d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  },
-  {
-    title: 'Just Because',
-    subtitle: 'Spontaneous joy, wrapped with intention.',
-    pieces: '19 pieces',
-    range: '$250 - $4,000',
-    image:
-      'https://images.unsplash.com/photo-1603974372039-adc49044b6bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  },
-];
+const GIFT_GUIDE_DEFAULTS = defaultPageContent['gift-guide'];
 
-const packagingOptions = [
-  {
-    icon: Package,
-    title: 'Signature Gift Box',
-    detail: 'Elegant black box with gold foil logo.',
-    note: 'Complimentary',
-  },
-  {
-    icon: Star,
-    title: 'Premium Gift Bag',
-    detail: 'Luxe velvet bag finished with a satin ribbon.',
-    note: 'Orders over $1,000',
-  },
-  {
-    icon: Sparkles,
-    title: 'Personalized Card',
-    detail: 'A handwritten message on premium cardstock.',
-    note: 'Add at checkout',
-  },
-];
+const GIFT_GUIDE_BANNER_DEFAULTS = {
+  title: 'The Perfect Gift',
+  subtitle: 'Awaits',
+  description: 'Discover curated jewelry gifts for every milestone, each presented with refined packaging and thoughtful finishing touches.',
+  imageUrl: 'https://images.unsplash.com/photo-1617038220319-276d3cfab638?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080'
+};
 
-export function GiftGuidePage({ onBack }) {
+const PACKAGING_ICONS = [Package, Star, Sparkles];
+
+const cloneContent = (value) => JSON.parse(JSON.stringify(value));
+
+const mergeWithDefaults = (defaults, incoming) => {
+  if (Array.isArray(defaults)) {
+    const source = Array.isArray(incoming) ? incoming : [];
+    return defaults.map((item, index) => mergeWithDefaults(item, source[index]));
+  }
+
+  if (defaults && typeof defaults === 'object') {
+    const source = incoming && typeof incoming === 'object' ? incoming : {};
+    return Object.keys(defaults).reduce((acc, key) => {
+      acc[key] = mergeWithDefaults(defaults[key], source[key]);
+      return acc;
+    }, {});
+  }
+
+  return incoming ?? defaults;
+};
+
+const resolveBanner = (bannerContent) => ({
+  title: bannerContent?.title || GIFT_GUIDE_BANNER_DEFAULTS.title,
+  subtitle: bannerContent?.subtitle || GIFT_GUIDE_BANNER_DEFAULTS.subtitle,
+  description: bannerContent?.description || GIFT_GUIDE_BANNER_DEFAULTS.description,
+  imageUrl: bannerContent?.imageUrl || GIFT_GUIDE_BANNER_DEFAULTS.imageUrl
+});
+
+export function GiftGuidePage({ onBack, bannerContent }) {
+  const [content, setContent] = useState(() => cloneContent(GIFT_GUIDE_DEFAULTS));
+
   useEffect(() => {
     window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 50);
+
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 100);
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchPageContent = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/content/page-content/gift-guide');
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        if (isMounted) {
+          setContent(mergeWithDefaults(GIFT_GUIDE_DEFAULTS, data));
+        }
+      } catch (error) {
+        console.error('Error fetching gift guide page content:', error);
+      }
+    };
+
+    fetchPageContent();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const hero = resolveBanner(bannerContent);
 
   return (
     <div
@@ -109,28 +119,27 @@ export function GiftGuidePage({ onBack }) {
           >
             <div className="mb-6 flex items-center gap-3 text-xs uppercase tracking-[0.35em] text-gray-500">
               <Gift size={16} />
-              <span>Gift Guide</span>
+              <span>{content.hero.eyebrow}</span>
             </div>
             <h1 className="max-w-3xl text-5xl leading-[0.95] md:text-7xl">
-              The Perfect Gift
-              <span className="italic text-gray-400"> Awaits</span>
+              {hero.title}
+              <span className="italic text-gray-400"> {hero.subtitle}</span>
             </h1>
             <p className="mt-8 max-w-2xl text-lg leading-8 text-gray-600 md:text-xl">
-              Discover curated jewelry gifts for every milestone, each presented
-              with refined packaging and thoughtful finishing touches.
+              {hero.description}
             </p>
             <div className="mt-10 grid gap-4 sm:grid-cols-2">
               <div className="rounded-3xl border border-black/10 bg-[#faf8f5] p-5">
                 <p className="text-[10px] uppercase tracking-[0.35em] text-gray-500">
-                  Included
+                  {content.hero.included_label}
                 </p>
-                <p className="mt-3 text-2xl">Complimentary Gift Packaging</p>
+                <p className="mt-3 text-2xl">{content.hero.included_text}</p>
               </div>
               <div className="rounded-3xl border border-black/10 bg-[#f5f5f5] p-5">
                 <p className="text-[10px] uppercase tracking-[0.35em] text-gray-500">
-                  Optional
+                  {content.hero.optional_label}
                 </p>
-                <p className="mt-3 text-2xl">Personalized Message Cards</p>
+                <p className="mt-3 text-2xl">{content.hero.optional_text}</p>
               </div>
             </div>
           </motion.div>
@@ -145,17 +154,17 @@ export function GiftGuidePage({ onBack }) {
             <div className="absolute -bottom-6 right-6 hidden h-28 w-28 rounded-full bg-[#ececec] blur-2xl md:block" />
             <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-[#f4f1ec]">
               <ImageWithFallback
-                src="https://images.unsplash.com/photo-1617038220319-276d3cfab638?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
+                src={hero.imageUrl}
                 alt="Luxury jewelry gift presentation"
                 className="h-full w-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
                 <p className="text-[10px] uppercase tracking-[0.35em] text-white/70">
-                  Curated by Occasion
+                  {content.hero.image_eyebrow}
                 </p>
                 <p className="mt-3 max-w-sm text-3xl leading-tight">
-                  Gifts chosen to feel personal before the box is even opened.
+                  {content.hero.image_headline}
                 </p>
               </div>
             </div>
@@ -168,22 +177,21 @@ export function GiftGuidePage({ onBack }) {
           <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-[10px] uppercase tracking-[0.35em] text-gray-500">
-                Shop by Occasion
+                {content.occasions.eyebrow}
               </p>
               <h2 className="mt-4 text-4xl md:text-5xl">
-                Curated gift directions for every kind of moment.
+                {content.occasions.title}
               </h2>
             </div>
             <p className="max-w-xl text-base leading-7 text-gray-600">
-              Explore our edit for anniversaries, birthdays, graduations, and
-              more. Each selection is designed to make choosing feel effortless.
+              {content.occasions.description}
             </p>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {giftCategories.map((category, index) => (
+            {content.categories.map((category, index) => (
               <motion.article
-                key={category.title}
+                key={`${category.title}-${index}`}
                 initial={{ opacity: 0, y: 28 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-80px' }}
@@ -223,19 +231,19 @@ export function GiftGuidePage({ onBack }) {
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
             <p className="text-[10px] uppercase tracking-[0.35em] text-gray-500">
-              Luxury Packaging
+              {content.packaging.eyebrow}
             </p>
             <h2 className="mt-4 text-4xl md:text-5xl">
-              Every detail is part of the gift.
+              {content.packaging.title}
             </h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
-            {packagingOptions.map((option, index) => {
-              const Icon = option.icon;
+            {content.packaging.items.map((option, index) => {
+              const Icon = PACKAGING_ICONS[index] || Sparkles;
 
               return (
                 <motion.div
-                  key={option.title}
+                  key={`${option.title}-${index}`}
                   initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-60px' }}
@@ -262,27 +270,26 @@ export function GiftGuidePage({ onBack }) {
       <section className="bg-black px-6 py-20 text-white md:py-24">
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-[10px] uppercase tracking-[0.35em] text-white/60">
-            Concierge Support
+            {content.concierge.eyebrow}
           </p>
           <h2 className="mt-4 text-4xl md:text-6xl">
-            Need help choosing something unforgettable?
+            {content.concierge.title}
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-white/70">
-            Our team can help you select a piece based on recipient, occasion,
-            and budget, then finish it with the right presentation.
+            {content.concierge.description}
           </p>
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
             <a
-              href="mailto:concierge@unicornjewels.com?subject=Gift%20Consultation"
+              href={content.concierge.primary_cta_url}
               className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-8 py-3 text-xs uppercase tracking-[0.3em] text-black transition-transform hover:scale-[1.02]"
             >
-              Book Consultation
+              {content.concierge.primary_cta_text}
             </a>
             <a
-              href="mailto:hello@unicornjewels.com"
+              href={content.concierge.secondary_cta_url}
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/20 px-8 py-3 text-xs uppercase tracking-[0.3em] text-white transition-colors hover:border-white hover:bg-white hover:text-black"
             >
-              Contact Us
+              {content.concierge.secondary_cta_text}
             </a>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
+import {
   Plus, 
   Edit2, 
   Trash2, 
@@ -16,6 +16,7 @@ import {
   Instagram
 } from 'lucide-react';
 import { ImageWithFallback } from '../app/components/figma/ImageWithFallback';
+import HomeSectionsManagement from './HomeSectionsManagement';
 
 export default function HomeManagement() {
   const [categories, setCategories] = useState([]);
@@ -64,6 +65,7 @@ export default function HomeManagement() {
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
+  const giftGuideSection = services.find((service) => (service.button_link || '').toLowerCase() === 'gift-guide');
 
   useEffect(() => {
     fetchCategories();
@@ -331,6 +333,28 @@ export default function HomeManagement() {
     setPreviewUrl(service.image_url ? (service.image_url.startsWith('http') ? service.image_url : `http://localhost:5000${service.image_url}`) : '');
     setIsServiceModalOpen(true);
   };
+
+  const openGiftGuideSectionModal = () => {
+    if (giftGuideSection) {
+      openEditServiceModal(giftGuideSection);
+      return;
+    }
+
+    setEditingService(null);
+    setServiceFormData({
+      tag: 'GIFT GUIDE',
+      title: 'The Art of Giving',
+      description: '',
+      button_text: 'Explore Gift Guide',
+      button_link: 'gift-guide',
+      image_url: '',
+      is_reversed: true,
+      order_index: services.length + 1
+    });
+    setSelectedFile(null);
+    setPreviewUrl('');
+    setIsServiceModalOpen(true);
+  };
   
   const handleDeleteService = async (id, title) => {
     if (!window.confirm(`Are you sure you want to delete the service "${title}"?`)) return;
@@ -425,9 +449,14 @@ export default function HomeManagement() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
           <h3 className="text-3xl font-bold text-slate-800 tracking-tight">Home Page Management</h3>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Manage Collections, Editorials, Services, and the Diamond Edit.</p>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Manage homepage sections, collections, services, and the Diamond Edit.</p>
         </div>
       </div>
+
+      <HomeSectionsManagement
+        giftGuideSection={giftGuideSection}
+        onEditGiftGuideSection={openGiftGuideSectionModal}
+      />
 
       {/* CURATED COLLECTIONS SECTION */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -544,9 +573,17 @@ export default function HomeManagement() {
       {/* SERVICES MANAGEMENT SECTION */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-12">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/50">
-          <div className="flex items-center gap-3">
-            <h4 className="font-bold text-slate-800">Services & Concierge</h4>
-            <span className="px-2.5 py-1 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold">{services.length}</span>
+          <div>
+            <div className="flex items-center gap-3">
+              <h4 className="font-bold text-slate-800">Services & Concierge</h4>
+              <span className="px-2.5 py-1 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold">{services.length}</span>
+              {giftGuideSection && (
+                <span className="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold">Gift Guide Section Ready</span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              The homepage Gift Guide block is the service entry whose link is set to <span className="font-semibold text-slate-700">gift-guide</span>.
+            </p>
           </div>
           <button onClick={openAddServiceModal} className="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all">
             <Plus size={16} /> Add Service
@@ -562,6 +599,11 @@ export default function HomeManagement() {
                 <div className="flex items-center gap-3">
                   <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">{service.tag}</span>
                   <h4 className="text-lg font-bold text-slate-800">{service.title}</h4>
+                  {(service.button_link || '').toLowerCase() === 'gift-guide' && (
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold uppercase tracking-wider">
+                      Gift Guide Section
+                    </span>
+                  )}
                   {!service.is_reversed ? (
                     <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><ArrowRightLeft size={10} /> Image Right</span>
                   ) : (

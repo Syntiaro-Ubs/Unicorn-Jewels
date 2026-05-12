@@ -12,6 +12,15 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
+import Barcode from 'react-barcode';
+
+function slugifyProduct(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 export default function ProductManagement() {
   const [products, setProducts] = useState([]);
@@ -35,6 +44,8 @@ export default function ProductManagement() {
     tag: '',
     is_featured: false,
     is_new_arrival: false,
+    stock: 0,
+    barcode: '',
     image: null,
     image_url: '',
     hover_image: null,
@@ -83,17 +94,24 @@ export default function ProductManagement() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    const nextValue = type === 'checkbox' ? checked : value;
 
-    if (name === 'name' && !editingProduct) {
-      setFormData(prev => ({
+    setFormData(prev => {
+      const updated = {
         ...prev,
-        slug: value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
-      }));
-    }
+        [name]: nextValue
+      };
+
+      if (name === 'name' && !editingProduct) {
+        updated.slug = slugifyProduct(value);
+      }
+
+      if (name === 'slug') {
+        updated.slug = slugifyProduct(value);
+      }
+
+      return updated;
+    });
   };
 
   const handleImageChange = (e) => {
@@ -126,6 +144,8 @@ export default function ProductManagement() {
       tag: '',
       is_featured: false,
       is_new_arrival: false,
+      stock: 0,
+      barcode: '',
       image: null,
       image_url: '',
       hover_image: null,
@@ -150,6 +170,8 @@ export default function ProductManagement() {
       tag: product.tag || '',
       is_featured: product.is_featured === 1,
       is_new_arrival: product.is_new_arrival === 1,
+      stock: product.stock || 0,
+      barcode: product.barcode || '',
       image: null,
       image_url: product.image_url || '',
       hover_image: null,
@@ -165,11 +187,14 @@ export default function ProductManagement() {
     setIsSubmitting(true);
 
     const data = new FormData();
+    const normalizedSlug = slugifyProduct(formData.slug || formData.name);
     Object.keys(formData).forEach(key => {
       if (key === 'image' && formData[key]) {
         data.append('image', formData[key]);
       } else if (key === 'hover_image' && formData[key]) {
         data.append('hover_image', formData[key]);
+      } else if (key === 'slug') {
+        data.append('slug', normalizedSlug);
       } else if (key !== 'image' && key !== 'hover_image') {
         data.append(key, formData[key]);
       }
@@ -186,13 +211,14 @@ export default function ProductManagement() {
         method,
         body: data
       });
+      const result = await response.json().catch(() => null);
 
       if (response.ok) {
-        showMessage('success', `Product ${editingProduct ? 'updated' : 'created'} successfully`);
+        showMessage('success', result?.message || `Product ${editingProduct ? 'updated' : 'created'} successfully`);
         setIsModalOpen(false);
         fetchData();
       } else {
-        showMessage('error', 'Failed to save product');
+        showMessage('error', result?.message || result?.error || 'Failed to save product');
       }
     } catch (error) {
       console.error('Error saving product:', error);
@@ -225,7 +251,10 @@ export default function ProductManagement() {
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.category_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.collection_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    p.collection_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.metal?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.id?.toString().includes(searchQuery) ||
+    p.barcode?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -283,7 +312,7 @@ export default function ProductManagement() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input 
             type="text" 
-            placeholder="Search by name, category, or collection..."
+            placeholder="Search by name, ID, barcode, category, collection, or metal..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-700"
@@ -305,6 +334,7 @@ export default function ProductManagement() {
                 <th className="px-8 py-5 font-bold text-slate-600 text-sm">Category</th>
                 <th className="px-8 py-5 font-bold text-slate-600 text-sm">Collection</th>
                 <th className="px-8 py-5 font-bold text-slate-600 text-sm">Price</th>
+                <th className="px-8 py-5 font-bold text-slate-600 text-sm">Stock</th>
                 <th className="px-8 py-5 font-bold text-slate-600 text-sm">Status</th>
                 <th className="px-8 py-5 font-bold text-slate-600 text-sm text-right">Actions</th>
               </tr>
@@ -349,7 +379,10 @@ export default function ProductManagement() {
                           )}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-800">{product.name}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-wider">#{product.id}</span>
+                            <p className="font-bold text-slate-800">{product.name}</p>
+                          </div>
                           <p className="text-xs text-slate-400 font-mono mt-0.5">{product.slug}</p>
                         </div>
                       </div>
@@ -364,6 +397,15 @@ export default function ProductManagement() {
                     </td>
                     <td className="px-8 py-5">
                       <p className="font-bold text-slate-800">{product.price}</p>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center justify-center min-w-8 h-8 rounded-lg font-bold text-sm ${
+                          product.stock <= 5 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
+                        }`}>
+                          {product.stock || 0}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-8 py-5">
                       <div className="flex flex-col gap-1">
@@ -630,6 +672,44 @@ export default function ProductManagement() {
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Initial Stock</label>
+                    <input 
+                      type="number"
+                      name="stock"
+                      value={formData.stock}
+                      onChange={handleInputChange}
+                      placeholder="e.g. 50"
+                      className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Custom Barcode (Optional)</label>
+                    <input 
+                      name="barcode"
+                      value={formData.barcode}
+                      onChange={handleInputChange}
+                      placeholder="Leave empty to auto-generate from ID"
+                      className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
+                    />
+                  </div>
+                </div>
+
+                {(editingProduct || formData.barcode) && (
+                  <div className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Product Barcode</label>
+                    <Barcode 
+                      value={formData.barcode || (editingProduct ? `PRD-${editingProduct.id}` : 'PENDING')} 
+                      width={1.5}
+                      height={50}
+                      fontSize={14}
+                      background="transparent"
+                      lineColor="#1e293b"
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Description</label>

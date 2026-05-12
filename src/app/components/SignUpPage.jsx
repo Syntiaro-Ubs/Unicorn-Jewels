@@ -60,6 +60,7 @@ export function SignUpPage({
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
+    const normalizedEmail = fields.email.value.trim().toLowerCase();
     try {
       const signupResponse = await fetch('http://localhost:5000/api/auth/signup', {
         method: 'POST',
@@ -69,7 +70,7 @@ export function SignUpPage({
         body: JSON.stringify({
           firstName: fields.firstName.value,
           lastName: fields.lastName.value,
-          email: fields.email.value,
+          email: normalizedEmail,
           password: fields.password.value
         })
       });
@@ -82,7 +83,7 @@ export function SignUpPage({
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            email: fields.email.value,
+            email: normalizedEmail,
             password: fields.password.value
           })
         });

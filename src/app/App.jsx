@@ -6,6 +6,7 @@ import Overview from '../Dashboard/Overview';
 import BannerManagement from '../Dashboard/BannerManagement';
 import ProductManagement from '../Dashboard/ProductManagement';
 import TaxonomyManagement from '../Dashboard/TaxonomyManagement';
+import ShopByLookManagement from '../Dashboard/ShopByLookManagement';
 
 import HomeManagement from '../Dashboard/HomeManagement';
 import UserManagement from '../Dashboard/UserManagement';
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="banner" element={<BannerManagement />} />
         <Route path="products" element={<ProductManagement />} />
         <Route path="taxonomy" element={<TaxonomyManagement />} />
+        <Route path="shop-by-look" element={<ShopByLookManagement />} />
         <Route path="users" element={<UserManagement />} />
         <Route path="team" element={<TeamManagement />} />
       </Route>

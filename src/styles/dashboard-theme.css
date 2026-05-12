@@ -1,0 +1,172 @@
+:where(.dashboard-theme, .dashboard-login-theme) {
+  --admin-bg: #fbfaf7;
+  --admin-surface: rgba(255, 255, 255, 0.94);
+  --admin-surface-soft: #f6f1e9;
+  --admin-surface-strong: #efe7dc;
+  --admin-border: #e4dbce;
+  --admin-text: #171614;
+  --admin-muted: #6e685f;
+  --admin-muted-soft: #b7ad9f;
+  --admin-accent: #111111;
+  --admin-accent-hover: #2b2723;
+  font-family: "Cormorant Garamond", serif;
+  color: var(--admin-text);
+}
+
+:where(.dashboard-theme, .dashboard-login-theme) * {
+  font-family: inherit !important;
+}
+
+.dashboard-theme {
+  background:
+    radial-gradient(circle at top left, rgba(17, 17, 17, 0.05), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaf7 46%, #f6f1e9 100%);
+}
+
+.dashboard-login-theme {
+  background:
+    radial-gradient(circle at top center, rgba(17, 17, 17, 0.06), transparent 32%),
+    linear-gradient(135deg, #f5efe5 0%, #ffffff 46%, #f1ebdf 100%);
+}
+
+.dashboard-theme .bg-white {
+  background-color: var(--admin-surface) !important;
+}
+
+.dashboard-theme .bg-slate-50,
+.dashboard-theme .bg-slate-50\/50,
+.dashboard-theme .bg-blue-50,
+.dashboard-theme .bg-blue-50\/30,
+.dashboard-theme .bg-blue-100,
+.dashboard-theme .bg-indigo-50,
+.dashboard-theme .bg-purple-50 {
+  background-color: var(--admin-surface-soft) !important;
+}
+
+.dashboard-theme .bg-slate-100,
+.dashboard-theme .bg-indigo-100,
+.dashboard-theme .bg-purple-100 {
+  background-color: var(--admin-surface-strong) !important;
+}
+
+.dashboard-theme .border-slate-50,
+.dashboard-theme .border-slate-100,
+.dashboard-theme .border-slate-200,
+.dashboard-theme .border-blue-100,
+.dashboard-theme .border-blue-200,
+.dashboard-theme .border-indigo-100,
+.dashboard-theme .border-indigo-200,
+.dashboard-theme .border-purple-200 {
+  border-color: var(--admin-border) !important;
+}
+
+.dashboard-theme .text-slate-900,
+.dashboard-theme .text-slate-800,
+.dashboard-theme .text-blue-600,
+.dashboard-theme .text-blue-700,
+.dashboard-theme .text-indigo-500,
+.dashboard-theme .text-indigo-600,
+.dashboard-theme .text-indigo-700,
+.dashboard-theme .text-purple-700 {
+  color: var(--admin-text) !important;
+}
+
+.dashboard-theme .text-slate-500,
+.dashboard-theme .text-slate-400 {
+  color: var(--admin-muted) !important;
+}
+
+.dashboard-theme .text-slate-300 {
+  color: var(--admin-muted-soft) !important;
+}
+
+.dashboard-theme .bg-blue-600,
+.dashboard-theme .bg-blue-700,
+.dashboard-theme .bg-indigo-600,
+.dashboard-theme .bg-indigo-700,
+.dashboard-login-theme .bg-blue-600,
+.dashboard-login-theme .bg-blue-700 {
+  background-color: var(--admin-accent) !important;
+}
+
+.dashboard-theme .hover\:bg-blue-500:hover,
+.dashboard-theme .hover\:bg-blue-700:hover,
+.dashboard-theme .hover\:bg-indigo-500:hover,
+.dashboard-theme .hover\:bg-indigo-700:hover,
+.dashboard-login-theme .hover\:bg-blue-500:hover {
+  background-color: var(--admin-accent-hover) !important;
+}
+
+.dashboard-theme .hover\:bg-blue-50:hover,
+.dashboard-theme .hover\:bg-indigo-50:hover,
+.dashboard-theme .hover\:bg-purple-50:hover,
+.dashboard-theme .group:hover .group-hover\:bg-blue-50 {
+  background-color: var(--admin-surface-soft) !important;
+}
+
+.dashboard-theme .hover\:text-blue-600:hover,
+.dashboard-theme .hover\:text-blue-700:hover,
+.dashboard-theme .hover\:text-indigo-600:hover,
+.dashboard-theme .hover\:text-indigo-700:hover,
+.dashboard-theme .group:hover .group-hover\:text-blue-600,
+.dashboard-theme .group:hover .group-hover\:text-blue-500,
+.dashboard-theme .group:hover .group-hover\:text-blue-400,
+.dashboard-theme .group:hover .group-hover\:text-indigo-600,
+.dashboard-theme .group:hover .group-hover\:text-purple-700 {
+  color: var(--admin-accent) !important;
+}
+
+.dashboard-theme .hover\:border-blue-400:hover,
+.dashboard-theme .hover\:border-blue-500:hover,
+.dashboard-theme .border-blue-500,
+.dashboard-theme .border-blue-600,
+.dashboard-theme .border-indigo-400 {
+  border-color: var(--admin-accent) !important;
+}
+
+.dashboard-theme .focus\:border-blue-500:focus,
+.dashboard-theme .focus\:border-blue-400:focus,
+.dashboard-theme .focus\:border-indigo-400:focus,
+.dashboard-login-theme .focus\:border-blue-500:focus {
+  border-color: var(--admin-accent) !important;
+  box-shadow: 0 0 0 4px rgba(17, 17, 17, 0.08) !important;
+}
+
+.dashboard-theme .focus\:ring-blue-500\/20:focus,
+.dashboard-theme .focus\:ring-indigo-100:focus,
+.dashboard-theme .focus\:ring-blue-100:focus {
+  --tw-ring-color: rgba(17, 17, 17, 0.08) !important;
+}
+
+.dashboard-theme .peer:checked ~ .peer-checked\:bg-blue-600 {
+  background-color: var(--admin-accent) !important;
+}
+
+.dashboard-theme .peer:checked ~ .peer-checked\:border-blue-600 {
+  border-color: var(--admin-accent) !important;
+}
+
+.dashboard-theme .shadow-blue-600\/20,
+.dashboard-theme .shadow-indigo-600\/20,
+.dashboard-login-theme .shadow-blue-900\/20 {
+  box-shadow: 0 22px 48px -28px rgba(17, 17, 17, 0.35) !important;
+}
+
+.dashboard-theme input,
+.dashboard-theme select,
+.dashboard-theme textarea,
+.dashboard-login-theme input {
+  letter-spacing: 0.02em;
+}
+
+.dashboard-theme input:-webkit-autofill,
+.dashboard-theme input:-webkit-autofill:hover,
+.dashboard-theme input:-webkit-autofill:focus,
+.dashboard-login-theme input:-webkit-autofill,
+.dashboard-login-theme input:-webkit-autofill:hover,
+.dashboard-login-theme input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #fcfaf7 inset !important;
+  -webkit-text-fill-color: var(--admin-text) !important;
+  caret-color: var(--admin-text);
+  transition: background-color 9999s ease-out 0s;
+}

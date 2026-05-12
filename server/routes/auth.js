@@ -4,12 +4,20 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 
+const normalizeEmail = (value = '') => value.trim().toLowerCase();
+const isBcryptHash = (value = '') => /^\$2[aby]\$\d{2}\$/.test(value);
+
 // Admin Login
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+    const email = normalizeEmail(req.body?.email);
+    const password = req.body?.password || '';
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
 
     try {
-        const [rows] = await db.query('SELECT * FROM admins WHERE email = ?', [email]);
+        const [rows] = await db.query('SELECT * FROM admins WHERE LOWER(email) = ?', [email]);
         const admin = rows[0];
 
         if (!admin) {
@@ -44,10 +52,17 @@ router.post('/login', async (req, res) => {
 
 // User Signup
 router.post('/signup', async (req, res) => {
-    const { firstName, lastName, email, password } = req.body;
+    const firstName = req.body?.firstName?.trim() || '';
+    const lastName = req.body?.lastName?.trim() || '';
+    const email = normalizeEmail(req.body?.email);
+    const password = req.body?.password || '';
+
+    if (!firstName || !lastName || !email || !password) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
 
     try {
-        const [existing] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        const [existing] = await db.query('SELECT * FROM users WHERE LOWER(email) = ?', [email]);
         if (existing.length > 0) {
             return res.status(400).json({ message: 'User already exists' });
         }
@@ -67,19 +82,33 @@ router.post('/signup', async (req, res) => {
 
 // User Login
 router.post('/user-login', async (req, res) => {
-    const { email, password } = req.body;
+    const email = normalizeEmail(req.body?.email);
+    const password = req.body?.password || '';
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
 
     try {
-        const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        const [rows] = await db.query('SELECT * FROM users WHERE LOWER(email) = ?', [email]);
         const user = rows[0];
 
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const storedPassword = user.password || '';
+        const isMatch = isBcryptHash(storedPassword)
+            ? await bcrypt.compare(password, storedPassword)
+            : password === storedPassword;
+
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        if (!isBcryptHash(storedPassword)) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, user.id]);
         }
 
         const token = jwt.sign(

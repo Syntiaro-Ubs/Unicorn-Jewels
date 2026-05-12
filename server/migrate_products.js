@@ -46,6 +46,8 @@ async function migrate() {
                 tag VARCHAR(50),
                 is_featured BOOLEAN DEFAULT FALSE,
                 is_new_arrival BOOLEAN DEFAULT FALSE,
+                stock INT DEFAULT 0,
+                barcode VARCHAR(255) DEFAULT '',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,

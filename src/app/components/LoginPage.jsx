@@ -32,6 +32,7 @@ export function LoginPage({
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
     try {
       const response = await fetch('http://localhost:5000/api/auth/user-login', {
         method: 'POST',
@@ -39,7 +40,7 @@ export function LoginPage({
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          email,
+          email: normalizedEmail,
           password
         })
       });

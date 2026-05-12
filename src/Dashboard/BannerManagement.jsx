@@ -335,7 +335,7 @@ export default function BannerManagement() {
                         Main Site Pages
                       </h4>
                       <div className="space-y-2">
-                        {["home", "jewelry", "story", "gift-guide"].map(
+                        {["home", "jewelry", "login", "signup", "appointment", "story", "gift-guide"].map(
                           (page) => (
                             <button
                               key={page}
@@ -347,7 +347,7 @@ export default function BannerManagement() {
                               className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-200 rounded-2xl transition-all group"
                             >
                               <span className="font-bold text-slate-700 group-hover:text-blue-600 capitalize">
-                                {page}
+                                {page === "story" ? "vision" : page === "gift-guide" ? "gift guide" : page}
                               </span>
                               <ChevronRight
                                 size={16}

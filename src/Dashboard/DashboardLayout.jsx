@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  LayoutDashboard, 
-  Home, 
+import {
+  Home,
   ShoppingBag,
-  LogOut, 
-  ChevronLeft, 
+  LogOut,
+  ChevronLeft,
   ChevronRight,
   User,
-  Settings,
   Bell,
   Image as ImageIcon,
   FolderTree,
-  ShieldAlert
+  ShieldAlert,
+  Palette
 } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router';
+import { DASHBOARD_PERMISSION_IDS } from './dashboardPermissions';
 
 export default function DashboardLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -38,40 +38,43 @@ export default function DashboardLayout() {
     navigate('/dashboard/login');
   };
 
+  const userPermissions = adminUser?.username === 'admin'
+    ? Array.from(new Set([...(adminUser?.permissions || []), ...DASHBOARD_PERMISSION_IDS]))
+    : (adminUser?.permissions || []);
+
   const navItems = [
     { id: 'home', name: 'Home Page', icon: <Home size={20} />, path: '/dashboard/home' },
     { id: 'banner', name: 'Banner Management', icon: <ImageIcon size={20} />, path: '/dashboard/banner' },
     { id: 'products', name: 'Products', icon: <ShoppingBag size={20} />, path: '/dashboard/products' },
     { id: 'taxonomy', name: 'Collections & Categories', icon: <FolderTree size={20} />, path: '/dashboard/taxonomy' },
+    { id: 'shop-by-look', name: 'Shop by Look', icon: <Palette size={20} />, path: '/dashboard/shop-by-look' },
     { id: 'users', name: 'Customer Directory', icon: <User size={20} />, path: '/dashboard/users' },
     { id: 'team', name: 'Team Management', icon: <ShieldAlert size={20} />, path: '/dashboard/team' },
   ].filter(item => {
-    // Check if user has permission for this item
-    const userPermissions = adminUser?.permissions || [];
     return userPermissions.includes(item.id);
   });
 
   if (!adminUser) return null;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex overflow-hidden" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-screen flex overflow-hidden">
       {/* Sidebar */}
-      <motion.aside 
+      <motion.aside
         animate={{ width: isCollapsed ? 88 : 280 }}
-        className="bg-white border-r border-slate-200 flex flex-col z-20 shadow-sm transition-all"
+        className="bg-white/90 backdrop-blur-md border-r border-slate-200 flex flex-col z-20 shadow-[0_24px_60px_-40px_rgba(17,17,17,0.4)] transition-all"
       >
         {/* Sidebar Header */}
-        <div className="h-20 flex items-center px-6 border-b border-slate-100 shrink-0">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/20">
-            <span className="text-white font-bold text-xl">U</span>
+        <div className="h-20 flex items-center px-6 border-b border-slate-200 shrink-0">
+          <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center shrink-0 shadow-[0_18px_32px_-20px_rgba(17,17,17,0.45)]">
+            <span className="text-white text-lg tracking-[0.18em] uppercase">U</span>
           </div>
           <AnimatePresence>
             {!isCollapsed && (
-              <motion.span 
+              <motion.span
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                className="ml-4 font-bold text-slate-800 tracking-tight text-lg"
+                className="ml-4 text-slate-900 tracking-[0.16em] uppercase text-[0.95rem]"
               >
                 Unicorn Console
               </motion.span>
@@ -88,16 +91,16 @@ export default function DashboardLayout() {
                 key={item.name}
                 onClick={() => navigate(item.path)}
                 className={`w-full flex items-center rounded-xl transition-all ${
-                  isActive 
-                    ? 'bg-blue-50 text-blue-600 shadow-sm shadow-blue-100/50' 
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                  isActive
+                    ? 'bg-slate-100 text-slate-900 shadow-sm border border-slate-200'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                 } ${isCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-4'}`}
               >
-                <div className={`${isActive ? 'text-blue-600' : 'text-slate-400'}`}>
+                <div className={`${isActive ? 'text-slate-900' : 'text-slate-400'}`}>
                   {item.icon}
                 </div>
                 {!isCollapsed && (
-                  <span className="font-semibold text-sm tracking-wide">{item.name}</span>
+                  <span className="text-sm tracking-[0.08em]">{item.name}</span>
                 )}
               </button>
             );
@@ -105,20 +108,20 @@ export default function DashboardLayout() {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-100 space-y-2">
+        <div className="p-4 border-t border-[#ece4d8] space-y-2">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="w-full flex items-center justify-center p-3 text-slate-400 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-all"
+            className="w-full flex items-center justify-center p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
           >
             {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
           </button>
-          
+
           <button
             onClick={handleLogout}
-            className="w-full flex items-center rounded-xl p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all gap-4 overflow-hidden"
+            className="w-full flex items-center rounded-xl p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all gap-4 overflow-hidden"
           >
             <div className="shrink-0"><LogOut size={20} /></div>
-            {!isCollapsed && <span className="font-semibold text-sm">Sign Out</span>}
+            {!isCollapsed && <span className="text-sm tracking-[0.08em]">Sign Out</span>}
           </button>
         </div>
       </motion.aside>
@@ -126,35 +129,35 @@ export default function DashboardLayout() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Top Header */}
-        <header className="h-20 bg-white border-b border-slate-200 px-10 flex items-center justify-between shrink-0 z-10 shadow-sm">
+        <header className="h-20 bg-white/88 backdrop-blur-md border-b border-slate-200 px-10 flex items-center justify-between shrink-0 z-10 shadow-[0_18px_48px_-38px_rgba(17,17,17,0.28)]">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-slate-800">
+            <h2 className="text-[1.6rem] text-slate-900 tracking-[0.06em]">
               {navItems.find(i => i.path === location.pathname)?.name || 'Dashboard'}
             </h2>
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-lg hover:bg-slate-50 relative">
+            <button className="text-slate-400 hover:text-slate-900 transition-colors p-2 rounded-lg hover:bg-slate-50 relative">
               <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              <span className="absolute top-2 right-2 w-2 h-2 bg-slate-900 rounded-full border-2 border-white"></span>
             </button>
-            
+
             <div className="h-8 w-[1px] bg-slate-200"></div>
 
             <div className="flex items-center gap-4 group cursor-pointer">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{adminUser.username}</p>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">System Admin</p>
+                <p className="text-sm text-slate-900 group-hover:text-slate-900 transition-colors tracking-[0.06em]">{adminUser.username}</p>
+                <p className="text-[10px] text-slate-400 uppercase tracking-[0.28em]">System Admin</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center group-hover:bg-blue-50 transition-colors border border-slate-200">
-                <User size={20} className="text-slate-500 group-hover:text-blue-600" />
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-slate-100 transition-colors border border-slate-200">
+                <User size={20} className="text-slate-500 group-hover:text-slate-900" />
               </div>
             </div>
           </div>
         </header>
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 overflow-y-auto bg-[#f8fafc] p-10">
+        <main className="flex-1 overflow-y-auto bg-transparent p-10">
           <div className="max-w-6xl mx-auto">
             <Outlet />
           </div>

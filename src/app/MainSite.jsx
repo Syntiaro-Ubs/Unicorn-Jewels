@@ -40,6 +40,24 @@ import { ProductPage } from './components/ProductPage';
 import { buildProductIndex, withScopedProductIds } from './components/productIdentity';
 import GiftGuidePage from './components/GiftGuidePage';
 import { TrackOrderPage } from './components/TrackOrderPage';
+import defaultPageContent from '../../shared/pageContentDefaults.json';
+
+const cloneContent = value => JSON.parse(JSON.stringify(value));
+const mergeWithDefaults = (defaults, incoming) => {
+  if (Array.isArray(defaults)) {
+    const source = Array.isArray(incoming) ? incoming : [];
+    return defaults.map((item, index) => mergeWithDefaults(item, source[index]));
+  }
+  if (defaults && typeof defaults === 'object') {
+    const source = incoming && typeof incoming === 'object' ? incoming : {};
+    return Object.keys(defaults).reduce((acc, key) => {
+      acc[key] = mergeWithDefaults(defaults[key], source[key]);
+      return acc;
+    }, {});
+  }
+  return incoming ?? defaults;
+};
+const resolveManagedImage = value => value ? value.startsWith('http') ? value : `http://localhost:5000${value}` : '';
 
 const featuredCollectionCards = withScopedProductIds([{
   id: 1,
@@ -151,6 +169,7 @@ export default function App() {
     description: 'Discover our newest collection of handcrafted jewelry, where every piece tells a story of exceptional artistry and enduring beauty.',
     imageUrl: heroImage
   });
+  const [homeVisionSection, setHomeVisionSection] = useState(() => cloneContent(defaultPageContent['home-vision-section']));
 
   // Restore session on mount
   useEffect(() => {
@@ -207,6 +226,24 @@ export default function App() {
         console.error('Error fetching banner:', err);
       });
   }, [currentPage, activeCategory, activeCollection]);
+
+  useEffect(() => {
+    const fetchHomeVisionSection = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/content/page-content/home-vision-section');
+        if (!response.ok) {
+          throw new Error('Failed to fetch home vision section');
+        }
+
+        const data = await response.json();
+        setHomeVisionSection(mergeWithDefaults(defaultPageContent['home-vision-section'], data));
+      } catch (error) {
+        console.error('Error fetching home vision section:', error);
+      }
+    };
+
+    fetchHomeVisionSection();
+  }, []);
 
   useEffect(() => {
     // Fetch products, categories, and collections
@@ -541,11 +578,11 @@ export default function App() {
                 {/* Account Dropdown */}
                 {accountDropdownOpen && isLoggedIn && <motion.div initial={{
                 opacity: 0,
-                y: 10
+                y: -10
               }} animate={{
                 opacity: 1,
                 y: 0
-              }} className="absolute right-0 mt-4 w-48 bg-white border border-gray-200 shadow-xl z-[100] py-2 font-sans">
+              }} className="absolute right-0 bottom-[calc(100%+16px)] w-48 bg-white border border-gray-200 shadow-xl z-[100] py-2 font-sans">
                       <button onClick={() => {
                   setAccountDropdownOpen(false);
                   setCurrentPage('profile');
@@ -588,13 +625,13 @@ export default function App() {
     return <OurStoryPage onBack={() => {
       window.scrollTo(0, 0);
       setCurrentPage('home');
-    }} />;
+    }} bannerContent={dynamicBanner} />;
   }
   if (currentPage === 'gift-guide') {
     return <GiftGuidePage onBack={() => {
       window.scrollTo(0, 0);
       setCurrentPage('home');
-    }} />;
+    }} bannerContent={dynamicBanner} />;
   }
   const handleDownloadReceipt = (order) => {
     const doc = new jsPDF();
@@ -692,6 +729,18 @@ export default function App() {
         timestamp: Date.now()
       }));
 
+      // Reduce stock for all items
+      try {
+        const stockItems = cartItems.map(item => ({ id: item.id, quantity: item.quantity }));
+        await fetch('http://localhost:5000/api/products/reduce-stock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: stockItems })
+        });
+      } catch (err) {
+        console.error("Failed to reduce stock:", err);
+      }
+
       // If user is logged in, save to backend
       if (isLoggedIn && currentUser) {
         for (const order of newOrders) {
@@ -748,11 +797,11 @@ export default function App() {
                 </button>
                 {accountDropdownOpen && isLoggedIn && <motion.div initial={{
                 opacity: 0,
-                y: 10
+                y: -10
               }} animate={{
                 opacity: 1,
                 y: 0
-              }} className="absolute right-0 top-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
+              }} className="absolute right-0 bottom-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
                     <button onClick={() => {
                   setCurrentPage('profile');
                   setAccountDropdownOpen(false);
@@ -834,11 +883,11 @@ export default function App() {
                 </button>
                 {accountDropdownOpen && isLoggedIn && <motion.div initial={{
                 opacity: 0,
-                y: 10
+                y: -10
               }} animate={{
                 opacity: 1,
                 y: 0
-              }} className="absolute right-0 top-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
+              }} className="absolute right-0 bottom-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
                     <button onClick={() => {
                   setCurrentPage('profile');
                   setAccountDropdownOpen(false);
@@ -911,11 +960,11 @@ export default function App() {
                 </button>
                 {accountDropdownOpen && isLoggedIn && <motion.div initial={{
                 opacity: 0,
-                y: 10
+                y: -10
               }} animate={{
                 opacity: 1,
                 y: 0
-              }} className="absolute right-0 top-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
+              }} className="absolute right-0 bottom-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
                     <button onClick={() => {
                   setCurrentPage('profile');
                   setAccountDropdownOpen(false);
@@ -947,6 +996,7 @@ export default function App() {
 
         <GiftGuidePage 
           onBack={() => setCurrentPage('home')} 
+          bannerContent={dynamicBanner}
           onNavigateCategory={(cat) => {
             setActiveCategory(cat);
             setCurrentPage('category');
@@ -1241,6 +1291,56 @@ export default function App() {
                 <ChevronRight size={16} className="text-gray-400" />
               </button>
 
+              {/* Our Story */}
+              <button type="button" className="flex items-center justify-between py-3 text-lg tracking-wider hover:text-gray-500 transition-colors w-full text-left" style={{
+            fontWeight: 300,
+            pointerEvents: 'auto',
+            background: 'none',
+            cursor: 'pointer',
+            borderBottom: '1px solid #f3f4f6'
+          }} onClick={() => {
+            setMenuOpen(false);
+            setCategoryDropdownOpen(false);
+            setCollectionsDropdownOpen(false);
+            window.scrollTo(0, 0);
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+            setCurrentPage('story');
+            setTimeout(() => {
+              window.scrollTo(0, 0);
+              document.documentElement.scrollTop = 0;
+              document.body.scrollTop = 0;
+            }, 50);
+          }}>
+                <span>OUR STORY</span>
+                <ChevronRight size={16} className="text-gray-400" />
+              </button>
+
+              {/* Gift Guide */}
+              <button type="button" className="flex items-center justify-between py-3 text-lg tracking-wider hover:text-gray-500 transition-colors w-full text-left" style={{
+            fontWeight: 300,
+            pointerEvents: 'auto',
+            background: 'none',
+            cursor: 'pointer',
+            borderBottom: '1px solid #f3f4f6'
+          }} onClick={() => {
+            setMenuOpen(false);
+            setCategoryDropdownOpen(false);
+            setCollectionsDropdownOpen(false);
+            window.scrollTo(0, 0);
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+            setCurrentPage('gift-guide');
+            setTimeout(() => {
+              window.scrollTo(0, 0);
+              document.documentElement.scrollTop = 0;
+              document.body.scrollTop = 0;
+            }, 50);
+          }}>
+                <span>GIFT GUIDE</span>
+                <ChevronRight size={16} className="text-gray-400" />
+              </button>
+
               {/* Book an Appointment */}
               <button type="button" className="flex items-center justify-between py-3 text-lg tracking-wider hover:text-gray-500 transition-colors w-full text-left" style={{
             fontWeight: 300,
@@ -1304,11 +1404,11 @@ export default function App() {
                 </button>
                 {accountDropdownOpen && isLoggedIn && <motion.div initial={{
                 opacity: 0,
-                y: 10
+                y: -10
               }} animate={{
                 opacity: 1,
                 y: 0
-              }} className="absolute right-0 top-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
+              }} className="absolute right-0 bottom-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
                     <button onClick={() => {
                   setCurrentPage('profile');
                   setAccountDropdownOpen(false);
@@ -1623,7 +1723,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* Brand Origin - Asymmetric Editorial */}
+      {/* Our Vision - Asymmetric Editorial */}
       <section className="py-32 px-6 bg-[#0a0a0a] text-white">
         <div className="max-w-[1400px] mx-auto">
           <div className="flex flex-col md:flex-row items-center gap-16 lg:gap-32">
@@ -1640,8 +1740,8 @@ export default function App() {
             once: true
           }} className="w-full md:w-5/12 h-[80vh] min-h-[600px] max-h-[900px] relative group overflow-hidden">
               <div className="absolute inset-0 bg-[#111] z-0"></div>
-              <ImageWithFallback src={ourStoryModel} alt="Unicorn Jewels Model" className="w-full h-full object-cover object-center absolute inset-0 z-10" />
-              <ImageWithFallback src="https://images.unsplash.com/photo-1706955008775-c00874bb4d4b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxqZXdlbGVyJTIwY3JhZnRpbmclMjBjdXN0b20lMjByaW5nJTIwd29ya3Nob3B8ZW58MXx8fHwxNzc0MDcwNDEwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral" alt="Master Jeweler" className="w-full h-full object-cover object-center absolute inset-0 mix-blend-luminosity opacity-80" />
+              <ImageWithFallback src={resolveManagedImage(homeVisionSection.primary_image_url) || ourStoryModel} alt="Unicorn Jewels Model" className="w-full h-full object-cover object-center absolute inset-0 z-10" />
+              <ImageWithFallback src={resolveManagedImage(homeVisionSection.secondary_image_url) || "https://images.unsplash.com/photo-1706955008775-c00874bb4d4b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxqZXdlbGVyJTIwY3JhZnRpbmclMjBjdXN0b20lMjByaW5nJTIwd29ya3Nob3B8ZW58MXx8fHwxNzc0MDcwNDEwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"} alt="Master Jeweler" className="w-full h-full object-cover object-center absolute inset-0 mix-blend-luminosity opacity-80" />
               <div className="absolute inset-0 border border-white/10 z-20 m-6 lg:m-10 pointer-events-none mix-blend-overlay"></div>
             </motion.div>
             <motion.div initial={{
@@ -1656,30 +1756,37 @@ export default function App() {
           }} viewport={{
             once: true
           }} className="w-full md:w-6/12 flex flex-col justify-center">
-              <span className="text-xs tracking-[0.4em] uppercase text-gray-300 mb-8 block font-medium">Our Story</span>
+              <span className="text-xs tracking-[0.4em] uppercase text-gray-300 mb-8 block font-medium">{homeVisionSection.eyebrow}</span>
               <h2 className="text-5xl lg:text-7xl mb-10 text-white leading-tight" style={{
               fontWeight: 300
             }}>
-                A New Era of <br /><span className="italic text-gray-400">Brilliance</span>
+                {homeVisionSection.title_line_one} <br /><span className="italic text-gray-400">{homeVisionSection.accent}</span>
               </h2>
               <div className="w-12 h-[1px] bg-white/40 mb-10"></div>
               <p className="text-lg lg:text-xl mb-8 text-gray-300 max-w-lg" style={{
               fontWeight: 300,
               lineHeight: 1.8
             }}>
-                Born from a passion for disrupting traditional luxury, Unicorn Jewels was founded to bring uncompromising craftsmanship to the modern collector.
+                {homeVisionSection.paragraph_one}
               </p>
               <p className="text-sm text-gray-400 mb-12 max-w-md tracking-wide" style={{
               fontWeight: 300,
               lineHeight: 1.8
             }}>
-                Every piece is conceptualized in our studio and brought to life by master artisans. We don't just create jewelry; we engineer future heirlooms.
+                {homeVisionSection.paragraph_two}
               </p>
               <button onClick={() => {
               window.scrollTo(0, 0);
+              document.documentElement.scrollTop = 0;
+              document.body.scrollTop = 0;
               setCurrentPage('story');
+              setTimeout(() => {
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+              }, 50);
             }} className="group flex items-center gap-4 text-xs uppercase tracking-[0.2em] text-white hover:text-gray-300 transition-colors w-max">
-                <span>Discover Our Vision</span>
+                <span>{homeVisionSection.button_text}</span>
                 <span className="w-8 h-[1px] bg-white group-hover:w-12 transition-all duration-300"></span>
               </button>
             </motion.div>

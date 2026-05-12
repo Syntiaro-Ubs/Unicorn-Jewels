@@ -1,0 +1,127 @@
+{
+  "home-vision-section": {
+    "eyebrow": "Our Story",
+    "title_line_one": "A New Era of",
+    "accent": "Brilliance",
+    "paragraph_one": "Born from a passion for disrupting traditional luxury, Unicorn Jewels was founded to bring uncompromising craftsmanship to the modern collector.",
+    "paragraph_two": "Every piece is conceptualized in our studio and brought to life by master artisans. We don't just create jewelry; we engineer future heirlooms.",
+    "button_text": "Discover Our Vision",
+    "primary_image_url": "https://images.unsplash.com/photo-1771012266370-6bbe78f801c1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYXNoaW9uJTIwbW9kZWwlMjBsb29raW5nJTIwYmFjayUyMGVsZWdhbnQlMjBqZXdlbHJ5fGVufDF8fHx8MTc3Njc2NTMyOHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+    "secondary_image_url": "https://images.unsplash.com/photo-1706955008775-c00874bb4d4b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxqZXdlbGVyJTIwY3JhZnRpbmclMjBjdXN0b20lMjByaW5nJTIwd29ya3Nob3B8ZW58MXx8fHwxNzc0MDcwNDEwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+  },
+  "story": {
+    "hero": {
+      "eyebrow": "Chapter I"
+    },
+    "quote": {
+      "text": "To forge a piece of Unicorn jewelry is to capture a fleeting moment of eternity in absolute silver and shadow."
+    },
+    "craft": {
+      "eyebrow": "Chapter II",
+      "title": "Mastery of",
+      "accent": "Matter",
+      "paragraph_one": "In our atelier, light and shadow are the primary mediums. Every cut, polish, and setting is an exercise in restraint, stripping away the unnecessary to reveal the profound.",
+      "paragraph_two": "Silver, our signature element, is treated not merely as a metal, but as a mirror reflecting the wearer's deepest complexities. We contrast its brilliant, cold luster against the darkest depths of black enamel and rare obsidians.",
+      "footer": "Est. 2026 - Avant-Garde Atelier",
+      "image_url": "https://images.unsplash.com/photo-1638338276001-cfc1f7fb21cc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzaWx2ZXIlMjBqZXdlbHJ5JTIwd29ya3Nob3AlMjBibGFjayUyMGFuZCUyMHdoaXRlfGVufDF8fHx8MTc3Njc1NTQwM3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+    },
+    "finale": {
+      "image_url": "https://images.unsplash.com/photo-1755018237309-bb3f5efeb2c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwYXJjaGl0ZWN0dXJlJTIwYmxhY2slMjBhbmQlMjB3aGl0ZXxlbnwxfHx8fDE3NzY2ODQ1NTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      "title_line_one": "Defy",
+      "accent_one": "Gravity.",
+      "title_line_two": "Define",
+      "accent_two": "Eternity.",
+      "button_text": "Return to Collection"
+    }
+  },
+  "gift-guide": {
+    "hero": {
+      "eyebrow": "Gift Guide",
+      "included_label": "Included",
+      "included_text": "Complimentary Gift Packaging",
+      "optional_label": "Optional",
+      "optional_text": "Personalized Message Cards",
+      "image_eyebrow": "Curated by Occasion",
+      "image_headline": "Gifts chosen to feel personal before the box is even opened."
+    },
+    "occasions": {
+      "eyebrow": "Shop by Occasion",
+      "title": "Curated gift directions for every kind of moment.",
+      "description": "Explore our edit for anniversaries, birthdays, graduations, and more. Each selection is designed to make choosing feel effortless."
+    },
+    "categories": [
+      {
+        "title": "For Her",
+        "subtitle": "Elegant and timeless pieces for every celebration.",
+        "pieces": "42 pieces",
+        "range": "$500 - $5,000",
+        "image": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
+      },
+      {
+        "title": "For Him",
+        "subtitle": "Bold silhouettes with a refined, modern finish.",
+        "pieces": "28 pieces",
+        "range": "$800 - $8,000",
+        "image": "https://images.unsplash.com/photo-1617038220319-276d3cfab638?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
+      },
+      {
+        "title": "Anniversary",
+        "subtitle": "Celebrate love with statement heirlooms.",
+        "pieces": "31 pieces",
+        "range": "$1,000 - $15,000",
+        "image": "https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
+      },
+      {
+        "title": "Birthday",
+        "subtitle": "Meaningful gifts with everyday brilliance.",
+        "pieces": "36 pieces",
+        "range": "$300 - $3,000",
+        "image": "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
+      },
+      {
+        "title": "Graduation",
+        "subtitle": "Milestone-worthy keepsakes for a new chapter.",
+        "pieces": "24 pieces",
+        "range": "$400 - $2,500",
+        "image": "https://images.unsplash.com/photo-1611652022419-a9419f74343d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
+      },
+      {
+        "title": "Just Because",
+        "subtitle": "Spontaneous joy, wrapped with intention.",
+        "pieces": "19 pieces",
+        "range": "$250 - $4,000",
+        "image": "https://images.unsplash.com/photo-1603974372039-adc49044b6bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
+      }
+    ],
+    "packaging": {
+      "eyebrow": "Luxury Packaging",
+      "title": "Every detail is part of the gift.",
+      "items": [
+        {
+          "title": "Signature Gift Box",
+          "detail": "Elegant black box with gold foil logo.",
+          "note": "Complimentary"
+        },
+        {
+          "title": "Premium Gift Bag",
+          "detail": "Luxe velvet bag finished with a satin ribbon.",
+          "note": "Orders over $1,000"
+        },
+        {
+          "title": "Personalized Card",
+          "detail": "A handwritten message on premium cardstock.",
+          "note": "Add at checkout"
+        }
+      ]
+    },
+    "concierge": {
+      "eyebrow": "Concierge Support",
+      "title": "Need help choosing something unforgettable?",
+      "description": "Our team can help you select a piece based on recipient, occasion, and budget, then finish it with the right presentation.",
+      "primary_cta_text": "Book Consultation",
+      "primary_cta_url": "mailto:concierge@unicornjewels.com?subject=Gift%20Consultation",
+      "secondary_cta_text": "Contact Us",
+      "secondary_cta_url": "mailto:hello@unicornjewels.com"
+    }
+  }
+}

@@ -513,7 +513,7 @@ export function CategoryPage({
               <span>Sort by: {sort}</span>
               <ChevronDown size={14} className={`transition-transform duration-300 ${sortOpen ? 'rotate-180' : ''}`} />
             </button>
-            {sortOpen && <div className="absolute top-full right-0 mt-4 w-48 bg-white border border-gray-100 shadow-xl py-2 z-50">
+            {sortOpen && <div className="absolute right-0 bottom-full mb-4 w-48 bg-white border border-gray-100 shadow-xl py-2 z-50">
                 {SORT_OPTIONS.map(option => <button key={option} onClick={() => {
               setSort(option);
               setSortOpen(false);

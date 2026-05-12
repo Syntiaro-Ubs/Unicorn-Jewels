@@ -1,7 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
+
+// Monkey patch console.error
+const originalError = console.error;
+console.error = function(...args) {
+    fs.appendFileSync('error.log', new Date().toISOString() + ' ' + args.join(' ') + '\n');
+    originalError.apply(console, args);
+};
 
 const authRoutes = require('./routes/auth');
 const contentRoutes = require('./routes/content');

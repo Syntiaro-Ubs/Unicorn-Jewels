@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
+import {
   Plus, 
   Search, 
   Edit2, 
@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Key
 } from 'lucide-react';
+import { DASHBOARD_PERMISSION_OPTIONS } from './dashboardPermissions';
 
 const API_BASE = 'http://localhost:5000/api/admins-mgmt';
 
@@ -225,14 +226,14 @@ export default function TeamManagement() {
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+              className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
             >
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <h2 className="text-xl font-bold text-slate-800 tracking-tight">
                   {editingAdmin ? 'Edit Admin' : 'Add Team Member'}
                 </h2>
                 <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
@@ -240,7 +241,23 @@ export default function TeamManagement() {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-8 space-y-6">
+              <form onSubmit={handleSubmit} autoComplete="off" className="p-6 space-y-5 overflow-y-auto">
+                <input
+                  type="text"
+                  name="login_hint"
+                  autoComplete="username"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  className="hidden"
+                />
+                <input
+                  type="password"
+                  name="login_password_hint"
+                  autoComplete="current-password"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  className="hidden"
+                />
                 {formError && (
                   <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-medium border border-red-100 flex gap-2">
                     <AlertCircle size={18} />
@@ -248,78 +265,83 @@ export default function TeamManagement() {
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Username</label>
-                  <input 
-                    type="text" 
-                    required
-                    className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all font-medium text-slate-800"
-                    value={formData.username}
-                    onChange={(e) => setFormData({...formData, username: e.target.value})}
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.22em] ml-1">Username</label>
+                    <input
+                      type="text"
+                      name="admin_username"
+                      autoComplete="off"
+                      required
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all font-medium text-sm text-slate-800"
+                      value={formData.username}
+                      onChange={(e) => setFormData({...formData, username: e.target.value})}
+                      placeholder="e.g. khushi-admin"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Email Address</label>
-                  <input 
-                    type="email" 
-                    required
-                    className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all font-medium text-slate-800"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
-                    {editingAdmin ? 'Update Password (Optional)' : 'Set Password'}
-                  </label>
-                  <div className="relative">
-                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                      type="password" 
-                      required={!editingAdmin}
-                      className="w-full pl-12 pr-5 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all font-medium text-slate-800"
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.22em] ml-1">Email Address</label>
+                    <input
+                      type="email"
+                      name="admin_email"
+                      autoComplete="off"
+                      inputMode="email"
+                      required
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all font-medium text-sm text-slate-800"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="admin@unicornjewels.com"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Dashboard Access</label>
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                    {[
-                      { id: 'home', label: 'Home Page' },
-                      { id: 'banner', label: 'Banners' },
-                      { id: 'products', label: 'Products' },
-                      { id: 'taxonomy', label: 'Taxonomy' },
-                      { id: 'users', label: 'Customers' },
-                      { id: 'team', label: 'Team' }
-                    ].map(opt => (
-                      <label key={opt.id} className="flex items-center gap-3 cursor-pointer group">
-                        <input 
-                          type="checkbox" 
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.22em] ml-1">
+                    {editingAdmin ? 'Update Password (Optional)' : 'Set Password'}
+                  </label>
+                  <div className="relative">
+                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      type="password"
+                      name="admin_password"
+                      autoComplete="new-password"
+                      required={!editingAdmin}
+                      className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all font-medium text-sm text-slate-800"
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      placeholder={editingAdmin ? 'Leave blank to keep current password' : 'Create a temporary password'}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.22em] ml-1">Dashboard Access</label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    {DASHBOARD_PERMISSION_OPTIONS.map(opt => (
+                      <label key={opt.id} className="flex items-center gap-2.5 cursor-pointer group min-h-0">
+                        <input
+                          type="checkbox"
                           className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
                           checked={formData.permissions.includes(opt.id)}
                           onChange={(e) => {
-                            const newPerms = e.target.checked 
+                            const newPerms = e.target.checked
                               ? [...formData.permissions, opt.id]
                               : formData.permissions.filter(p => p !== opt.id);
                             setFormData({...formData, permissions: newPerms});
                           }}
                         />
-                        <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">{opt.label}</span>
+                        <span className="text-[13px] font-medium leading-tight text-slate-600 group-hover:text-slate-900 transition-colors">{opt.label}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-4 flex gap-4">
-                  <button 
+                <div className="pt-2 flex gap-4">
+                  <button
                     type="submit"
                     disabled={formLoading}
-                    className="w-full px-6 py-4 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 font-bold text-sm flex items-center justify-center gap-2"
+                    className="w-full px-6 py-3.5 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 font-bold text-sm flex items-center justify-center gap-2"
                   >
                     {formLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : editingAdmin ? 'Update Access' : 'Grant Access'}
                   </button>

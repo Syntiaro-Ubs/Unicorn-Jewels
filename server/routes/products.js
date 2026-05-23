@@ -84,7 +84,7 @@ router.get('/:id', async (req, res) => {
 
 // POST new product
 router.post('/', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'hover_image', maxCount: 1 }]), async (req, res) => {
-    const { name, slug, price, price_num, description, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode } = req.body;
+    const { name, slug, price, price_num, description, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight } = req.body;
     let image_url = req.body.image_url || '';
     let hover_image_url = req.body.hover_image_url || '';
 
@@ -99,9 +99,9 @@ router.post('/', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'hover_i
     try {
         const normalizedSlug = await getUniqueProductSlug(slug, name);
         const [result] = await db.query(
-            `INSERT INTO products (name, slug, price, price_num, description, image_url, hover_image_url, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [name, normalizedSlug, price, price_num, description, image_url, hover_image_url, category_id || null, collection_id || null, metal, tag, is_featured === 'true', is_new_arrival === 'true', stock || 0, barcode || '']
+            `INSERT INTO products (name, slug, price, price_num, description, image_url, hover_image_url, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [name, normalizedSlug, price, price_num, description, image_url, hover_image_url, category_id || null, collection_id || null, metal, tag, is_featured === 'true', is_new_arrival === 'true', stock || 0, barcode || '', weight || 0.3]
         );
         res.status(201).json({ id: result.insertId, slug: normalizedSlug, message: 'Product created successfully' });
     } catch (error) {
@@ -117,7 +117,7 @@ router.post('/', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'hover_i
 // PUT update product
 router.put('/:id', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'hover_image', maxCount: 1 }]), async (req, res) => {
     const { id } = req.params;
-    const { name, slug, price, price_num, description, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode } = req.body;
+    const { name, slug, price, price_num, description, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight } = req.body;
     let image_url = req.body.image_url;
     let hover_image_url = req.body.hover_image_url;
 
@@ -132,9 +132,9 @@ router.put('/:id', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'hover
     try {
         const normalizedSlug = await getUniqueProductSlug(slug, name, id);
         await db.query(
-            `UPDATE products SET name = ?, slug = ?, price = ?, price_num = ?, description = ?, image_url = ?, hover_image_url = ?, category_id = ?, collection_id = ?, metal = ?, tag = ?, is_featured = ?, is_new_arrival = ?, stock = ?, barcode = ? 
+            `UPDATE products SET name = ?, slug = ?, price = ?, price_num = ?, description = ?, image_url = ?, hover_image_url = ?, category_id = ?, collection_id = ?, metal = ?, tag = ?, is_featured = ?, is_new_arrival = ?, stock = ?, barcode = ?, weight = ? 
              WHERE id = ?`,
-            [name, normalizedSlug, price, price_num, description, image_url, hover_image_url, category_id || null, collection_id || null, metal, tag, is_featured === 'true', is_new_arrival === 'true', stock || 0, barcode || '', id]
+            [name, normalizedSlug, price, price_num, description, image_url, hover_image_url, category_id || null, collection_id || null, metal, tag, is_featured === 'true', is_new_arrival === 'true', stock || 0, barcode || '', weight || 0.3, id]
         );
         res.json({ message: 'Product updated successfully', slug: normalizedSlug });
     } catch (error) {
@@ -198,6 +198,61 @@ router.post('/reduce-stock', async (req, res) => {
     } catch (error) {
         console.error('Error reducing stock:', error);
         res.status(500).json({ message: 'Server error reducing stock' });
+    }
+});
+
+// GET variants for a product
+router.get('/:id/variants', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM product_variants WHERE product_id = ? ORDER BY size, color', [req.params.id]);
+        res.json(rows);
+    } catch (error) {
+        console.error('Error fetching variants:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// POST create variant
+router.post('/variants', upload.array('images', 5), async (req, res) => {
+    const { product_id, size, color, stock, sku, price, is_active } = req.body;
+    
+    let images = [];
+    if (req.files && req.files.length > 0) {
+        images = req.files.map(file => `/uploads/${file.filename}`);
+    }
+
+    try {
+        const [result] = await db.query(
+            `INSERT INTO product_variants (product_id, size, color, stock, sku, price, images, is_active) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [product_id, size || '', color || '', stock || 0, sku || '', price || 0, JSON.stringify(images), is_active === '1' || is_active === true ? 1 : 0]
+        );
+        res.status(201).json({ id: result.insertId, message: 'Variant created successfully' });
+    } catch (error) {
+        console.error('Error creating variant:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// DELETE all variants for a product
+router.delete('/:id/variants', async (req, res) => {
+    try {
+        await db.query('DELETE FROM product_variants WHERE product_id = ?', [req.params.id]);
+        res.json({ message: 'Variants deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting variants:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// DELETE single variant
+router.delete('/variants/:id', async (req, res) => {
+    try {
+        await db.query('DELETE FROM product_variants WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Variant deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting variant:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
 

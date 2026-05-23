@@ -1,18 +1,107 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Heart, Plus, Minus, Ruler, Info } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+
 export function ProductPage({
   product,
   onBack,
   wishlist,
   toggleWishlist,
   addToCart,
-  addedIds
+  addedIds,
+  onProductClick
 }) {
   const [activeAccordion, setActiveAccordion] = useState('details');
-  const [selectedSize, setSelectedSize] = useState('Medium');
-  const SIZES = ['Small', 'Medium', 'Large'];
+  const [selectedSize, setSelectedSize] = useState('');
+  const [variants, setVariants] = useState([]);
+  const [availableSizes, setAvailableSizes] = useState([]);
+  const [isLoadingVariants, setIsLoadingVariants] = useState(true);
+  const [similarProducts, setSimilarProducts] = useState([]);
+  const [isLoadingSimilar, setIsLoadingSimilar] = useState(true);
+
+  useEffect(() => {
+    // Fetch variants for this product
+    const fetchVariants = async () => {
+      setIsLoadingVariants(true);
+      try {
+        const response = await fetch(`http://localhost:5000/api/products/${product.id}/variants`);
+        if (response.ok) {
+          const data = await response.json();
+          setVariants(data);
+          
+          // Extract unique sizes
+          const sizes = [...new Set(data.filter(v => v.size).map(v => v.size))];
+          setAvailableSizes(sizes);
+          
+          // Set default selected size
+          if (sizes.length > 0) {
+            setSelectedSize(sizes[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching variants:', error);
+      } finally {
+        setIsLoadingVariants(false);
+      }
+    };
+
+    if (product.id) {
+      fetchVariants();
+    }
+  }, [product.id]);
+
+  useEffect(() => {
+    // Fetch similar products from same collection (prioritize) or category
+    const fetchSimilarProducts = async () => {
+      setIsLoadingSimilar(true);
+      try {
+        const response = await fetch('http://localhost:5000/api/products');
+        if (response.ok) {
+          const allProducts = await response.json();
+          
+          let similar = [];
+          
+          // First priority: Same collection (show up to 4 products from collection)
+          if (product.collection_id) {
+            similar = allProducts.filter(p => 
+              p.id !== product.id && 
+              p.collection_id === product.collection_id
+            ).slice(0, 4);
+          }
+          
+          // If no collection products found, try category
+          if (similar.length === 0 && product.category_id) {
+            similar = allProducts.filter(p => 
+              p.id !== product.id && 
+              p.category_id === product.category_id
+            ).slice(0, 4);
+          }
+          
+          setSimilarProducts(similar);
+        }
+      } catch (error) {
+        console.error('Error fetching similar products:', error);
+      } finally {
+        setIsLoadingSimilar(false);
+      }
+    };
+
+    if (product.id) {
+      fetchSimilarProducts();
+    }
+  }, [product.id, product.category_id, product.collection_id]);
+
+  // Fallback sizes if no variants
+  const FALLBACK_SIZES = ['Small', 'Medium', 'Large'];
+  const displaySizes = availableSizes.length > 0 ? availableSizes : FALLBACK_SIZES;
+
+  // Set default size if not set
+  useEffect(() => {
+    if (!selectedSize && displaySizes.length > 0) {
+      setSelectedSize(displaySizes[0]);
+    }
+  }, [displaySizes, selectedSize]);
   return <div className="min-h-screen bg-white text-black font-sans relative">
       <div className="flex flex-col lg:flex-row min-h-screen">
         {/* Left Side: Images (60%) */}
@@ -65,11 +154,19 @@ export function ProductPage({
                   <Ruler size={10} /> Size Guide
                 </button>
               </div>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {SIZES.map(size => <button key={size} onClick={() => setSelectedSize(size)} className={`py-2.5 sm:py-3 text-xs tracking-widest uppercase transition-all border ${selectedSize === size ? 'border-black bg-black text-white' : 'border-gray-200 bg-white text-black hover:border-black'} tap-target`}>
-                    {size}
-                  </button>)}
-              </div>
+              {isLoadingVariants ? (
+                <div className="py-8 text-center">
+                  <div className="inline-block w-6 h-6 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></div>
+                </div>
+              ) : displaySizes.length > 0 ? (
+                <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(displaySizes.length, 5)}, minmax(0, 1fr))` }}>
+                  {displaySizes.map(size => <button key={size} onClick={() => setSelectedSize(size)} className={`py-2.5 sm:py-3 text-xs tracking-widest uppercase transition-all border ${selectedSize === size ? 'border-black bg-black text-white' : 'border-gray-200 bg-white text-black hover:border-black'} tap-target`}>
+                      {size}
+                    </button>)}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 italic">One size fits all</p>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -142,6 +239,96 @@ export function ProductPage({
               </div>
             </div>
           </motion.div>
+        </div>
+      </div>
+
+      {/* You May Also Like Section */}
+      <div className="w-full bg-white py-12 sm:py-16 md:py-20 px-6 sm:px-8 md:px-12 border-t border-gray-100">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-xl sm:text-2xl md:text-3xl text-center mb-8 sm:mb-12" style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontWeight: 300
+          }}>
+            You May Also Like
+          </h2>
+          
+          {isLoadingSimilar ? (
+            <div className="flex justify-center py-12">
+              <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></div>
+            </div>
+          ) : similarProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-sm text-gray-400">No similar products found</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
+              {similarProducts.map((item) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="group cursor-pointer"
+                  onClick={() => onProductClick?.(item)}
+                >
+                  <div className="relative aspect-square bg-[#f7f7f7] mb-3 sm:mb-4 overflow-hidden">
+                    <ImageWithFallback
+                      src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : item.image}
+                      alt={item.name}
+                      className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-500 group-hover:scale-105"
+                    />
+                    
+                    {/* Wishlist button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWishlist(item.id);
+                      }}
+                      className="absolute top-2 right-2 sm:top-3 sm:right-3 w-8 h-8 sm:w-10 sm:h-10 bg-white/90 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    >
+                      <Heart
+                        size={14}
+                        strokeWidth={1.5}
+                        className={`sm:w-[16px] sm:h-[16px] ${
+                          wishlist.has(item.id) ? 'fill-black text-black' : 'text-black'
+                        }`}
+                      />
+                    </button>
+
+                    {/* Quick add button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart(item);
+                      }}
+                      className="absolute inset-x-0 bottom-0 bg-black text-white py-2 sm:py-3 text-[9px] sm:text-[10px] tracking-[0.2em] uppercase translate-y-full group-hover:translate-y-0 transition-transform duration-300"
+                    >
+                      {addedIds.has(item.id) ? 'Added to Bag' : 'Quick Add'}
+                    </button>
+                  </div>
+
+                  <h3 className="text-xs sm:text-sm tracking-[0.1em] uppercase text-black mb-1 leading-snug" style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontWeight: 400
+                  }}>
+                    {item.name}
+                  </h3>
+                  
+                  {item.metal && (
+                    <p className="text-[10px] sm:text-xs text-gray-400 tracking-wider uppercase mb-1">
+                      {item.metal}
+                    </p>
+                  )}
+                  
+                  <p className="text-xs sm:text-sm text-black tracking-wider" style={{
+                    fontWeight: 300
+                  }}>
+                    {item.price}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>;

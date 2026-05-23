@@ -49,8 +49,11 @@ export default function ProductManagement() {
     image: null,
     image_url: '',
     hover_image: null,
-    hover_image_url: ''
+    hover_image_url: '',
+    weight: 0.3
   });
+
+
 
   const [previewUrl, setPreviewUrl] = useState('');
   const [hoverPreviewUrl, setHoverPreviewUrl] = useState('');
@@ -130,6 +133,8 @@ export default function ProductManagement() {
     }
   };
 
+
+
   const openAddModal = () => {
     setEditingProduct(null);
     setFormData({
@@ -149,7 +154,8 @@ export default function ProductManagement() {
       image: null,
       image_url: '',
       hover_image: null,
-      hover_image_url: ''
+      hover_image_url: '',
+      weight: 0.3
     });
     setPreviewUrl('');
     setHoverPreviewUrl('');
@@ -175,10 +181,12 @@ export default function ProductManagement() {
       image: null,
       image_url: product.image_url || '',
       hover_image: null,
-      hover_image_url: product.hover_image_url || ''
+      hover_image_url: product.hover_image_url || '',
+      weight: product.weight || 0.3
     });
     setPreviewUrl(product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `http://localhost:5000${product.image_url}`) : '');
     setHoverPreviewUrl(product.hover_image_url ? (product.hover_image_url.startsWith('http') ? product.hover_image_url : `http://localhost:5000${product.hover_image_url}`) : '');
+    
     setIsModalOpen(true);
   };
 

@@ -616,7 +616,7 @@ export default function App() {
           </div>
         </div>
 
-        <ProductPage product={selectedProduct} onBack={goBackFromProduct} wishlist={wishlist} toggleWishlist={toggleWishlist} addToCart={addToCart} addedIds={addedIds} />
+        <ProductPage product={selectedProduct} onBack={goBackFromProduct} wishlist={wishlist} toggleWishlist={toggleWishlist} addToCart={addToCart} addedIds={addedIds} onProductClick={p => openProductPage(p, 'product')} />
 
         <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} items={cartItems} addedIds={addedIds} updateQty={updateQty} removeFromCart={removeFromCart} wishlist={wishlist} toggleWishlist={toggleWishlist} onCheckout={() => setCurrentPage('checkout')} onProductClick={openCartProductPage} />
       </>;

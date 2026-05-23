@@ -22,6 +22,7 @@ const serviceRoutes = require('./routes/services');
 const instagramRouter = require('./routes/instagram');
 const usersRoutes = require('./routes/users');
 const adminsMgmtRoutes = require('./routes/admins_mgmt');
+const migrateUsers = require('./migrate_users');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -44,7 +45,20 @@ app.use('/api/instagram', instagramRouter);
 app.use('/api/users', usersRoutes);
 app.use('/api/admins-mgmt', adminsMgmtRoutes);
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// Run migrations and start server
+async function startServer() {
+    try {
+        console.log('Running database migrations...');
+        await migrateUsers();
+        
+        // Start server
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+}
+
+startServer();

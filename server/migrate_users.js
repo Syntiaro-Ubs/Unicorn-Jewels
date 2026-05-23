@@ -57,9 +57,12 @@ async function migrateUsers() {
 
     } catch (error) {
         console.error('Migration failed:', error);
-    } finally {
-        process.exit();
     }
 }
 
-migrateUsers();
+module.exports = migrateUsers;
+
+// Run as standalone script if called directly
+if (require.main === module) {
+    migrateUsers().then(() => process.exit()).catch(() => process.exit(1));
+}

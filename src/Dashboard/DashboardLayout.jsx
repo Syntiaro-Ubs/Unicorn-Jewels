@@ -11,7 +11,8 @@ import {
   Image as ImageIcon,
   FolderTree,
   ShieldAlert,
-  Palette
+  Palette,
+  Package
 } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router';
 import { DASHBOARD_PERMISSION_IDS } from './dashboardPermissions';
@@ -49,6 +50,7 @@ export default function DashboardLayout() {
     { id: 'taxonomy', name: 'Collections & Categories', icon: <FolderTree size={20} />, path: '/dashboard/taxonomy' },
     { id: 'shop-by-look', name: 'Shop by Look', icon: <Palette size={20} />, path: '/dashboard/shop-by-look' },
     { id: 'users', name: 'Customer Directory', icon: <User size={20} />, path: '/dashboard/users' },
+    { id: 'orders', name: 'Orders', icon: <Package size={20} />, path: '/dashboard/orders' },
     { id: 'team', name: 'Team Management', icon: <ShieldAlert size={20} />, path: '/dashboard/team' },
   ].filter(item => {
     return userPermissions.includes(item.id);
@@ -90,17 +92,16 @@ export default function DashboardLayout() {
               <button
                 key={item.name}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center rounded-xl transition-all ${
-                  isActive
+                className={`w-full flex items-center rounded-xl transition-all ${isActive
                     ? 'bg-slate-100 text-slate-900 shadow-sm border border-slate-200'
                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                } ${isCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-4'}`}
+                  } ${isCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-4'}`}
               >
                 <div className={`${isActive ? 'text-slate-900' : 'text-slate-400'}`}>
                   {item.icon}
                 </div>
                 {!isCollapsed && (
-                  <span className="text-sm tracking-[0.08em]">{item.name}</span>
+                  <span className="text-sm tracking-[0em]">{item.name}</span>
                 )}
               </button>
             );

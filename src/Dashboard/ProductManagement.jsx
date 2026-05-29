@@ -30,6 +30,8 @@ export default function ProductManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sizes, setSizes] = useState([]);
+  const [newSizeInput, setNewSizeInput] = useState('');
   
   // Form state
   const [formData, setFormData] = useState({
@@ -113,6 +115,21 @@ export default function ProductManagement() {
         updated.slug = slugifyProduct(value);
       }
 
+      if (name === 'price') {
+        const cleaned = value.replace(/[^0-9.]/g, '');
+        const num = parseFloat(cleaned);
+        updated.price_num = isNaN(num) ? 0 : num;
+      }
+
+      if (name === 'stock') {
+        if (value === '') {
+          updated.stock = '';
+        } else {
+          const val = parseInt(value, 10);
+          updated.stock = isNaN(val) ? 0 : Math.max(0, val);
+        }
+      }
+
       return updated;
     });
   };
@@ -131,6 +148,25 @@ export default function ProductManagement() {
       setFormData(prev => ({ ...prev, hover_image: file }));
       setHoverPreviewUrl(URL.createObjectURL(file));
     }
+  };
+
+  const handleAddSize = (e) => {
+    if (e) e.preventDefault();
+    const cleanSize = newSizeInput.trim().toUpperCase();
+    if (cleanSize && !sizes.some(s => s.size === cleanSize)) {
+      setSizes(prev => [...prev, { size: cleanSize, stock: 0 }]);
+      setNewSizeInput('');
+    }
+  };
+
+  const handleSizeStockChange = (sizeName, newStockVal) => {
+    const parsed = parseInt(newStockVal, 10);
+    const stockVal = isNaN(parsed) ? 0 : Math.max(0, parsed);
+    setSizes(prev => prev.map(s => s.size === sizeName ? { ...s, stock: stockVal } : s));
+  };
+
+  const handleRemoveSize = (sizeToRemove) => {
+    setSizes(prev => prev.filter(s => s.size !== sizeToRemove));
   };
 
 
@@ -159,10 +195,12 @@ export default function ProductManagement() {
     });
     setPreviewUrl('');
     setHoverPreviewUrl('');
+    setSizes([]);
+    setNewSizeInput('');
     setIsModalOpen(true);
   };
 
-  const openEditModal = (product) => {
+  const openEditModal = async (product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -186,6 +224,22 @@ export default function ProductManagement() {
     });
     setPreviewUrl(product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `http://localhost:5000${product.image_url}`) : '');
     setHoverPreviewUrl(product.hover_image_url ? (product.hover_image_url.startsWith('http') ? product.hover_image_url : `http://localhost:5000${product.hover_image_url}`) : '');
+    setNewSizeInput('');
+    setSizes([]);
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/products/${product.id}/variants`);
+      if (response.ok) {
+        const data = await response.json();
+        const extractedSizes = data.filter(v => v.size).map(v => ({
+          size: v.size,
+          stock: v.stock || 0
+        }));
+        setSizes(extractedSizes);
+      }
+    } catch (err) {
+      console.error('Error fetching variants for edit modal:', err);
+    }
     
     setIsModalOpen(true);
   };
@@ -193,6 +247,11 @@ export default function ProductManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    let finalStock = formData.stock;
+    if (sizes.length > 0) {
+      finalStock = sizes.reduce((sum, s) => sum + (s.stock || 0), 0);
+    }
 
     const data = new FormData();
     const normalizedSlug = slugifyProduct(formData.slug || formData.name);
@@ -203,6 +262,8 @@ export default function ProductManagement() {
         data.append('hover_image', formData[key]);
       } else if (key === 'slug') {
         data.append('slug', normalizedSlug);
+      } else if (key === 'stock') {
+        data.append('stock', finalStock);
       } else if (key !== 'image' && key !== 'hover_image') {
         data.append(key, formData[key]);
       }
@@ -222,6 +283,40 @@ export default function ProductManagement() {
       const result = await response.json().catch(() => null);
 
       if (response.ok) {
+        const savedProductId = editingProduct ? editingProduct.id : result?.id;
+        
+        if (savedProductId) {
+          // If editing, clear existing variants first
+          if (editingProduct) {
+            await fetch(`http://localhost:5000/api/products/${savedProductId}/variants`, {
+              method: 'DELETE'
+            }).catch(err => console.error('Error clearing variants:', err));
+          }
+
+          // Create variants for each size
+          if (sizes.length > 0) {
+            await Promise.all(sizes.map(async (s) => {
+              const variantData = {
+                product_id: savedProductId,
+                size: s.size,
+                color: '',
+                stock: s.stock || 0,
+                sku: '',
+                price: formData.price_num || 0,
+                is_active: 1
+              };
+
+              await fetch('http://localhost:5000/api/products/variants', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(variantData)
+              }).catch(err => console.error('Error creating variant:', err));
+            }));
+          }
+        }
+
         showMessage('success', result?.message || `Product ${editingProduct ? 'updated' : 'created'} successfully`);
         setIsModalOpen(false);
         fetchData();
@@ -603,24 +698,13 @@ export default function ProductManagement() {
                         className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-mono text-sm"
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 sm:col-span-2">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Display Price</label>
                       <input 
                         name="price"
                         value={formData.price}
                         onChange={handleInputChange}
                         placeholder="e.g. $1,250"
-                        className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Numeric Price</label>
-                      <input 
-                        type="number"
-                        name="price_num"
-                        value={formData.price_num}
-                        onChange={handleInputChange}
-                        placeholder="1250"
                         className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
                       />
                     </div>
@@ -687,6 +771,7 @@ export default function ProductManagement() {
                     <input 
                       type="number"
                       name="stock"
+                      min="0"
                       value={formData.stock}
                       onChange={handleInputChange}
                       placeholder="e.g. 50"
@@ -703,6 +788,78 @@ export default function ProductManagement() {
                       className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
                     />
                   </div>
+                </div>
+
+                {/* Sizes Management Section */}
+                <div className="space-y-4">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block">Product Sizes & Stock Allocation</label>
+                  <div className="flex gap-4">
+                    <input 
+                      type="text"
+                      value={newSizeInput}
+                      onChange={(e) => setNewSizeInput(e.target.value)}
+                      placeholder="e.g. Small, Medium, Large, or ring sizes like 5, 6, 7"
+                      className="flex-1 px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddSize();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSize}
+                      className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-3 rounded-xl font-bold transition-all text-xs uppercase tracking-widest"
+                    >
+                      Add Size
+                    </button>
+                  </div>
+
+                  {sizes.length > 0 ? (
+                    <div className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50/50 p-4 space-y-3">
+                      <div className="grid grid-cols-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider pb-2 border-b border-slate-100">
+                        <span>Size Name</span>
+                        <span>Stock Allocation</span>
+                        <span className="text-right">Actions</span>
+                      </div>
+                      
+                      {sizes.map((s) => (
+                        <div key={s.size} className="grid grid-cols-3 items-center text-sm font-semibold text-slate-700">
+                          <span className="uppercase tracking-wide">{s.size}</span>
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="number"
+                              min="0"
+                              value={s.stock}
+                              onChange={(e) => handleSizeStockChange(s.size, e.target.value)}
+                              className="w-20 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-xs font-bold outline-none focus:border-blue-500 text-center"
+                              placeholder="0"
+                            />
+                            <span className="text-[10px] font-bold text-slate-400">units</span>
+                          </div>
+                          <div className="text-right">
+                            <button 
+                              type="button" 
+                              onClick={() => handleRemoveSize(s.size)} 
+                              className="text-red-500 hover:text-red-700 text-xs font-bold transition-colors uppercase tracking-widest"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        <span>Total Allocated Stock:</span>
+                        <span className="text-blue-600 text-sm font-black">
+                          {sizes.reduce((sum, s) => sum + (s.stock || 0), 0)} units
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic font-medium">No sizes configured. Default "Small, Medium, Large" will be used on the product page.</p>
+                  )}
                 </div>
 
                 {(editingProduct || formData.barcode) && (

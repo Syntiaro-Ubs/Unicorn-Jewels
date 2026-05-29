@@ -151,7 +151,10 @@ router.put('/update-profile', async (req, res) => {
 // Get User Orders
 router.get('/user-orders/:userId', async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM user_orders WHERE user_id = ? ORDER BY order_date DESC', [req.params.userId]);
+        const [rows] = await db.query(
+            'SELECT * FROM user_orders WHERE user_id = ? AND status NOT IN ("Pending Payment", "Failed", "FAILED") ORDER BY order_date DESC',
+            [req.params.userId]
+        );
         res.json(rows);
     } catch (error) {
         console.error(error);
@@ -161,11 +164,15 @@ router.get('/user-orders/:userId', async (req, res) => {
 
 // Create User Order
 router.post('/user-orders', async (req, res) => {
-    const { userId, orderId, productName, price, imageUrl } = req.body;
+    const { userId, orderId, productName, price, imageUrl, status, productId, quantity, selectedSize } = req.body;
     try {
+        const orderStatus = status || 'Processing';
+        const prodId = productId || null;
+        const qty = quantity || 1;
+        const sz = selectedSize || null;
         await db.query(
-            'INSERT INTO user_orders (user_id, order_id, product_name, price, image_url) VALUES (?, ?, ?, ?, ?)',
-            [userId, orderId, productName, price, imageUrl]
+            'INSERT INTO user_orders (user_id, order_id, product_name, price, image_url, status, product_id, quantity, selected_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [userId, orderId, productName, price, imageUrl, orderStatus, prodId, qty, sz]
         );
         res.status(201).json({ message: 'Order created' });
     } catch (error) {

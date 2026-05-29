@@ -513,17 +513,32 @@ export function CollectionPage({
                   }} className="absolute top-4 right-4 z-10 p-2">
                         <Heart size={20} className={wishlist.has(product.id) ? 'fill-black' : 'fill-none'} stroke="black" strokeWidth={1} />
                       </button>
-                      <button onClick={e => {
-                    e.stopPropagation();
-                    addToCart(product);
-                  }} className="absolute bottom-0 left-0 right-0 z-10 py-4 text-[10px] tracking-[0.25em] uppercase transition-all duration-300 translate-y-full group-hover:translate-y-0" style={{
-                    fontFamily: "'Cormorant Garamond', serif",
-                    fontWeight: 400,
-                    background: addedIds.has(product.id) ? '#1a1a1a' : '#000',
-                    color: '#fff'
-                  }}>
-                        {addedIds.has(product.id) ? '✓ Added to Bag' : 'Add to Bag'}
-                      </button>
+                      {product.stock === 0 ? (
+                        <button onClick={e => {
+                          e.stopPropagation();
+                          alert(`Notification Signup Successful!\n\nWe will notify you as soon as "${product.name}" is back in stock.`);
+                        }} className="absolute bottom-0 left-0 right-0 z-10 py-4 text-[10px] tracking-[0.25em] uppercase transition-all duration-300 translate-y-full group-hover:translate-y-0" style={{
+                          fontFamily: "'Cormorant Garamond', serif",
+                          fontWeight: 400,
+                          background: '#f1f5f9',
+                          color: '#475569',
+                          borderTop: '1px solid #cbd5e1'
+                        }}>
+                          Notify Me
+                        </button>
+                      ) : (
+                        <button onClick={e => {
+                          e.stopPropagation();
+                          addToCart(product);
+                        }} className="absolute bottom-0 left-0 right-0 z-10 py-4 text-[10px] tracking-[0.25em] uppercase transition-all duration-300 translate-y-full group-hover:translate-y-0" style={{
+                          fontFamily: "'Cormorant Garamond', serif",
+                          fontWeight: 400,
+                          background: addedIds.has(product.id) ? '#1a1a1a' : '#000',
+                          color: '#fff'
+                        }}>
+                          {addedIds.has(product.id) ? '✓ Added to Bag' : 'Add to Bag'}
+                        </button>
+                      )}
                     </div>
                     <h3 className="text-sm uppercase tracking-widest mb-1 text-black" style={{
                   fontWeight: 400

@@ -85,5 +85,5 @@ VALUES (
 
 -- Insert a default admin (password: admin123)
 INSERT INTO admins (username, email, password, permissions) 
-VALUES ('admin', 'admin@unicornjewels.com', '$2b$10$t3YvehjrcmRvsRwJSuqlcuZGb/NpmcO.jZIp.KK6wFuK1/ssBPIT.', '["home", "banner", "products", "taxonomy", "shop-by-look", "users", "team"]')
+VALUES ('admin', 'admin@unicornjewels.com', '$2b$10$t3YvehjrcmRvsRwJSuqlcuZGb/NpmcO.jZIp.KK6wFuK1/ssBPIT.', '["home", "banner", "products", "taxonomy", "shop-by-look", "users", "orders", "team"]')
 ON DUPLICATE KEY UPDATE password=VALUES(password), permissions=VALUES(permissions);

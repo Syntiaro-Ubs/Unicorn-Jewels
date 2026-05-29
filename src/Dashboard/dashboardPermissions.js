@@ -5,6 +5,7 @@ export const DASHBOARD_PERMISSION_OPTIONS = [
   { id: "taxonomy", label: "Taxonomy" },
   { id: "shop-by-look", label: "Shop by Look" },
   { id: "users", label: "Customers" },
+  { id: "orders", label: "Orders" },
   { id: "team", label: "Team" },
 ];
 

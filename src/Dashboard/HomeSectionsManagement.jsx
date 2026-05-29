@@ -3,7 +3,6 @@ import {
   AlertCircle,
   BookOpen,
   CheckCircle,
-  Gift,
   Image as ImageIcon,
   Loader2,
   Save,
@@ -211,25 +210,7 @@ export default function HomeSectionsManagement({ giftGuideSection, onEditGiftGui
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
-        <div>
-          <div className="flex items-center gap-2 text-slate-500 mb-2">
-            <Sparkles size={16} />
-            <span className="text-[11px] uppercase tracking-[0.26em] font-bold">Homepage Sections</span>
-          </div>
-          <h4 className="text-2xl text-slate-900">Our Vision and Gift Guide</h4>
-          <p className="text-sm text-slate-500 mt-2 max-w-2xl">
-            Customize the homepage editorial sections here. This controls the home blocks only, not the full standalone pages.
-          </p>
-        </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 max-w-md">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Quick Note</p>
-          <p className="text-sm text-slate-600 mt-2 leading-6">
-            <span className="font-semibold text-slate-900">Our Vision</span> is saved directly here. <span className="font-semibold text-slate-900">Gift Guide</span> uses the homepage service block linked to <span className="font-semibold text-slate-900">gift-guide</span>.
-          </p>
-        </div>
-      </div>
 
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center gap-4">
@@ -247,7 +228,7 @@ export default function HomeSectionsManagement({ giftGuideSection, onEditGiftGui
                 <div>
                   <h5 className="text-lg text-slate-900">Our Vision Home Section</h5>
                   <p className="text-sm text-slate-500 mt-1">
-                    Edit the dark editorial block on the homepage, including its copy, button label, and both layered images.
+                    Edit the dark editorial block on the homepage, including its copy, button label, and primary image.
                   </p>
                 </div>
               </div>
@@ -330,80 +311,8 @@ export default function HomeSectionsManagement({ giftGuideSection, onEditGiftGui
                     })}
                     onRemove={() => updateField('primary_image_url', '')}
                   />
-
-                  <ManagedImageField
-                    label="Overlay Image"
-                    value={sectionContent.secondary_image_url}
-                    uploadKey="home-vision-secondary-image"
-                    helperText="This is the blended craft image layered above the main portrait."
-                    uploading={!!uploadingFields['home-vision-secondary-image']}
-                    error={uploadErrors['home-vision-secondary-image']}
-                    onChange={(value) => updateField('secondary_image_url', value)}
-                    onUpload={(file) => handleImageUpload(file, 'home-vision-secondary-image', (imageUrl) => {
-                      updateField('secondary_image_url', imageUrl);
-                    })}
-                    onRemove={() => updateField('secondary_image_url', '')}
-                  />
                 </div>
               </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-5">
-              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                    <Gift size={18} />
-                  </div>
-                  <div>
-                    <h5 className="text-lg text-slate-900">Gift Guide Home Section</h5>
-                    <p className="text-sm text-slate-500 mt-1">
-                      This homepage block is powered by the shared service entry that links to <span className="font-semibold text-slate-900">gift-guide</span>.
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={onEditGiftGuideSection}
-                  className="bg-amber-600 hover:bg-amber-500 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-amber-600/15"
-                >
-                  {giftGuideSection ? 'Edit Gift Guide Section' : 'Create Gift Guide Section'}
-                </button>
-              </div>
-
-              {giftGuideSection ? (
-                <div className="grid gap-4 xl:grid-cols-[220px,1fr] items-start">
-                  <div className="aspect-[4/3] rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
-                    <ImageWithFallback
-                      src={resolveImageSource(giftGuideSection.image_url)}
-                      alt={giftGuideSection.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap gap-2">
-                      <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-[0.18em]">
-                        {giftGuideSection.tag || 'Gift Guide'}
-                      </span>
-                      <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-[0.18em]">
-                        Homepage Section
-                      </span>
-                    </div>
-                    <h6 className="text-xl text-slate-900">{giftGuideSection.title}</h6>
-                    <p className="text-sm text-slate-500 leading-7">{giftGuideSection.description}</p>
-                    <div className="text-xs font-bold text-slate-400 uppercase tracking-[0.18em]">
-                      Button: {giftGuideSection.button_text} | Link: {giftGuideSection.button_link}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-5">
-                  <p className="text-sm text-slate-600 leading-7">
-                    No homepage Gift Guide section was found yet. Use the button above and I'll open a prefilled service entry that links to <span className="font-semibold text-slate-900">gift-guide</span>.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 

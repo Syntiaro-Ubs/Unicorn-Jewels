@@ -11,6 +11,7 @@ import ShopByLookManagement from '../Dashboard/ShopByLookManagement';
 import HomeManagement from '../Dashboard/HomeManagement';
 import UserManagement from '../Dashboard/UserManagement';
 import TeamManagement from '../Dashboard/TeamManagement';
+import OrderManagement from '../Dashboard/OrderManagement';
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('adminToken');
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="taxonomy" element={<TaxonomyManagement />} />
         <Route path="shop-by-look" element={<ShopByLookManagement />} />
         <Route path="users" element={<UserManagement />} />
+        <Route path="orders" element={<OrderManagement />} />
         <Route path="team" element={<TeamManagement />} />
       </Route>
 

@@ -192,7 +192,22 @@ router.post('/reduce-stock', async (req, res) => {
 
     try {
         for (const item of items) {
-            await db.query('UPDATE products SET stock = stock - ? WHERE id = ?', [item.quantity, item.id]);
+            const numericId = parseInt(item.id, 10);
+            if (!isNaN(numericId) && String(numericId) === String(item.id)) {
+                // 1. Reduce main product stock
+                await db.query('UPDATE products SET stock = stock - ? WHERE id = ?', [item.quantity, numericId]);
+                
+                // 2. Reduce size variant stock if selectedSize is provided
+                if (item.selectedSize) {
+                    await db.query(
+                        'UPDATE product_variants SET stock = stock - ? WHERE product_id = ? AND size = ?',
+                        [item.quantity, numericId, item.selectedSize]
+                    );
+                }
+            } else {
+                // Fallback for mock/string products
+                await db.query('UPDATE products SET stock = stock - ? WHERE id = ?', [item.quantity, item.id]);
+            }
         }
         res.json({ message: 'Stock reduced successfully' });
     } catch (error) {

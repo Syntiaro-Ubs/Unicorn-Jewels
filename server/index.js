@@ -18,10 +18,15 @@ const categoryRoutes = require('./routes/categories');
 const collectionRoutes = require('./routes/collections');
 const editorialsRoutes = require('./routes/editorials');
 const diamondEditRoutes = require('./routes/diamond_edit');
+const justUnveiledRoutes = require('./routes/just_unveiled');
+const orderRoutes = require('./routes/orders');
 const serviceRoutes = require('./routes/services');
 const instagramRouter = require('./routes/instagram');
 const usersRoutes = require('./routes/users');
 const adminsMgmtRoutes = require('./routes/admins_mgmt');
+const trackingRoutes = require('./routes/tracking');
+const paymentRoutes = require('./routes/payment');
+const appointmentRoutes = require('./routes/appointments');
 const migrateUsers = require('./migrate_users');
 
 const app = express();
@@ -40,10 +45,15 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/collections', collectionRoutes);
 app.use('/api/editorials', editorialsRoutes);
 app.use('/api/diamond-edit', diamondEditRoutes);
+app.use('/api/just-unveiled', justUnveiledRoutes);
+app.use('/api/orders', orderRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/instagram', instagramRouter);
 app.use('/api/users', usersRoutes);
 app.use('/api/admins-mgmt', adminsMgmtRoutes);
+app.use('/api/tracking', trackingRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/appointments', appointmentRoutes);
 
 // Run migrations and start server
 async function startServer() {

@@ -157,6 +157,7 @@ export default function App() {
   const [dbCollections, setDbCollections] = useState([]);
   const [dbEditorials, setDbEditorials] = useState([]);
   const [dbDiamondEdit, setDbDiamondEdit] = useState([]);
+  const [dbJustUnveiled, setDbJustUnveiled] = useState([]);
   const [dbServices, setDbServices] = useState([]);
   const [dbInstagramPosts, setDbInstagramPosts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -170,6 +171,70 @@ export default function App() {
     imageUrl: heroImage
   });
   const [homeVisionSection, setHomeVisionSection] = useState(() => cloneContent(defaultPageContent['home-vision-section']));
+  const [phonepeSuccess, setPhonepeSuccess] = useState(false);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+
+  // Handle PhonePe Redirect Callback
+  useEffect(() => {
+    const checkPhonePeStatus = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const phonepeOrderId = urlParams.get('phonepe_order_id');
+      
+      if (phonepeOrderId) {
+        setIsVerifyingPayment(true);
+        try {
+          // Remove query params from browser URL so page refreshes don't re-trigger verification
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+
+          console.log(`Verifying PhonePe payment for order ${phonepeOrderId}`);
+          const response = await fetch(`http://localhost:5000/api/payment/phonepe/status/${phonepeOrderId}`);
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            console.log('✅ PhonePe Payment Verified successfully!');
+            setPhonepeSuccess(true);
+            setCartItems([]);
+            setAddedIds(new Set());
+            setCurrentPage('checkout');
+            
+            // Re-fetch user orders to show the new order in their profile immediately
+            const savedUser = localStorage.getItem('unicorn_jewels_user');
+            if (savedUser) {
+              const user = JSON.parse(savedUser);
+              const ordersResponse = await fetch(`http://localhost:5000/api/auth/user-orders/${user.id}`);
+              if (ordersResponse.ok) {
+                const backendOrders = await ordersResponse.json();
+                const formattedOrders = backendOrders.map(o => ({
+                  id: o.order_id,
+                  date: new Date(o.order_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                  status: o.status,
+                  total: o.price,
+                  item: o.product_name,
+                  image: o.image_url,
+                  productId: o.product_id,
+                  quantity: o.quantity || 1,
+                  selectedSize: o.selected_size || '',
+                  timestamp: new Date(o.order_date).getTime()
+                }));
+                setOrders(formattedOrders);
+              }
+            }
+          } else {
+            console.error('❌ PhonePe Payment verification failed:', data.message || 'Payment was not completed.');
+            alert(data.message || 'Payment verification failed. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error verifying PhonePe payment:', error);
+          alert('Network error while verifying payment status.');
+        } finally {
+          setIsVerifyingPayment(false);
+        }
+      }
+    };
+
+    checkPhonePeStatus();
+  }, []);
 
   // Restore session on mount
   useEffect(() => {
@@ -249,20 +314,22 @@ export default function App() {
     // Fetch products, categories, and collections
     const fetchStoreData = async () => {
       try {
-        const [prodRes, catRes, collRes, editRes, diamondRes] = await Promise.all([
+        const [prodRes, catRes, collRes, editRes, diamondRes, justUnveiledRes] = await Promise.all([
           fetch('http://localhost:5000/api/products'),
           fetch('http://localhost:5000/api/categories'),
           fetch('http://localhost:5000/api/collections'),
           fetch('http://localhost:5000/api/editorials'),
-          fetch('http://localhost:5000/api/diamond-edit')
+          fetch('http://localhost:5000/api/diamond-edit'),
+          fetch('http://localhost:5000/api/just-unveiled')
         ]);
 
-        const [prods, cats, colls, edits, diamondItems] = await Promise.all([
+        const [prods, cats, colls, edits, diamondItems, justUnveiledItems] = await Promise.all([
           prodRes.json(),
           catRes.json(),
           collRes.json(),
           editRes.json(),
-          diamondRes.json()
+          diamondRes.json(),
+          justUnveiledRes.json()
         ]);
 
         const servicesRes = await fetch('http://localhost:5000/api/services');
@@ -276,6 +343,7 @@ export default function App() {
         setDbCollections(colls);
         setDbEditorials(edits);
         setDbDiamondEdit(diamondItems);
+        setDbJustUnveiled(justUnveiledItems);
         setDbServices(servicesItems);
         setDbInstagramPosts(instaPosts);
       } catch (error) {
@@ -329,21 +397,30 @@ export default function App() {
       return nextWishlist;
     });
   };
-  const addToCart = item => {
+  const addToCart = (item, selectedSize, sizeStock) => {
     if (!isLoggedIn) {
       setCurrentPage('login');
       return;
     }
+    const cartSize = selectedSize || item.selectedSize || '';
+    const cartStock = sizeStock !== undefined ? sizeStock : (item.sizeStock !== undefined ? item.sizeStock : item.stock);
+
     setCartItems(prev => {
-      const existing = prev.find(i => i.id === item.id);
+      const existing = prev.find(i => i.id === item.id && (i.selectedSize || '') === cartSize);
       if (existing) {
-        return prev.map(i => i.id === item.id ? {
+        if (cartStock !== undefined && cartStock !== null && existing.quantity >= cartStock) {
+          alert(`You can only purchase up to ${cartStock} items of this size.`);
+          return prev;
+        }
+        return prev.map(i => (i.id === item.id && (i.selectedSize || '') === cartSize) ? {
           ...i,
           quantity: i.quantity + 1
         } : i);
       }
       return [...prev, {
         ...item,
+        selectedSize: cartSize,
+        sizeStock: cartStock,
         quantity: 1
       }];
     });
@@ -357,14 +434,23 @@ export default function App() {
     }, 1600);
     setCartOpen(true);
   };
-  const updateQty = (id, qty) => {
-    setCartItems(prev => prev.map(i => i.id === id ? {
-      ...i,
-      quantity: qty
-    } : i));
+  const updateQty = (id, qty, selectedSize) => {
+    const cartSize = selectedSize || '';
+    setCartItems(prev => prev.map(i => {
+      if (i.id === id && (i.selectedSize || '') === cartSize) {
+        const maxStock = i.sizeStock !== undefined && i.sizeStock !== null ? i.sizeStock : i.stock;
+        const targetQty = (maxStock !== undefined && maxStock !== null) ? Math.min(qty, maxStock) : qty;
+        return {
+          ...i,
+          quantity: targetQty
+        };
+      }
+      return i;
+    }));
   };
-  const removeFromCart = id => {
-    setCartItems(prev => prev.filter(i => i.id !== id));
+  const removeFromCart = (id, selectedSize) => {
+    const cartSize = selectedSize || '';
+    setCartItems(prev => prev.filter(i => !(i.id === id && (i.selectedSize || '') === cartSize)));
   };
   const openProductPage = (product, backPage = currentPage, scrollPos = window.scrollY) => {
     if (currentPage === 'product' && selectedProduct?.id === product.id) {
@@ -434,6 +520,9 @@ export default function App() {
           total: o.price,
           item: o.product_name,
           image: o.image_url,
+          productId: o.product_id,
+          quantity: o.quantity || 1,
+          selectedSize: o.selected_size || '',
           timestamp: new Date(o.order_date).getTime()
         }));
         setOrders(formattedOrders);
@@ -582,7 +671,7 @@ export default function App() {
               }} animate={{
                 opacity: 1,
                 y: 0
-              }} className="absolute right-0 bottom-[calc(100%+16px)] w-48 bg-white border border-gray-200 shadow-xl z-[100] py-2 font-sans">
+              }} className="absolute right-0 top-[calc(100%+16px)] w-48 bg-white border border-gray-200 shadow-xl z-[100] py-2 font-sans">
                       <button onClick={() => {
                   setAccountDropdownOpen(false);
                   setCurrentPage('profile');
@@ -636,47 +725,176 @@ export default function App() {
   const handleDownloadReceipt = (order) => {
     const doc = new jsPDF();
     
-    // Header
+    // Find matching product in state
+    const matchedProduct = dbProducts.find(p => String(p.id) === String(order.productId)) || {};
+    
+    // 1. BRAND HEADER
+    // Set gold color for brand accents: RGB 201, 166, 107 (#C9A66B)
+    doc.setTextColor(30, 30, 30); // Very dark gray for clean text
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.text("UNICORN JEWELS", 105, 30, { align: "center" });
+    doc.setFontSize(26);
+    doc.text("UNICORN JEWELS", 105, 25, { align: "center" });
     
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("Sustainable spark. Soulful shine.", 105, 38, { align: "center" });
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text("Sustainable spark. Soulful shine.", 105, 31, { align: "center" });
     
-    doc.setDrawColor(200, 200, 200);
-    doc.line(20, 45, 190, 45);
+    // Accent gold separator line
+    doc.setDrawColor(201, 166, 107);
+    doc.setLineWidth(0.8);
+    doc.line(20, 37, 190, 37);
     
-    // Order Info
-    doc.setFontSize(12);
+    // 2. RECEIPT TITLE & META METADATA
+    doc.setTextColor(30, 30, 30);
     doc.setFont("helvetica", "bold");
-    doc.text("RECEIPT", 20, 60);
+    doc.setFontSize(14);
+    doc.text("RECEIPT / PROOF OF PURCHASE", 20, 48);
     
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(`Order Number: ${order.id}`, 20, 70);
-    doc.text(`Date: ${order.date}`, 20, 77);
-    doc.text(`Status: ${order.status}`, 20, 84);
-    
-    doc.line(20, 95, 190, 95);
-    
-    // Item Info
+    // Left Metadata Block: Customer Details
     doc.setFont("helvetica", "bold");
-    doc.text("ITEM", 20, 110);
-    doc.text("TOTAL", 170, 110);
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text("BILLED TO:", 20, 58);
     
     doc.setFont("helvetica", "normal");
-    doc.text(order.item, 20, 120);
-    doc.text(order.total, 170, 120);
-    
-    doc.line(20, 135, 190, 135);
-    
-    // Footer
     doc.setFontSize(10);
-    doc.text("Thank you for choosing Unicorn Jewels.", 105, 150, { align: "center" });
-    doc.text("For any inquiries, please contact concierge@unicornjewels.com", 105, 157, { align: "center" });
+    doc.setTextColor(30, 30, 30);
+    const clientName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Valued Customer";
+    const clientEmail = currentUser ? currentUser.email : "concierge@unicornjewels.com";
+    doc.text(clientName, 20, 64);
+    doc.text(clientEmail, 20, 70);
     
+    // Right Metadata Block: Order Details
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text("ORDER DETAILS:", 120, 58);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(30, 30, 30);
+    doc.text(`Order ID: ${order.id}`, 120, 64);
+    doc.text(`Date: ${order.date}`, 120, 70);
+    const displayStatus = (order.status === 'Processing' || order.status === 'Shipped' || order.status === 'Delivered') ? 'Paid' : order.status;
+    doc.text(`Payment Status: ${displayStatus}`, 120, 76);
+    
+    // Deduce payment method from Order ID pattern
+    const payMethod = order.id && order.id.startsWith("ORD-PP") ? "PhonePe Sandbox (UAT)" : "Simulated Credit Card";
+    doc.text(`Payment Method: ${payMethod}`, 120, 82);
+    
+    // Separator line
+    doc.setDrawColor(230, 230, 230);
+    doc.setLineWidth(0.5);
+    doc.line(20, 90, 190, 90);
+    
+    // 3. PRODUCT SPECIFICATIONS SECTION
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(201, 166, 107); // Gold
+    doc.text("PRODUCT SPECIFICATIONS", 20, 99);
+    
+    // Spec Table headers background
+    doc.setFillColor(248, 248, 248);
+    doc.rect(20, 104, 170, 8, "F");
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 100, 100);
+    doc.text("SPECIFICATION", 25, 109.5);
+    doc.text("DETAILS", 75, 109.5);
+    
+    // Spec rows
+    const specs = [
+      { label: "Product Name", value: order.item },
+      { label: "Variant Size", value: order.selectedSize || "Standard" },
+      { label: "Metal Type", value: matchedProduct.metal || "18k Yellow Gold (Default)" },
+      { label: "Total Weight", value: matchedProduct.weight ? `${matchedProduct.weight} ct` : "0.30 ct (Default)" },
+      { label: "Barcode (SKU)", value: matchedProduct.barcode || "N/A" },
+      { label: "Quantity", value: String(order.quantity || 1) }
+    ];
+    
+    let yPos = 117;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(30, 30, 30);
+    
+    specs.forEach((spec, idx) => {
+      // Background shading for alternating rows
+      if (idx % 2 === 1) {
+        doc.setFillColor(252, 252, 252);
+        doc.rect(20, yPos - 4.5, 170, 6.5, "F");
+      }
+      
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(120, 120, 120);
+      doc.text(spec.label, 25, yPos);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(30, 30, 30);
+      doc.text(spec.value, 75, yPos);
+      
+      yPos += 7;
+    });
+    
+    // Thin line
+    doc.setDrawColor(240, 240, 240);
+    doc.line(20, yPos - 1.5, 190, yPos - 1.5);
+    yPos += 5;
+    
+    // 4. PRODUCT DESCRIPTION
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text("PRODUCT DESCRIPTION:", 25, yPos);
+    yPos += 5.5;
+    
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 80, 80);
+    const descText = matchedProduct.description || "A signature creation showcasing our dedication to sustainable elegance and master-crafted design. Each stone is ethically curated and set by hand.";
+    const wrappedDescLines = doc.splitTextToSize(descText, 160);
+    wrappedDescLines.forEach(line => {
+      doc.text(line, 25, yPos);
+      yPos += 4.5;
+    });
+    
+    yPos += 4;
+    
+    // Separator line
+    doc.setDrawColor(201, 166, 107);
+    doc.setLineWidth(0.8);
+    doc.line(20, yPos, 190, yPos);
+    yPos += 10;
+    
+    // 5. PRICING SUMMARY (Right-aligned)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text("TOTAL AMOUNT PAID:", 125, yPos, { align: "right" });
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(30, 30, 30);
+    doc.text(order.total, 190, yPos, { align: "right" });
+    
+    // 6. BRAND FOOTER
+    // Use a fixed bottom position for standard brand signature
+    const footerY = 270;
+    doc.setDrawColor(230, 230, 230);
+    doc.setLineWidth(0.5);
+    doc.line(20, footerY - 10, 190, footerY - 10);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text("Thank you for choosing Unicorn Jewels.", 105, footerY - 3, { align: "center" });
+    
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text("For bespoke modifications or concierge inquiries, contact concierge@unicornjewels.com", 105, footerY + 2, { align: "center" });
+    
+    // Save generated PDF
     doc.save(`Receipt_${order.id}.pdf`);
   };
 
@@ -714,61 +932,117 @@ export default function App() {
   if (currentPage === 'track-order') {
     return <TrackOrderPage onBack={() => {
       window.scrollTo(0, 0);
-      setCurrentPage('home');
+      setCurrentPage('profile');
     }} />;
   }
   if (currentPage === 'checkout') {
-    return <CheckoutPage items={cartItems} onBack={() => setCurrentPage('home')} onCompletePurchase={async () => {
-      const newOrders = cartItems.map(item => ({
-        id: `ORD-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 900) + 100}`,
-        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-        status: "Processing",
-        total: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(item.priceNum * item.quantity),
-        item: item.name,
-        image: item.image,
-        timestamp: Date.now()
-      }));
+    return <CheckoutPage 
+      items={cartItems} 
+      onBack={() => {
+        setPhonepeSuccess(false);
+        setCurrentPage('home');
+      }} 
+      initialIsComplete={phonepeSuccess}
+      onPhonePeCheckout={async (total) => {
+        try {
+          console.log(`Initiating PhonePe payment for amount: ${total} USD`);
+          const response = await fetch('http://localhost:5000/api/payment/phonepe/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: currentUser?.id,
+              amount: total,
+              items: cartItems.map(item => ({
+                id: item.id,
+                name: item.name,
+                priceNum: item.priceNum,
+                quantity: item.quantity,
+                image: item.image,
+                selectedSize: item.selectedSize || ''
+              }))
+            })
+          });
 
-      // Reduce stock for all items
-      try {
-        const stockItems = cartItems.map(item => ({ id: item.id, quantity: item.quantity }));
-        await fetch('http://localhost:5000/api/products/reduce-stock', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items: stockItems })
-        });
-      } catch (err) {
-        console.error("Failed to reduce stock:", err);
-      }
+          if (!response.ok) {
+            throw new Error('Failed to initiate payment');
+          }
 
-      // If user is logged in, save to backend
-      if (isLoggedIn && currentUser) {
-        for (const order of newOrders) {
-          try {
-            await fetch('http://localhost:5000/api/auth/user-orders', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userId: currentUser.id,
-                orderId: order.id,
-                productName: order.item,
-                price: order.total,
-                imageUrl: order.image
-              })
-            });
-          } catch (err) {
-            console.error("Failed to save order to backend:", err);
+          const data = await response.json();
+          if (data.redirectUrl) {
+            console.log(`Redirecting to PhonePe checkout URL: ${data.redirectUrl}`);
+            window.location.href = data.redirectUrl;
+          } else {
+            alert('Error: PhonePe checkout URL not received.');
+          }
+        } catch (err) {
+          console.error("PhonePe payment initiation failed:", err);
+          alert("Unable to initiate PhonePe payment. Please try again.");
+        }
+      }}
+      onCompletePurchase={async () => {
+        const newOrders = cartItems.map(item => ({
+          id: `ORD-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 900) + 100}`,
+          date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+          status: "Processing",
+          total: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(item.priceNum * item.quantity),
+          item: item.name,
+          image: item.image,
+          productId: item.id,
+          quantity: item.quantity,
+          selectedSize: item.selectedSize || '',
+          timestamp: Date.now()
+        }));
+
+        // Reduce stock for all items
+        try {
+          const stockItems = cartItems.map(item => ({ id: item.id, quantity: item.quantity, selectedSize: item.selectedSize || '' }));
+          await fetch('http://localhost:5000/api/products/reduce-stock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: stockItems })
+          });
+        } catch (err) {
+          console.error("Failed to reduce stock:", err);
+        }
+
+        // If user is logged in, save to backend
+        if (isLoggedIn && currentUser) {
+          for (const order of newOrders) {
+            try {
+              await fetch('http://localhost:5000/api/auth/user-orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: currentUser.id,
+                  orderId: order.id,
+                  productName: order.item,
+                  price: order.total,
+                  imageUrl: order.image,
+                  productId: order.productId,
+                  quantity: order.quantity,
+                  selectedSize: order.selectedSize
+                })
+              });
+            } catch (err) {
+              console.error("Failed to save order to backend:", err);
+            }
           }
         }
-      }
 
-      setOrders(prev => [...newOrders, ...prev]);
-      setCartItems([]);
-      setAddedIds(new Set());
-    }} onViewTracking={() => {
-      setCurrentPage('track-order');
-      window.scrollTo(0, 0);
-    }} onContinueShopping={() => setCurrentPage('home')} />;
+        setOrders(prev => [...newOrders, ...prev]);
+        setCartItems([]);
+        setAddedIds(new Set());
+      }} 
+      onViewTracking={() => {
+        setPhonepeSuccess(false);
+        setCurrentPage('track-order');
+        window.scrollTo(0, 0);
+      }} 
+      onContinueShopping={() => {
+        setPhonepeSuccess(false);
+        setCurrentPage('home');
+      }} 
+    />;
   }
   if (currentPage === 'collection' && activeCollection) {
     return <>
@@ -801,17 +1075,12 @@ export default function App() {
               }} animate={{
                 opacity: 1,
                 y: 0
-              }} className="absolute right-0 bottom-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
+              }} className="absolute right-0 top-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
                     <button onClick={() => {
                   setCurrentPage('profile');
                   setAccountDropdownOpen(false);
                   window.scrollTo(0, 0);
                 }} className="w-full text-left px-4 py-2.5 text-xs tracking-widest uppercase hover:bg-gray-50 transition-colors">Profile</button>
-                    <button onClick={() => {
-                  setCurrentPage('profile');
-                  setAccountDropdownOpen(false);
-                  window.scrollTo(0, 0);
-                }} className="w-full text-left px-4 py-2.5 text-xs tracking-widest uppercase hover:bg-gray-50 transition-colors">Orders</button>
                     <div className="h-[1px] bg-gray-100 my-1 w-full" />
                     <button onClick={() => {
                   setIsLoggedIn(false);
@@ -887,17 +1156,12 @@ export default function App() {
               }} animate={{
                 opacity: 1,
                 y: 0
-              }} className="absolute right-0 bottom-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
+              }} className="absolute right-0 top-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
                     <button onClick={() => {
                   setCurrentPage('profile');
                   setAccountDropdownOpen(false);
                   window.scrollTo(0, 0);
                 }} className="w-full text-left px-4 py-2.5 text-xs tracking-widest uppercase hover:bg-gray-50 transition-colors">Profile</button>
-                    <button onClick={() => {
-                  setCurrentPage('profile');
-                  setAccountDropdownOpen(false);
-                  window.scrollTo(0, 0);
-                }} className="w-full text-left px-4 py-2.5 text-xs tracking-widest uppercase hover:bg-gray-50 transition-colors">Orders</button>
                     <div className="h-[1px] bg-gray-100 my-1 w-full" />
                     <button onClick={() => {
                   setIsLoggedIn(false);
@@ -964,17 +1228,12 @@ export default function App() {
               }} animate={{
                 opacity: 1,
                 y: 0
-              }} className="absolute right-0 bottom-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
+              }} className="absolute right-0 top-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
                     <button onClick={() => {
                   setCurrentPage('profile');
                   setAccountDropdownOpen(false);
                   window.scrollTo(0, 0);
                 }} className="w-full text-left px-4 py-2.5 text-xs tracking-widest uppercase hover:bg-gray-50 transition-colors">Profile</button>
-                    <button onClick={() => {
-                  setCurrentPage('profile');
-                  setAccountDropdownOpen(false);
-                  window.scrollTo(0, 0);
-                }} className="w-full text-left px-4 py-2.5 text-xs tracking-widest uppercase hover:bg-gray-50 transition-colors">Orders</button>
                     <div className="h-[1px] bg-gray-100 my-1 w-full" />
                     <button onClick={() => {
                   setIsLoggedIn(false);
@@ -1111,6 +1370,21 @@ export default function App() {
   return <div className="min-h-screen bg-white overflow-x-hidden" style={{
     fontFamily: "'Cormorant Garamond', serif"
   }}>
+      {isVerifyingPayment && (
+        <div className="fixed inset-0 bg-white/90 backdrop-blur-md z-[1000] flex flex-col items-center justify-center text-center p-6">
+          <div className="space-y-6 max-w-md">
+            <div className="flex justify-center">
+              <div className="w-12 h-12 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <h2 className="text-2xl tracking-widest font-light text-black" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+              Verifying Payment Status
+            </h2>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400">
+              Communicating with PhonePe secure server...
+            </p>
+          </div>
+        </div>
+      )}
       {/* Slide-out Menu Backdrop — always mounted for smooth animation; pointer-events off when closed */}
       <motion.div initial={false} animate={{
       opacity: menuOpen ? 1 : 0
@@ -1358,9 +1632,22 @@ export default function App() {
             </div>
           </nav>
           <div className="px-6 sm:px-8 py-5 sm:py-6 border-t border-gray-200">
-            <p className="text-xs sm:text-sm text-gray-400 tracking-wider" style={{
-          fontWeight: 300
-        }}>1-800-UNICORN</p>
+            <button 
+              type="button" 
+              className="text-xs sm:text-sm text-gray-800 hover:text-gray-500 tracking-widest uppercase transition-colors text-left font-light w-full"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', outline: 'none' }}
+              onClick={() => {
+                setMenuOpen(false);
+                if (isLoggedIn) {
+                  openProfileTab('overview');
+                } else {
+                  setCurrentPage('login');
+                  window.scrollTo(0, 0);
+                }
+              }}
+            >
+              My Account
+            </button>
           </div>
         </motion.div>
 
@@ -1399,8 +1686,16 @@ export default function App() {
                 } else {
                   setCurrentPage('login');
                 }
-              }} className="relative z-[95] hover:text-gray-500 transition-colors flex items-center justify-center tap-target" aria-label="Account">
-                  {isLoggedIn && userInitial ? <span className="text-sm sm:text-base font-medium leading-none text-gray-800">{userInitial}</span> : <User size={18} className={`sm:w-[20px] sm:h-[20px] ${isLoggedIn ? "text-gray-500" : ""}`} />}
+              }} className="relative z-[95] flex items-center justify-center tap-target focus:outline-none" aria-label="Account">
+                  {isLoggedIn && userInitial ? (
+                    <span className="w-8 h-8 rounded-full bg-black text-white hover:bg-neutral-800 transition-colors flex items-center justify-center text-xs font-semibold uppercase tracking-wider shadow-sm">
+                      {userInitial}
+                    </span>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full border border-gray-200 bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-gray-100 hover:text-gray-900 transition-colors shadow-sm">
+                      <User size={16} />
+                    </div>
+                  )}
                 </button>
                 {accountDropdownOpen && isLoggedIn && <motion.div initial={{
                 opacity: 0,
@@ -1408,17 +1703,12 @@ export default function App() {
               }} animate={{
                 opacity: 1,
                 y: 0
-              }} className="absolute right-0 bottom-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
+              }} className="absolute right-0 top-[calc(100%+16px)] w-40 bg-white border border-gray-100 shadow-xl py-2 z-[100]">
                     <button onClick={() => {
                   setCurrentPage('profile');
                   setAccountDropdownOpen(false);
                   window.scrollTo(0, 0);
                 }} className="w-full text-left px-4 py-2.5 text-xs tracking-widest uppercase hover:bg-gray-50 transition-colors text-black">Profile</button>
-                    <button onClick={() => {
-                  setCurrentPage('profile');
-                  setAccountDropdownOpen(false);
-                  window.scrollTo(0, 0);
-                }} className="w-full text-left px-4 py-2.5 text-xs tracking-widest uppercase hover:bg-gray-50 transition-colors text-black">Orders</button>
                     <div className="h-[1px] bg-gray-100 my-1 w-full" />
                     <button onClick={() => {
                   setIsLoggedIn(false);
@@ -1669,7 +1959,7 @@ export default function App() {
           </div>
           
           {(() => {
-            const sliderProducts = dbProducts.filter(p => p.is_new_arrival);
+            const sliderProducts = dbJustUnveiled;
             if (sliderProducts.length === 0) return null;
             
             const maxIndex = Math.max(0, sliderProducts.length - 3); // Assumes 3 items per view on desktop
@@ -1683,19 +1973,35 @@ export default function App() {
                   >
                     {sliderProducts.map((item, index) => (
                       <div key={item.id} className="w-full sm:w-1/2 md:w-1/3 flex-shrink-0 px-3 sm:px-4 md:px-5">
-                        <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: index * 0.15 }} viewport={{ once: true }} className="group cursor-pointer h-full">
+                        <motion.div 
+                          initial={{ opacity: 0, y: 40 }} 
+                          whileInView={{ opacity: 1, y: 0 }} 
+                          transition={{ duration: 0.7, delay: index * 0.15 }} 
+                          viewport={{ once: true }} 
+                          className="group cursor-pointer h-full"
+                          onClick={() => {
+                            const matchingProduct = dbProducts.find(p => p.name.toLowerCase() === item.title.toLowerCase());
+                            if (matchingProduct) {
+                              openProductPage(matchingProduct, 'home');
+                            } else {
+                              openProductPage({
+                                id: 'just-unveiled-' + item.id,
+                                name: item.title,
+                                price: item.subtitle || '$0',
+                                image_url: item.image_url,
+                                description: 'Exquisite piece from the Just Unveiled collection.',
+                                stock: 10
+                              }, 'home');
+                            }
+                          }}
+                        >
                           <div className="relative mb-4 sm:mb-5 overflow-hidden">
-                            <ImageWithFallback src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : ''} alt={item.name} className="w-full h-64 sm:h-80 md:h-96 object-cover bg-gray-50 group-hover:scale-105 transition-transform duration-700" />
-                            <button onClick={e => { e.stopPropagation(); toggleWishlist(item.id); }} className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors z-10 tap-target">
-                              <Heart size={16} className={`sm:w-[18px] sm:h-[18px] ${wishlist.has(item.id) ? 'fill-black' : 'fill-none'}`} stroke="black" />
-                            </button>
-                            {/* Tiffany-style Add to Bag */}
-                            <button onClick={e => { e.stopPropagation(); addToCart(item); }} className="absolute bottom-0 left-0 right-0 z-10 py-3 sm:py-4 text-[10px] sm:text-xs tracking-[0.25em] uppercase transition-all duration-300 translate-y-full group-hover:translate-y-0" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400, background: addedIds.has(item.id) ? '#1a1a1a' : '#000', color: '#fff' }}>
-                              {addedIds.has(item.id) ? '✓ Added to Bag' : 'Add to Bag'}
+                            <ImageWithFallback src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : ''} alt={item.title} className="w-full h-64 sm:h-80 md:h-96 object-cover bg-gray-50 group-hover:scale-105 transition-transform duration-700" />
+                            <button onClick={e => { e.stopPropagation(); toggleWishlist('just-unveiled-' + item.id); }} className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors z-10 tap-target">
+                              <Heart size={16} className={`sm:w-[18px] sm:h-[18px] ${wishlist.has('just-unveiled-' + item.id) ? 'fill-black' : 'fill-none'}`} stroke="black" />
                             </button>
                           </div>
-                          <h3 className="text-lg sm:text-xl mb-2" style={{ fontWeight: 400 }}>{item.name}</h3>
-                          <p className="text-sm text-gray-500">${item.price}</p>
+                          <h3 className="text-lg sm:text-xl mb-2" style={{ fontWeight: 400 }}>{item.title}</h3>
                         </motion.div>
                       </div>
                     ))}
@@ -1703,20 +2009,24 @@ export default function App() {
                 </div>
                 
                 {/* Navigation Arrows */}
-                <button 
-                  onClick={() => setSliderIndex(Math.max(0, sliderIndex - 1))}
-                  disabled={sliderIndex === 0}
-                  className={`absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur border border-slate-200 p-2 sm:p-3 rounded-full shadow-sm transition-all z-10 ${sliderIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:scale-110'}`}
-                >
-                  <ChevronLeft size={20} className="text-slate-800" />
-                </button>
-                <button 
-                  onClick={() => setSliderIndex(Math.min(maxIndex, sliderIndex + 1))}
-                  disabled={sliderIndex >= maxIndex}
-                  className={`absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur border border-slate-200 p-2 sm:p-3 rounded-full shadow-sm transition-all z-10 ${sliderIndex >= maxIndex ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:scale-110'}`}
-                >
-                  <ChevronRight size={20} className="text-slate-800" />
-                </button>
+                {sliderProducts.length > 3 && (
+                  <>
+                    <button 
+                      onClick={() => setSliderIndex(Math.max(0, sliderIndex - 1))}
+                      disabled={sliderIndex === 0}
+                      className={`absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur border border-slate-200 p-2 sm:p-3 rounded-full shadow-sm transition-all z-10 ${sliderIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:scale-110'}`}
+                    >
+                      <ChevronLeft size={20} className="text-slate-800" />
+                    </button>
+                    <button 
+                      onClick={() => setSliderIndex(Math.min(maxIndex, sliderIndex + 1))}
+                      disabled={sliderIndex >= maxIndex}
+                      className={`absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur border border-slate-200 p-2 sm:p-3 rounded-full shadow-sm transition-all z-10 ${sliderIndex >= maxIndex ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white hover:scale-110'}`}
+                    >
+                      <ChevronRight size={20} className="text-slate-800" />
+                    </button>
+                  </>
+                )}
               </div>
             );
           })()}
@@ -1741,7 +2051,6 @@ export default function App() {
           }} className="w-full md:w-5/12 h-[80vh] min-h-[600px] max-h-[900px] relative group overflow-hidden">
               <div className="absolute inset-0 bg-[#111] z-0"></div>
               <ImageWithFallback src={resolveManagedImage(homeVisionSection.primary_image_url) || ourStoryModel} alt="Unicorn Jewels Model" className="w-full h-full object-cover object-center absolute inset-0 z-10" />
-              <ImageWithFallback src={resolveManagedImage(homeVisionSection.secondary_image_url) || "https://images.unsplash.com/photo-1706955008775-c00874bb4d4b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxqZXdlbGVyJTIwY3JhZnRpbmclMjBjdXN0b20lMjByaW5nJTIwd29ya3Nob3B8ZW58MXx8fHwxNzc0MDcwNDEwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"} alt="Master Jeweler" className="w-full h-full object-cover object-center absolute inset-0 mix-blend-luminosity opacity-80" />
               <div className="absolute inset-0 border border-white/10 z-20 m-6 lg:m-10 pointer-events-none mix-blend-overlay"></div>
             </motion.div>
             <motion.div initial={{
@@ -1945,8 +2254,10 @@ export default function App() {
       {/* Personal Styling & Art of Giving - Combined Editorial Spread */}
       <section className="py-32 px-6 bg-[#fafafa]">
         <div className="max-w-[1400px] mx-auto">
-          {dbServices.map((service, index) => (
-            <div key={service.id} className={`flex flex-col md:flex-row items-center gap-12 lg:gap-24 ${index < dbServices.length - 1 ? 'mb-40' : ''}`}>
+          {dbServices
+            .filter((service) => (service.button_link || '').toLowerCase() !== 'gift-guide')
+            .map((service, index, filteredServices) => (
+              <div key={service.id} className={`flex flex-col md:flex-row items-center gap-12 lg:gap-24 ${index < filteredServices.length - 1 ? 'mb-40' : ''}`}>
               
               {/* Text Content */}
               <motion.div 

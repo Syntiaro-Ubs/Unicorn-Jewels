@@ -32,11 +32,43 @@ async function migrateUsers() {
                 price VARCHAR(50) NOT NULL,
                 image_url TEXT,
                 status VARCHAR(50) DEFAULT 'Processing',
+                product_id VARCHAR(100) NULL,
+                quantity INT DEFAULT 1,
+                selected_size VARCHAR(50) NULL,
                 order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         `);
         console.log('User orders table created or already exists.');
+
+        // Add columns if they don't exist, and ensure type is VARCHAR(100)
+        try {
+            await db.query('ALTER TABLE user_orders ADD COLUMN product_id VARCHAR(100) NULL');
+            console.log('product_id column added to user_orders table.');
+        } catch (e) {
+            // Ignore if column already exists
+        }
+
+        try {
+            await db.query('ALTER TABLE user_orders MODIFY COLUMN product_id VARCHAR(100) NULL');
+            console.log('product_id column modified to VARCHAR(100) in user_orders table.');
+        } catch (e) {
+            // Ignore
+        }
+
+        try {
+            await db.query('ALTER TABLE user_orders ADD COLUMN quantity INT DEFAULT 1');
+            console.log('quantity column added to user_orders table.');
+        } catch (e) {
+            // Ignore if column already exists
+        }
+
+        try {
+            await db.query('ALTER TABLE user_orders ADD COLUMN selected_size VARCHAR(50) NULL');
+            console.log('selected_size column added to user_orders table.');
+        } catch (e) {
+            // Ignore if column already exists
+        }
 
         await db.query(`
             CREATE TABLE IF NOT EXISTS user_addresses (
@@ -54,6 +86,36 @@ async function migrateUsers() {
             )
         `);
         console.log('User addresses table created or already exists.');
+
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS order_tracking (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                order_id VARCHAR(50) NOT NULL,
+                tracking_number VARCHAR(100) NOT NULL UNIQUE,
+                carrier VARCHAR(50) DEFAULT 'FedEx',
+                status VARCHAR(100) DEFAULT 'Label Created',
+                estimated_delivery TIMESTAMP NULL,
+                actual_delivery TIMESTAMP NULL,
+                shipment_date TIMESTAMP NULL,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX (tracking_number)
+            )
+        `);
+        console.log('Order tracking table created or already exists.');
+
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS order_tracking_events (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                tracking_id INT NOT NULL,
+                event_timestamp TIMESTAMP NOT NULL,
+                location VARCHAR(255) DEFAULT 'Unknown',
+                description TEXT NOT NULL,
+                status_code VARCHAR(10) NULL,
+                FOREIGN KEY (tracking_id) REFERENCES order_tracking(id) ON DELETE CASCADE,
+                INDEX (event_timestamp)
+            )
+        `);
+        console.log('Order tracking events table created or already exists.');
 
     } catch (error) {
         console.error('Migration failed:', error);

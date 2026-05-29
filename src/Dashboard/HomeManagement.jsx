@@ -22,6 +22,7 @@ export default function HomeManagement() {
   const [categories, setCategories] = useState([]);
   const [editorials, setEditorials] = useState([]);
   const [diamondEditItems, setDiamondEditItems] = useState([]);
+  const [justUnveiledItems, setJustUnveiledItems] = useState([]);
   const [services, setServices] = useState([]);
   const [instagramPosts, setInstagramPosts] = useState([]);
   const [products, setProducts] = useState([]);
@@ -43,6 +44,13 @@ export default function HomeManagement() {
   const [isDiamondModalOpen, setIsDiamondModalOpen] = useState(false);
   const [editingDiamond, setEditingDiamond] = useState(null);
   const [diamondFormData, setDiamondFormData] = useState({
+    title: '', subtitle: '', image_url: '', order_index: 0
+  });
+
+  // Just Unveiled Modal State
+  const [isJustUnveiledModalOpen, setIsJustUnveiledModalOpen] = useState(false);
+  const [editingJustUnveiled, setEditingJustUnveiled] = useState(null);
+  const [justUnveiledFormData, setJustUnveiledFormData] = useState({
     title: '', subtitle: '', image_url: '', order_index: 0
   });
   
@@ -71,6 +79,7 @@ export default function HomeManagement() {
     fetchCategories();
     fetchEditorials();
     fetchDiamondEdit();
+    fetchJustUnveiled();
     fetchServices();
     fetchInstagramPosts();
     fetchProducts();
@@ -103,6 +112,15 @@ export default function HomeManagement() {
       if (response.ok) setDiamondEditItems(await response.json());
     } catch (error) {
       console.error('Error fetching diamond edit items:', error);
+    }
+  };
+
+  const fetchJustUnveiled = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/just-unveiled');
+      if (response.ok) setJustUnveiledItems(await response.json());
+    } catch (error) {
+      console.error('Error fetching just unveiled items:', error);
     }
   };
   
@@ -313,11 +331,69 @@ export default function HomeManagement() {
       setSaveStatus('error');
     }
   };
+
+  // JUST UNVEILED HANDLERS
+  const openAddJustUnveiledModal = () => {
+    if (justUnveiledItems.length >= 3) {
+      alert('You can only add up to 3 cards in the Just Unveiled section.');
+      return;
+    }
+    setEditingJustUnveiled(null);
+    setJustUnveiledFormData({ title: '', subtitle: '', image_url: '', order_index: justUnveiledItems.length + 1 });
+    setSelectedFile(null);
+    setPreviewUrl('');
+    setIsJustUnveiledModalOpen(true);
+  };
+
+  const openEditJustUnveiledModal = (item) => {
+    setEditingJustUnveiled(item);
+    setJustUnveiledFormData({ title: item.title, subtitle: item.subtitle || '', image_url: item.image_url || '', order_index: item.order_index });
+    setSelectedFile(null);
+    setPreviewUrl(item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : '');
+    setIsJustUnveiledModalOpen(true);
+  };
+
+  const handleDeleteJustUnveiled = async (id, title) => {
+    if (!window.confirm(`Are you sure you want to delete the Just Unveiled item "${title}"?`)) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/just-unveiled/${id}`, { method: 'DELETE' });
+      if (response.ok) fetchJustUnveiled();
+    } catch (error) {
+      console.error('Error deleting just unveiled item:', error);
+    }
+  };
+
+  const handleSaveJustUnveiled = async (e) => {
+    e.preventDefault();
+    setSaveStatus('saving');
+
+    const submitData = new FormData();
+    submitData.append('title', justUnveiledFormData.title);
+    submitData.append('subtitle', justUnveiledFormData.subtitle);
+    submitData.append('order_index', justUnveiledFormData.order_index);
+    submitData.append('image_url', justUnveiledFormData.image_url);
+    if (selectedFile) submitData.append('image', selectedFile);
+
+    try {
+      const url = editingJustUnveiled ? `http://localhost:5000/api/just-unveiled/${editingJustUnveiled.id}` : `http://localhost:5000/api/just-unveiled`;
+      const response = await fetch(url, { method: editingJustUnveiled ? 'PUT' : 'POST', body: submitData });
+      if (response.ok) {
+        setSaveStatus('success');
+        setTimeout(() => { setSaveStatus(null); setIsJustUnveiledModalOpen(false); fetchJustUnveiled(); }, 1500);
+      } else {
+        const errData = await response.json();
+        alert(errData.message || 'Error saving Just Unveiled item');
+        setSaveStatus('error');
+      }
+    } catch (error) {
+      setSaveStatus('error');
+    }
+  };
   
   // SERVICES HANDLERS
   const openAddServiceModal = () => {
     setEditingService(null);
-    setServiceFormData({ tag: '', title: '', description: '', button_text: '', button_link: '', image_url: '', is_reversed: false, order_index: services.length + 1 });
+    setServiceFormData({ tag: 'CONCIERGE', title: '', description: '', button_text: '', button_link: '', image_url: '', is_reversed: false, order_index: services.length + 1 });
     setSelectedFile(null);
     setPreviewUrl('');
     setIsServiceModalOpen(true);
@@ -326,7 +402,7 @@ export default function HomeManagement() {
   const openEditServiceModal = (service) => {
     setEditingService(service);
     setServiceFormData({ 
-      tag: service.tag, title: service.title, description: service.description, button_text: service.button_text, 
+      tag: service.tag || 'CONCIERGE', title: service.title, description: service.description, button_text: service.button_text, 
       button_link: service.button_link || '', image_url: service.image_url || '', is_reversed: !!service.is_reversed, order_index: service.order_index 
     });
     setSelectedFile(null);
@@ -449,14 +525,9 @@ export default function HomeManagement() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
           <h3 className="text-3xl font-bold text-slate-800 tracking-tight">Home Page Management</h3>
-          <p className="text-slate-500 text-sm mt-1 font-medium">Manage homepage sections, collections, services, and the Diamond Edit.</p>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Manage homepage sections, collections, concierge, and the Diamond Edit.</p>
         </div>
       </div>
-
-      <HomeSectionsManagement
-        giftGuideSection={giftGuideSection}
-        onEditGiftGuideSection={openGiftGuideSectionModal}
-      />
 
       {/* CURATED COLLECTIONS SECTION */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -498,41 +569,94 @@ export default function HomeManagement() {
         </div>
       </div>
 
-      {/* JUST UNVEILED SLIDER SECTION */}
+      {/* EDITORIAL FEATURES SECTION */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-12">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <h4 className="font-bold text-slate-800">Editorial Features</h4>
+            <span className="px-2.5 py-1 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold">{editorials.length}</span>
+          </div>
+          <button onClick={openAddEditorialModal} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all">
+            <Plus size={16} /> Add Editorial
+          </button>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {editorials.map((editorial) => (
+            <div key={editorial.id} className="p-6 flex flex-col md:flex-row gap-6 items-center hover:bg-slate-50/50 transition-colors group">
+              <div className="w-full md:w-48 aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+                <ImageWithFallback src={editorial.image_url ? (editorial.image_url.startsWith('http') ? editorial.image_url : `http://localhost:5000${editorial.image_url}`) : ''} alt={editorial.title} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-3">
+                  <h4 className="text-lg font-bold text-slate-800">{editorial.title}</h4>
+                  {editorial.is_reversed ? (
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><ArrowRightLeft size={10} /> Image Right</span>
+                  ) : (
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><LayoutTemplate size={10} /> Image Left</span>
+                  )}
+                </div>
+                <p className="text-sm text-slate-500 line-clamp-2">{editorial.description}</p>
+                <div className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-wider">Button: {editorial.button_text}</div>
+              </div>
+              <div className="flex flex-row md:flex-col gap-2 shrink-0 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => openEditEditorialModal(editorial)} className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium text-sm w-full"><Edit2 size={16} /> Edit</button>
+                <button onClick={() => handleDeleteEditorial(editorial.id, editorial.title)} className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all font-medium text-sm w-full"><Trash2 size={16} /> Delete</button>
+              </div>
+            </div>
+          ))}
+          {editorials.length === 0 && <div className="py-16 text-center text-slate-400 italic">No editorial features found.</div>}
+        </div>
+      </div>
+
+      {/* JUST UNVEILED MANAGEMENT SECTION */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-8 mb-8">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <h4 className="font-bold text-slate-800">Home Page Slider (Just Unveiled)</h4>
-            <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">
-              {products.filter(p => p.is_new_arrival).length} Selected
+            <h4 className="font-bold text-slate-800">Just Unveiled (Grid Cards)</h4>
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${justUnveiledItems.length >= 3 ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-600'}`}>
+              {justUnveiledItems.length} / 3 Cards
             </span>
           </div>
+          <button 
+            onClick={openAddJustUnveiledModal} 
+            disabled={justUnveiledItems.length >= 3}
+            className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all ${
+              justUnveiledItems.length >= 3 
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none' 
+                : 'bg-blue-600 hover:bg-blue-500 text-white'
+            }`}
+          >
+            <Plus size={16} /> Add Card
+          </button>
         </div>
-        <div className="p-6">
-          <p className="text-sm text-slate-500 mb-4">Select which products should appear in the dynamic horizontal slider on the home page.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-            {products.map(product => (
-              <div 
-                key={product.id} 
-                onClick={() => toggleSliderStatus(product.id, product.is_new_arrival)}
-                className={`p-3 border rounded-xl cursor-pointer transition-all flex items-center gap-3 ${product.is_new_arrival ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
-              >
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 shrink-0">
-                  <ImageWithFallback src={product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `http://localhost:5000${product.image_url}`) : ''} alt={product.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h5 className="font-bold text-slate-800 text-sm truncate">{product.name}</h5>
-                  <p className="text-xs text-slate-500 truncate">${product.price}</p>
-                </div>
-                <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${product.is_new_arrival ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
-                  {product.is_new_arrival && <CheckCircle size={12} className="text-white" />}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 p-8">
+          {justUnveiledItems.map((item) => (
+            <div key={item.id} className="group relative bg-white border border-slate-200 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-500">
+              <div className="aspect-[3/4] w-full bg-slate-50 relative overflow-hidden">
+                <ImageWithFallback src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : ''} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                  <div className="flex gap-3 justify-center">
+                    <button onClick={() => openEditJustUnveiledModal(item)} className="bg-white/20 backdrop-blur-md text-white p-3 rounded-2xl hover:bg-white hover:text-slate-900 transition-all shadow-lg"><Edit2 size={20} /></button>
+                    <button onClick={() => handleDeleteJustUnveiled(item.id, item.title)} className="bg-white/20 backdrop-blur-md text-white p-3 rounded-2xl hover:bg-red-500 transition-all shadow-lg"><Trash2 size={20} /></button>
+                  </div>
                 </div>
               </div>
-            ))}
-            {products.length === 0 && <div className="col-span-full text-slate-400 italic text-sm">No products found.</div>}
-          </div>
+              <div className="p-6 text-center">
+                <h4 className="text-xl font-bold text-slate-800 tracking-tight">{item.title}</h4>
+                <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500">
+                  <LayoutTemplate size={10} /> Position {item.order_index}
+                </div>
+              </div>
+            </div>
+          ))}
+          {justUnveiledItems.length === 0 && <div className="col-span-full py-16 text-center text-slate-400 italic">No Just Unveiled cards found. Click "Add Card" to create one (max 3).</div>}
         </div>
       </div>
+
+      <HomeSectionsManagement
+        giftGuideSection={giftGuideSection}
+        onEditGiftGuideSection={openGiftGuideSectionModal}
+      />
 
       {/* FEATURED COLLECTIONS SECTION (Eternally Desired) */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8">
@@ -570,23 +694,56 @@ export default function HomeManagement() {
         </div>
       </div>
 
+      {/* DIAMOND EDIT SECTION */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <h4 className="font-bold text-slate-800">The Diamond Edit (Grid Cards)</h4>
+            <span className="px-2.5 py-1 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold">{diamondEditItems.length}</span>
+          </div>
+          <button onClick={openAddDiamondModal} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all">
+            <Plus size={16} /> Add Card
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 p-8">
+          {diamondEditItems.map((item) => (
+            <div key={item.id} className="group relative bg-white border border-slate-200 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-500">
+              <div className="aspect-[3/4] w-full bg-slate-50 relative overflow-hidden">
+                <ImageWithFallback src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : ''} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
+                  <div className="flex gap-3 justify-center">
+                    <button onClick={() => openEditDiamondModal(item)} className="bg-white/20 backdrop-blur-md text-white p-3 rounded-2xl hover:bg-white hover:text-slate-900 transition-all shadow-lg"><Edit2 size={20} /></button>
+                    <button onClick={() => handleDeleteDiamond(item.id, item.title)} className="bg-white/20 backdrop-blur-md text-white p-3 rounded-2xl hover:bg-red-500 transition-all shadow-lg"><Trash2 size={20} /></button>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 text-center">
+                <h4 className="text-xl font-bold text-slate-800 tracking-tight">{item.title}</h4>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">{item.subtitle}</p>
+                <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500">
+                  <LayoutTemplate size={10} /> Position {item.order_index}
+                </div>
+              </div>
+            </div>
+          ))}
+          {diamondEditItems.length === 0 && <div className="col-span-full py-16 text-center text-slate-400 italic">No diamond edit items found.</div>}
+        </div>
+      </div>
+
       {/* SERVICES MANAGEMENT SECTION */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-12">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/50">
           <div>
             <div className="flex items-center gap-3">
-              <h4 className="font-bold text-slate-800">Services & Concierge</h4>
+              <h4 className="font-bold text-slate-800">Concierge</h4>
               <span className="px-2.5 py-1 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold">{services.length}</span>
-              {giftGuideSection && (
-                <span className="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold">Gift Guide Section Ready</span>
-              )}
             </div>
             <p className="text-xs text-slate-500 mt-2">
-              The homepage Gift Guide block is the service entry whose link is set to <span className="font-semibold text-slate-700">gift-guide</span>.
+              Manage the homepage concierge blocks and stylist appointment sections.
             </p>
           </div>
           <button onClick={openAddServiceModal} className="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all">
-            <Plus size={16} /> Add Service
+            <Plus size={16} /> Add Concierge
           </button>
         </div>
         <div className="divide-y divide-slate-100">
@@ -651,81 +808,6 @@ export default function HomeManagement() {
             ))}
             {instagramPosts.length === 0 && <div className="col-span-full py-12 text-center text-slate-400 italic">No Instagram posts found.</div>}
           </div>
-        </div>
-      </div>
-
-      {/* EDITORIAL FEATURES SECTION */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-12">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/50">
-          <div className="flex items-center gap-3">
-            <h4 className="font-bold text-slate-800">Editorial Features</h4>
-            <span className="px-2.5 py-1 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold">{editorials.length}</span>
-          </div>
-          <button onClick={openAddEditorialModal} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all">
-            <Plus size={16} /> Add Editorial
-          </button>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {editorials.map((editorial) => (
-            <div key={editorial.id} className="p-6 flex flex-col md:flex-row gap-6 items-center hover:bg-slate-50/50 transition-colors group">
-              <div className="w-full md:w-48 aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                <ImageWithFallback src={editorial.image_url ? (editorial.image_url.startsWith('http') ? editorial.image_url : `http://localhost:5000${editorial.image_url}`) : ''} alt={editorial.title} className="w-full h-full object-cover" />
-              </div>
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-3">
-                  <h4 className="text-lg font-bold text-slate-800">{editorial.title}</h4>
-                  {editorial.is_reversed ? (
-                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><ArrowRightLeft size={10} /> Image Right</span>
-                  ) : (
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><LayoutTemplate size={10} /> Image Left</span>
-                  )}
-                </div>
-                <p className="text-sm text-slate-500 line-clamp-2">{editorial.description}</p>
-                <div className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-wider">Button: {editorial.button_text}</div>
-              </div>
-              <div className="flex flex-row md:flex-col gap-2 shrink-0 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openEditEditorialModal(editorial)} className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all font-medium text-sm w-full"><Edit2 size={16} /> Edit</button>
-                <button onClick={() => handleDeleteEditorial(editorial.id, editorial.title)} className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all font-medium text-sm w-full"><Trash2 size={16} /> Delete</button>
-              </div>
-            </div>
-          ))}
-          {editorials.length === 0 && <div className="py-16 text-center text-slate-400 italic">No editorial features found.</div>}
-        </div>
-      </div>
-
-      {/* DIAMOND EDIT SECTION */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/50">
-          <div className="flex items-center gap-3">
-            <h4 className="font-bold text-slate-800">The Diamond Edit (Grid Cards)</h4>
-            <span className="px-2.5 py-1 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold">{diamondEditItems.length}</span>
-          </div>
-          <button onClick={openAddDiamondModal} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all">
-            <Plus size={16} /> Add Card
-          </button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 p-8">
-          {diamondEditItems.map((item) => (
-            <div key={item.id} className="group relative bg-white border border-slate-200 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-500">
-              <div className="aspect-[3/4] w-full bg-slate-50 relative overflow-hidden">
-                <ImageWithFallback src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : ''} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
-                  <div className="flex gap-3 justify-center">
-                    <button onClick={() => openEditDiamondModal(item)} className="bg-white/20 backdrop-blur-md text-white p-3 rounded-2xl hover:bg-white hover:text-slate-900 transition-all shadow-lg"><Edit2 size={20} /></button>
-                    <button onClick={() => handleDeleteDiamond(item.id, item.title)} className="bg-white/20 backdrop-blur-md text-white p-3 rounded-2xl hover:bg-red-500 transition-all shadow-lg"><Trash2 size={20} /></button>
-                  </div>
-                </div>
-              </div>
-              <div className="p-6 text-center">
-                <h4 className="text-xl font-bold text-slate-800 tracking-tight">{item.title}</h4>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">{item.subtitle}</p>
-                <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500">
-                  <LayoutTemplate size={10} /> Position {item.order_index}
-                </div>
-              </div>
-            </div>
-          ))}
-          {diamondEditItems.length === 0 && <div className="col-span-full py-16 text-center text-slate-400 italic">No diamond edit items found.</div>}
         </div>
       </div>
 
@@ -937,6 +1019,70 @@ export default function HomeManagement() {
         )}
       </AnimatePresence>
 
+      {/* JUST UNVEILED MODAL */}
+      <AnimatePresence>
+        {isJustUnveiledModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsJustUnveiledModalOpen(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="text-xl font-bold text-slate-800">{editingJustUnveiled ? 'Edit Just Unveiled Item' : 'Add Just Unveiled Item'}</h3>
+                <button onClick={() => setIsJustUnveiledModalOpen(false)} className="text-slate-400 hover:text-slate-800 transition-colors p-2 rounded-full hover:bg-white shadow-sm"><X size={20} /></button>
+              </div>
+              <form onSubmit={handleSaveJustUnveiled} className="flex-1 overflow-y-auto p-8 space-y-6">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Card Title</label>
+                    <input type="text" value={justUnveiledFormData.title} onChange={(e) => setJustUnveiledFormData({...justUnveiledFormData, title: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all font-medium" placeholder="e.g. Sapphire Cushion Ring" required />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Display Order</label>
+                    <input type="number" value={justUnveiledFormData.order_index} onChange={(e) => setJustUnveiledFormData({...justUnveiledFormData, order_index: parseInt(e.target.value)})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all font-medium" required />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Card Image</label>
+                    <div className="relative group aspect-[3/4] w-full max-w-[240px] bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center overflow-hidden transition-all hover:border-blue-400 mx-auto">
+                      {previewUrl ? (
+                        <>
+                          <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center gap-2 backdrop-blur-sm">
+                            <label className="cursor-pointer bg-white text-slate-800 px-4 py-2 rounded-xl hover:scale-105 transition-all shadow-lg font-bold flex items-center gap-2 text-[10px] uppercase w-32 justify-center">
+                              <Upload size={14} /> Change
+                              <input type="file" className="hidden" accept="image/*" onChange={(e) => { const file = e.target.files[0]; if (file) { setSelectedFile(file); setPreviewUrl(URL.createObjectURL(file)); } }} />
+                            </label>
+                            <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPreviewUrl(''); setSelectedFile(null); setJustUnveiledFormData(prev => ({ ...prev, image_url: '' })); }} className="bg-white text-red-600 px-4 py-2 rounded-xl hover:scale-105 transition-all shadow-lg font-bold flex items-center gap-2 text-[10px] uppercase w-32 justify-center">
+                              <Trash2 size={14} /> Remove
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <label className="cursor-pointer flex flex-col items-center gap-4 group w-full h-full justify-center">
+                          <div className="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform"><ImageIcon size={24} className="text-slate-400" /></div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Select Image</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={(e) => { const file = e.target.files[0]; if (file) { setSelectedFile(file); setPreviewUrl(URL.createObjectURL(file)); } }} required={!editingJustUnveiled && !justUnveiledFormData.image_url} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </form>
+              <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  {saveStatus === 'success' && <span className="text-emerald-600 text-xs font-bold flex items-center gap-1"><CheckCircle size={14} /> Saved!</span>}
+                  {saveStatus === 'error' && <span className="text-red-600 text-xs font-bold flex items-center gap-1"><AlertCircle size={14} /> Error!</span>}
+                </div>
+                <div className="flex gap-4">
+                  <button onClick={() => setIsJustUnveiledModalOpen(false)} className="px-6 py-3 text-slate-500 hover:text-slate-800 font-bold transition-colors">Cancel</button>
+                  <button onClick={handleSaveJustUnveiled} disabled={saveStatus === 'saving'} className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50">
+                    {saveStatus === 'saving' ? 'Saving...' : <><Save size={18} /> Save Item</>}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* SERVICE MODAL */}
       <AnimatePresence>
         {isServiceModalOpen && (
@@ -944,15 +1090,15 @@ export default function HomeManagement() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsServiceModalOpen(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
               <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h3 className="text-xl font-bold text-slate-800">{editingService ? 'Edit Service' : 'Add New Service'}</h3>
+                <h3 className="text-xl font-bold text-slate-800">{editingService ? 'Edit Concierge Item' : 'Add New Concierge Item'}</h3>
                 <button onClick={() => setIsServiceModalOpen(false)} className="text-slate-400 hover:text-slate-800 transition-colors p-2 rounded-full hover:bg-white shadow-sm"><X size={20} /></button>
               </div>
               <form onSubmit={handleSaveService} className="flex-1 overflow-y-auto p-8 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Tag (e.g. CONCIERGE)</label>
-                      <input type="text" value={serviceFormData.tag} onChange={(e) => setServiceFormData({...serviceFormData, tag: e.target.value.toUpperCase()})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 outline-none focus:border-amber-500 focus:bg-white transition-all font-medium" placeholder="e.g. CONCIERGE" required />
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Tag</label>
+                      <input type="text" value="CONCIERGE" disabled className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3 text-slate-400 outline-none transition-all font-medium cursor-not-allowed" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Title</label>
@@ -1014,7 +1160,7 @@ export default function HomeManagement() {
                 <div className="flex gap-4">
                   <button onClick={() => setIsServiceModalOpen(false)} className="px-6 py-3 text-slate-500 hover:text-slate-800 font-bold transition-colors">Cancel</button>
                   <button onClick={handleSaveService} disabled={saveStatus === 'saving'} className="bg-amber-600 hover:bg-amber-500 text-white px-10 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-amber-600/20 transition-all disabled:opacity-50">
-                    {saveStatus === 'saving' ? 'Saving...' : <><Save size={18} /> Save Service</>}
+                    {saveStatus === 'saving' ? 'Saving...' : <><Save size={18} /> Save Concierge</>}
                   </button>
                 </div>
               </div>

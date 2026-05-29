@@ -144,57 +144,26 @@ function OverviewTab({ user, onEdit }) {
     duration: 0.6,
     ease: [0.22, 1, 0.36, 1]
   }} className="flex flex-col gap-16 h-full">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 h-full">
-        {/* Left 40% - Profile details */}
-        <div className="lg:col-span-5 flex flex-col">
-          <div className="border border-gray-200 p-10 md:p-12 h-full flex flex-col relative">
-            <h2 className="font-serif text-3xl mb-12">Personal Information</h2>
-            <div className="space-y-10 flex-1">
-              <div>
-                <p className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-3">Name</p>
-                <p className="text-sm tracking-wide">{fullName}</p>
-              </div>
-              <div>
-                <p className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-3">Email</p>
-                <p className="text-sm tracking-wide">{email}</p>
-              </div>
-              <div>
-                <p className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-3">Phone</p>
-                <p className="text-sm tracking-wide">{phone}</p>
-              </div>
-              <div className="pt-12 mt-auto">
-                <button onClick={onEdit} className="text-[10px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
-                  Edit Details
-                </button>
-              </div>
+      <div className="max-w-2xl w-full flex flex-col">
+        <div className="border border-gray-200 p-10 md:p-12 h-full flex flex-col relative">
+          <h2 className="font-serif text-3xl mb-12">Personal Information</h2>
+          <div className="space-y-10 flex-1">
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-3">Name</p>
+              <p className="text-sm tracking-wide">{fullName}</p>
             </div>
-          </div>
-        </div>
-
-        {/* Right 60% - Private Concierge */}
-        <div className="lg:col-span-7 flex flex-col">
-          <div className="bg-[#fcfcfc] border border-gray-100 p-10 md:p-12 h-full flex flex-col relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gray-100 rounded-full blur-3xl -mr-32 -mt-32 transition-all duration-1000 group-hover:bg-[#f0f0f0]"></div>
-            <div className="relative z-10 flex flex-col h-full">
-              <div className="flex justify-between items-start mb-10">
-                <h2 className="font-serif text-3xl">Private Concierge</h2>
-                <span className="text-[9px] uppercase tracking-[0.2em] bg-black text-white px-4 py-1.5">Active</span>
-              </div>
-              <p className="text-sm text-gray-500 leading-relaxed mb-16 max-w-[400px]">
-                Your dedicated jewelry advisor is available to assist you with bespoke requests, private viewings, and curating your personal collection to your exacting standards.
-              </p>
-              <div className="flex items-center gap-6 mt-auto">
-                <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 border border-gray-200">
-                  <ImageWithFallback src={imgPortrait} alt="Julian Sterling" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <p className="text-[11px] tracking-[0.2em] uppercase mb-1.5 font-medium">Julian Sterling</p>
-                  <p className="text-[9px] uppercase tracking-[0.2em] text-[#C0C0C0]">Senior Advisor</p>
-                </div>
-                <button className="ml-auto bg-black text-white text-[9px] uppercase tracking-[0.2em] py-4 px-8 hover:bg-gray-800 transition-colors">
-                  Message
-                </button>
-              </div>
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-3">Email</p>
+              <p className="text-sm tracking-wide">{email}</p>
+            </div>
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-3">Phone</p>
+              <p className="text-sm tracking-wide">{phone}</p>
+            </div>
+            <div className="pt-12 mt-auto">
+              <button onClick={onEdit} className="text-[10px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
+                Edit Details
+              </button>
             </div>
           </div>
         </div>

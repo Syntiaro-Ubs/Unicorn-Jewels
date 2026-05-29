@@ -171,9 +171,30 @@ export function ProductPage({
 
             {/* Action Buttons */}
             <div className="flex gap-3 sm:gap-4 mb-12 sm:mb-14 md:mb-16">
-              <button onClick={() => addToCart(product)} className={`flex-1 py-3 sm:py-4 text-xs tracking-[0.2em] uppercase transition-all duration-300 border tap-target ${addedIds.has(product.id) ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white' : 'bg-black border-black text-white hover:bg-gray-800'}`}>
-                {addedIds.has(product.id) ? 'Added to Bag' : 'Add to Bag'}
-              </button>
+              {(() => {
+                const currentVariant = variants.find(v => v.size === selectedSize);
+                const sizeStock = currentVariant ? currentVariant.stock : (variants.length > 0 ? 0 : product.stock);
+                
+                if (sizeStock === 0) {
+                  return (
+                    <button 
+                      onClick={() => alert(`Notification Signup Successful!\n\nWe will notify you as soon as "${product.name}"${selectedSize ? ` (Size: ${selectedSize})` : ''} is back in stock.`)} 
+                      className="flex-1 py-3 sm:py-4 text-xs tracking-[0.2em] uppercase transition-all duration-300 border tap-target bg-[#f1f5f9] border-[#cbd5e1] text-[#475569] hover:bg-[#e2e8f0]"
+                    >
+                      Notify Me
+                    </button>
+                  );
+                }
+                
+                return (
+                  <button 
+                    onClick={() => addToCart(product, selectedSize, sizeStock)} 
+                    className={`flex-1 py-3 sm:py-4 text-xs tracking-[0.2em] uppercase transition-all duration-300 border tap-target ${addedIds.has(product.id) ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white' : 'bg-black border-black text-white hover:bg-gray-800'}`}
+                  >
+                    {addedIds.has(product.id) ? 'Added to Bag' : 'Add to Bag'}
+                  </button>
+                );
+              })()}
               <button onClick={() => toggleWishlist(product.id)} className="w-12 sm:w-14 h-[44px] sm:h-[48px] border border-gray-200 flex items-center justify-center hover:border-black transition-colors shrink-0 tap-target">
                 <Heart size={14} strokeWidth={1.5} className={`sm:w-[16px] sm:h-[16px] ${wishlist.has(product.id) ? 'fill-black text-black' : 'text-black'}`} />
               </button>
@@ -296,15 +317,27 @@ export function ProductPage({
                     </button>
 
                     {/* Quick add button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addToCart(item);
-                      }}
-                      className="absolute inset-x-0 bottom-0 bg-black text-white py-2 sm:py-3 text-[9px] sm:text-[10px] tracking-[0.2em] uppercase translate-y-full group-hover:translate-y-0 transition-transform duration-300"
-                    >
-                      {addedIds.has(item.id) ? 'Added to Bag' : 'Quick Add'}
-                    </button>
+                    {item.stock === 0 ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          alert(`Notification Signup Successful!\n\nWe will notify you as soon as "${item.name}" is back in stock.`);
+                        }}
+                        className="absolute inset-x-0 bottom-0 bg-[#f1f5f9] text-[#475569] border-t border-[#cbd5e1] py-2 sm:py-3 text-[9px] sm:text-[10px] tracking-[0.2em] uppercase translate-y-full group-hover:translate-y-0 transition-transform duration-300"
+                      >
+                        Notify Me
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToCart(item);
+                        }}
+                        className="absolute inset-x-0 bottom-0 bg-black text-white py-2 sm:py-3 text-[9px] sm:text-[10px] tracking-[0.2em] uppercase translate-y-full group-hover:translate-y-0 transition-transform duration-300"
+                      >
+                        {addedIds.has(item.id) ? 'Added to Bag' : 'Quick Add'}
+                      </button>
+                    )}
                   </div>
 
                   <h3 className="text-xs sm:text-sm tracking-[0.1em] uppercase text-black mb-1 leading-snug" style={{

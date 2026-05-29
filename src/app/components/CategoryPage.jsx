@@ -688,20 +688,38 @@ export function CategoryPage({
                     </button>
 
                     {/* Tiffany-style "Add to Bag" — slides up from bottom */}
-                    <button onClick={e => {
-                  e.stopPropagation();
-                  addToCart(product);
-                }} className="absolute bottom-0 left-0 right-0 z-10 py-4 transition-all duration-300 ease-out translate-y-full group-hover:translate-y-0" style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontWeight: 400,
-                  fontSize: '10px',
-                  letterSpacing: '0.28em',
-                  textTransform: 'uppercase',
-                  background: addedIds.has(product.id) ? '#1a1a1a' : '#000',
-                  color: '#fff'
-                }}>
-                      {addedIds.has(product.id) ? '✓  Added to Bag' : 'Add to Bag'}
-                    </button>
+                    {product.stock === 0 ? (
+                      <button onClick={e => {
+                        e.stopPropagation();
+                        alert(`Notification Signup Successful!\n\nWe will notify you as soon as "${product.name}" is back in stock.`);
+                      }} className="absolute bottom-0 left-0 right-0 z-10 py-4 transition-all duration-300 ease-out translate-y-full group-hover:translate-y-0" style={{
+                        fontFamily: "'Cormorant Garamond', serif",
+                        fontWeight: 400,
+                        fontSize: '10px',
+                        letterSpacing: '0.28em',
+                        textTransform: 'uppercase',
+                        background: '#f1f5f9',
+                        color: '#475569',
+                        borderTop: '1px solid #cbd5e1'
+                      }}>
+                        Notify Me
+                      </button>
+                    ) : (
+                      <button onClick={e => {
+                        e.stopPropagation();
+                        addToCart(product);
+                      }} className="absolute bottom-0 left-0 right-0 z-10 py-4 transition-all duration-300 ease-out translate-y-full group-hover:translate-y-0" style={{
+                        fontFamily: "'Cormorant Garamond', serif",
+                        fontWeight: 400,
+                        fontSize: '10px',
+                        letterSpacing: '0.28em',
+                        textTransform: 'uppercase',
+                        background: addedIds.has(product.id) ? '#1a1a1a' : '#000',
+                        color: '#fff'
+                      }}>
+                        {addedIds.has(product.id) ? '✓  Added to Bag' : 'Add to Bag'}
+                      </button>
+                    )}
                   </div>
 
                   {/* Product info */}

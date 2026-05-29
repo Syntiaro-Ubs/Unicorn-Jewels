@@ -129,11 +129,49 @@ export function AppointmentPage({
     notes: ''
   });
   const [confirmed, setConfirmed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const totalSteps = 4;
   const serviceObj = services.find(s => s.id === selectedService);
   const locationObj = locations.find(l => l.id === selectedLocation);
   const daysInMonth = getDaysInMonth(calYear, calMonth);
   const firstDay = getFirstDay(calYear, calMonth);
+
+  const handleConfirmBooking = async () => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          service: serviceObj?.label || 'General Inquiry',
+          location: locationObj?.city || 'Unspecified Boutique',
+          date: formattedDate,
+          time: selectedTime,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          phone: form.phone,
+          notes: form.notes
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit booking');
+      }
+
+      const data = await response.json();
+      console.log('Booking successful, email sent:', data);
+      setConfirmed(true);
+    } catch (err) {
+      console.error('Error confirming booking:', err);
+      alert('Unable to send booking details to the owner at this time. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -488,8 +526,18 @@ export function AppointmentPage({
             fontWeight: 300
           }}>Contact our concierge</p>
           </div>
-          <button onClick={() => step < 4 ? setStep(s => s + 1) : setConfirmed(true)} disabled={!canProceed()} className="bg-black text-white px-10 py-4 text-xs tracking-[0.2em] uppercase flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-[#1a1a1a]">
-            <span>{step === 4 ? 'Confirm Booking' : 'Continue'}</span>
+          <button 
+            onClick={() => {
+              if (step < 4) {
+                setStep(s => s + 1);
+              } else {
+                handleConfirmBooking();
+              }
+            }} 
+            disabled={!canProceed() || isSubmitting} 
+            className="bg-black text-white px-10 py-4 text-xs tracking-[0.2em] uppercase flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-[#1a1a1a]"
+          >
+            <span>{isSubmitting ? 'Confirming...' : step === 4 ? 'Confirm Booking' : 'Continue'}</span>
             <ArrowRight size={14} />
           </button>
         </div>

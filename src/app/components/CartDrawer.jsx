@@ -121,7 +121,11 @@ export function CartDrawer({
               </button>
             </div> : (/* ── CART ITEMS ── */
             <div className="divide-y divide-gray-100">
-              {items.map(item => <div key={item.id} className="flex gap-4 px-5 sm:px-6 py-5">
+              {items.map(item => {
+                const maxStock = item.sizeStock !== undefined && item.sizeStock !== null ? item.sizeStock : item.stock;
+                const isLimitReached = maxStock !== undefined && maxStock !== null && item.quantity >= maxStock;
+                
+                return <div key={`${item.id}-${item.selectedSize || ''}`} className="flex gap-4 px-5 sm:px-6 py-5">
                   {/* Image */}
                   <div className="w-[75px] h-[75px] flex-shrink-0 bg-[#f7f7f7] overflow-hidden">
                     <button type="button" onClick={() => onProductClick?.(item)} className="block h-full w-full cursor-pointer">
@@ -141,8 +145,11 @@ export function CartDrawer({
                         {item.metal && <p className="text-[9px] tracking-[0.12em] text-gray-400 uppercase mt-1">
                             {item.metal}
                           </p>}
+                        {item.selectedSize && <p className="text-[9px] tracking-[0.12em] text-blue-600 font-bold uppercase mt-1">
+                            Size: {item.selectedSize}
+                          </p>}
                       </div>
-                      <button onClick={() => removeFromCart(item.id)} className="text-gray-300 hover:text-black transition-colors flex-shrink-0 mt-0.5">
+                      <button onClick={() => removeFromCart(item.id, item.selectedSize)} className="text-gray-300 hover:text-black transition-colors flex-shrink-0 mt-0.5">
                         <X size={13} strokeWidth={1.5} />
                       </button>
                     </div>
@@ -150,7 +157,7 @@ export function CartDrawer({
                     <div className="flex items-center justify-between mt-4">
                       {/* Qty Controls */}
                       <div className="flex items-center gap-0 border border-gray-200">
-                        <button onClick={() => item.quantity > 1 ? updateQty(item.id, item.quantity - 1) : removeFromCart(item.id)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-black transition-colors border-r border-gray-200">
+                        <button onClick={() => item.quantity > 1 ? updateQty(item.id, item.quantity - 1, item.selectedSize) : removeFromCart(item.id, item.selectedSize)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-black transition-colors border-r border-gray-200">
                           <Minus size={10} strokeWidth={1.5} />
                         </button>
                         <span className="text-xs w-8 text-center" style={{
@@ -158,7 +165,15 @@ export function CartDrawer({
                   }}>
                           {item.quantity}
                         </span>
-                        <button onClick={() => updateQty(item.id, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-black transition-colors border-l border-gray-200">
+                        <button 
+                          onClick={() => updateQty(item.id, item.quantity + 1, item.selectedSize)} 
+                          disabled={isLimitReached}
+                          className={`w-8 h-8 flex items-center justify-center border-l border-gray-200 transition-colors ${
+                            isLimitReached
+                              ? 'text-gray-200 cursor-not-allowed bg-gray-50'
+                              : 'text-gray-400 hover:text-black'
+                          }`}
+                        >
                           <Plus size={10} strokeWidth={1.5} />
                         </button>
                       </div>
@@ -179,12 +194,21 @@ export function CartDrawer({
                 }} className="flex-1 bg-black text-white py-2 px-3 text-[8px] tracking-[0.15em] uppercase transition-colors hover:bg-gray-800">
                         Buy Now
                       </button>
-                      <button onClick={() => updateQty(item.id, item.quantity + 1)} className="flex-1 bg-white border border-gray-300 text-black py-2 px-3 text-[8px] tracking-[0.15em] uppercase transition-colors hover:border-black">
+                      <button 
+                        onClick={() => updateQty(item.id, item.quantity + 1, item.selectedSize)} 
+                        disabled={isLimitReached}
+                        className={`flex-1 py-2 px-3 text-[8px] tracking-[0.15em] uppercase transition-colors border ${
+                          isLimitReached
+                            ? 'bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed'
+                            : 'bg-white border-gray-300 text-black hover:border-black'
+                        }`}
+                      >
                         Add More
                       </button>
                     </div>
                   </div>
-                </div>)}
+                </div>;
+              })}
             </div>)}
 
           {/* ── SERVICES STRIP ── */}

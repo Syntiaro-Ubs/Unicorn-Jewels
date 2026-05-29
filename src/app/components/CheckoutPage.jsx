@@ -8,10 +8,13 @@ export function CheckoutPage({
   onBack,
   onViewTracking,
   onContinueShopping,
-  onCompletePurchase
+  onCompletePurchase,
+  onPhonePeCheckout,
+  initialIsComplete = false
 }) {
   const [activeSection, setActiveSection] = useState(1);
-  const [isComplete, setIsComplete] = useState(false);
+  const [isComplete, setIsComplete] = useState(initialIsComplete);
+  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' or 'phonepe'
   const subtotal = items.reduce((sum, item) => sum + item.priceNum * item.quantity, 0);
   const shipping = subtotal > 500 ? 0 : 25;
   const taxes = subtotal * 0.08;
@@ -183,24 +186,72 @@ export function CheckoutPage({
                 opacity: 1
               }} className="pt-2">
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-4">All transactions are secure and encrypted.</p>
-                    <div className="border border-gray-300 p-4 space-y-4 bg-[#fafafa]">
-                      <div className="relative">
-                        <input type="text" placeholder="Card Number" className="w-full border border-gray-300 bg-white px-4 py-3 text-sm focus:border-black outline-none transition-colors" />
-                        <CreditCard size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <input type="text" placeholder="Expiration (MM/YY)" className="w-full border border-gray-300 bg-white px-4 py-3 text-sm focus:border-black outline-none transition-colors" />
-                        <input type="text" placeholder="Security Code" className="w-full border border-gray-300 bg-white px-4 py-3 text-sm focus:border-black outline-none transition-colors" />
-                      </div>
-                      <input type="text" placeholder="Name on Card" className="w-full border border-gray-300 bg-white px-4 py-3 text-sm focus:border-black outline-none transition-colors" />
+                    
+                    {/* Payment Method Selector */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                      <label className={`flex items-center gap-3 border p-4 cursor-pointer transition-all duration-300 ${paymentMethod === 'card' ? 'border-black bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                        <input type="radio" name="paymentMethod" value="card" checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')} className="accent-black w-4 h-4" />
+                        <div className="flex flex-col">
+                          <span className="text-[10px] uppercase tracking-wider font-semibold">Credit Card</span>
+                          <span className="text-[9px] text-gray-400 mt-0.5">Simulated instant check</span>
+                        </div>
+                      </label>
+                      <label className={`flex items-center gap-3 border p-4 cursor-pointer transition-all duration-300 ${paymentMethod === 'phonepe' ? 'border-black bg-purple-50/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                        <input type="radio" name="paymentMethod" value="phonepe" checked={paymentMethod === 'phonepe'} onChange={() => setPaymentMethod('phonepe')} className="accent-black w-4 h-4" />
+                        <div className="flex flex-col">
+                          <span className="text-[10px] uppercase tracking-wider font-semibold text-purple-700 flex items-center gap-1.5">
+                            PhonePe
+                            <span className="text-[7px] bg-purple-100 text-purple-800 px-1.5 py-0.5 font-bold rounded">UAT</span>
+                          </span>
+                          <span className="text-[9px] text-gray-400 mt-0.5">Secure sandbox pay</span>
+                        </div>
+                      </label>
                     </div>
 
-                    <button onClick={handlePlaceOrder} className="w-full bg-black text-white py-4 mt-8 flex items-center justify-center gap-3 text-[11px] tracking-[0.3em] uppercase hover:bg-[#1a1a1a] transition-colors" style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontWeight: 400,
-                  fontSize: '14px'
-                }}>
-                      <Lock size={14} className="mb-0.5" /> Complete Purchase
+                    {paymentMethod === 'card' ? (
+                      <div className="border border-gray-300 p-4 space-y-4 bg-[#fafafa]">
+                        <div className="relative">
+                          <input type="text" placeholder="Card Number" className="w-full border border-gray-300 bg-white px-4 py-3 text-sm focus:border-black outline-none transition-colors" />
+                          <CreditCard size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <input type="text" placeholder="Expiration (MM/YY)" className="w-full border border-gray-300 bg-white px-4 py-3 text-sm focus:border-black outline-none transition-colors" />
+                          <input type="text" placeholder="Security Code" className="w-full border border-gray-300 bg-white px-4 py-3 text-sm focus:border-black outline-none transition-colors" />
+                        </div>
+                        <input type="text" placeholder="Name on Card" className="w-full border border-gray-300 bg-white px-4 py-3 text-sm focus:border-black outline-none transition-colors" />
+                      </div>
+                    ) : (
+                      <div className="border border-purple-200 p-6 space-y-3 bg-purple-50/10 text-center rounded-sm">
+                        <div className="flex justify-center text-purple-600 mb-1">
+                          <ShieldCheck size={28} strokeWidth={1.5} />
+                        </div>
+                        <h4 className="text-[11px] tracking-wider uppercase font-semibold text-purple-900">PhonePe Safe Redirect</h4>
+                        <p className="text-[11px] text-gray-500 max-w-md mx-auto leading-relaxed">
+                          You will be securely redirected to PhonePe's Sandbox Payment Gateway to finalize your transaction.
+                        </p>
+                        <div className="text-[8px] text-purple-400 uppercase tracking-widest font-sans font-medium">
+                          UAT ID: M22W57IMFZ6JF_2512041158
+                        </div>
+                      </div>
+                    )}
+
+                    <button 
+                      onClick={() => {
+                        if (paymentMethod === 'phonepe') {
+                          onPhonePeCheckout(total);
+                        } else {
+                          handlePlaceOrder();
+                        }
+                      }} 
+                      className="w-full bg-black text-white py-4 mt-8 flex items-center justify-center gap-3 text-[11px] tracking-[0.3em] uppercase hover:bg-[#1a1a1a] transition-colors" 
+                      style={{
+                        fontFamily: "'Cormorant Garamond', serif",
+                        fontWeight: 400,
+                        fontSize: '14px'
+                      }}
+                    >
+                      <Lock size={14} className="mb-0.5" /> 
+                      {paymentMethod === 'phonepe' ? 'Pay with PhonePe' : 'Complete Purchase'}
                     </button>
                   </motion.div>}
               </div>

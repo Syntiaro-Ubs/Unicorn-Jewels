@@ -12,7 +12,6 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
-import Barcode from 'react-barcode';
 
 function slugifyProduct(value) {
   return String(value || '')
@@ -153,11 +152,25 @@ export default function ProductManagement() {
   const handleAddSize = (e) => {
     if (e) e.preventDefault();
     const cleanSize = newSizeInput.trim().toUpperCase();
-    if (cleanSize && !sizes.some(s => s.size === cleanSize)) {
+    if (!cleanSize) return;
+
+    const selectedCat = categories.find(c => String(c.id) === String(formData.category_id));
+    const isRing = selectedCat?.name?.toLowerCase() === 'rings' || selectedCat?.name?.toLowerCase() === 'ring';
+
+    if (isRing) {
+      const numVal = Number(cleanSize);
+      if (isNaN(numVal) || numVal <= 0) {
+        showMessage('error', 'Sizes for Ring products must be numeric (e.g., 6 or 6.5).');
+        return;
+      }
+    }
+
+    if (!sizes.some(s => s.size === cleanSize)) {
       setSizes(prev => [...prev, { size: cleanSize, stock: 0 }]);
       setNewSizeInput('');
     }
   };
+
 
   const handleSizeStockChange = (sizeName, newStockVal) => {
     const parsed = parseInt(newStockVal, 10);
@@ -247,6 +260,20 @@ export default function ProductManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    const selectedCat = categories.find(c => String(c.id) === String(formData.category_id));
+    const isRing = selectedCat?.name?.toLowerCase() === 'rings' || selectedCat?.name?.toLowerCase() === 'ring';
+    if (isRing && sizes.length > 0) {
+      const hasNonNumeric = sizes.some(s => {
+        const numVal = Number(s.size);
+        return isNaN(numVal) || numVal <= 0;
+      });
+      if (hasNonNumeric) {
+        showMessage('error', 'All sizes for Ring products must be in numeric format (e.g., 5, 6, 7).');
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     let finalStock = formData.stock;
     if (sizes.length > 0) {
@@ -350,6 +377,9 @@ export default function ProductManagement() {
       showMessage('error', 'An error occurred while deleting');
     }
   };
+
+  const selectedCat = categories.find(c => String(c.id) === String(formData.category_id));
+  const isRing = selectedCat?.name?.toLowerCase() === 'rings' || selectedCat?.name?.toLowerCase() === 'ring';
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -676,6 +706,15 @@ export default function ProductManagement() {
                   </div>
 
                   <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2 sm:col-span-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Product ID</label>
+                      <input 
+                        type="text"
+                        disabled
+                        value={editingProduct ? `#${editingProduct.id}` : 'Auto-generated on Save'}
+                        className="w-full px-4 py-3 bg-slate-100 border-transparent rounded-xl outline-none text-slate-500 font-mono text-sm cursor-not-allowed"
+                      />
+                    </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Product Name</label>
                       <input 
@@ -766,7 +805,7 @@ export default function ProductManagement() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Initial Stock</label>
                     <input 
                       type="number"
@@ -775,16 +814,6 @@ export default function ProductManagement() {
                       value={formData.stock}
                       onChange={handleInputChange}
                       placeholder="e.g. 50"
-                      className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Custom Barcode (Optional)</label>
-                    <input 
-                      name="barcode"
-                      value={formData.barcode}
-                      onChange={handleInputChange}
-                      placeholder="Leave empty to auto-generate from ID"
                       className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
                     />
                   </div>
@@ -798,7 +827,7 @@ export default function ProductManagement() {
                       type="text"
                       value={newSizeInput}
                       onChange={(e) => setNewSizeInput(e.target.value)}
-                      placeholder="e.g. Small, Medium, Large, or ring sizes like 5, 6, 7"
+                      placeholder={isRing ? "e.g. 5, 5.5, 6, 6.5, 7" : "e.g. Small, Medium, Large"}
                       className="flex-1 px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
@@ -858,23 +887,15 @@ export default function ProductManagement() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-400 italic font-medium">No sizes configured. Default "Small, Medium, Large" will be used on the product page.</p>
+                    <p className="text-xs text-slate-400 italic font-medium">
+                      {isRing 
+                        ? 'No sizes configured. Default numeric sizes "5, 6, 7, 8" will be used on the product page.' 
+                        : 'No sizes configured. Default "Small, Medium, Large" will be used on the product page.'}
+                    </p>
                   )}
                 </div>
 
-                {(editingProduct || formData.barcode) && (
-                  <div className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Product Barcode</label>
-                    <Barcode 
-                      value={formData.barcode || (editingProduct ? `PRD-${editingProduct.id}` : 'PENDING')} 
-                      width={1.5}
-                      height={50}
-                      fontSize={14}
-                      background="transparent"
-                      lineColor="#1e293b"
-                    />
-                  </div>
-                )}
+
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Description</label>

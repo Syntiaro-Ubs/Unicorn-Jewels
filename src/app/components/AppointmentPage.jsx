@@ -106,7 +106,8 @@ function StepIndicator({
 }
 export function AppointmentPage({
   onBack,
-  mode = 'standard'
+  mode = 'standard',
+  bannerContent
 }) {
   const today = new Date();
   const isVaultMode = mode === 'vault';
@@ -264,7 +265,7 @@ export function AppointmentPage({
       {/* Left Panel */}
       <div className="hidden lg:flex flex-col w-[38%] sticky top-0 h-screen overflow-hidden bg-black">
         <div className="absolute inset-0">
-          <img src={logoImg} alt="Unicorn Jewels" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+          <img src={bannerContent?.imageUrl || logoImg} alt="Unicorn Jewels" className="absolute inset-0 w-full h-full object-cover opacity-60" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
         </div>
         

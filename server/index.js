@@ -28,6 +28,7 @@ const trackingRoutes = require('./routes/tracking');
 const paymentRoutes = require('./routes/payment');
 const appointmentRoutes = require('./routes/appointments');
 const migrateUsers = require('./migrate_users');
+const migrateShopByLook = require('./migrate_shop_by_look');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -60,6 +61,7 @@ async function startServer() {
     try {
         console.log('Running database migrations...');
         await migrateUsers();
+        await migrateShopByLook();
         
         // Start server
         app.listen(PORT, () => {

@@ -40,6 +40,8 @@ import { ProductPage } from './components/ProductPage';
 import { buildProductIndex, withScopedProductIds } from './components/productIdentity';
 import GiftGuidePage from './components/GiftGuidePage';
 import { TrackOrderPage } from './components/TrackOrderPage';
+import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
+import { TermsOfServicePage } from './components/TermsOfServicePage';
 import defaultPageContent from '../../shared/pageContentDefaults.json';
 
 const cloneContent = value => JSON.parse(JSON.stringify(value));
@@ -114,11 +116,17 @@ const homeNewArrivals = withScopedProductIds([{
   image: sapphireEarringsImg
 }], 'home-new-arrivals');
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPage] = useState(() => sessionStorage.getItem('uj_currentPage') || 'home');
   const [appointmentMode, setAppointmentMode] = useState('standard');
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [productBackPage, setProductBackPage] = useState('home');
-  const [productHistory, setProductHistory] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(() => {
+    const saved = sessionStorage.getItem('uj_selectedProduct');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [productBackPage, setProductBackPage] = useState(() => sessionStorage.getItem('uj_productBackPage') || 'home');
+  const [productHistory, setProductHistory] = useState(() => {
+    const saved = sessionStorage.getItem('uj_productHistory');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [savedScrollPos, setSavedScrollPos] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -147,8 +155,8 @@ export default function App() {
   }]);
   const [userAddresses, setUserAddresses] = useState([]);
   const [profileInitialTab, setProfileInitialTab] = useState('overview');
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [activeCollection, setActiveCollection] = useState(null);
+  const [activeCategory, setActiveCategory] = useState(() => sessionStorage.getItem('uj_activeCategory') || null);
+  const [activeCollection, setActiveCollection] = useState(() => sessionStorage.getItem('uj_activeCollection') || null);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [collectionsDropdownOpen, setCollectionsDropdownOpen] = useState(false);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
@@ -174,6 +182,23 @@ export default function App() {
   const [homeVisionSection, setHomeVisionSection] = useState(() => cloneContent(defaultPageContent['home-vision-section']));
   const [phonepeSuccess, setPhonepeSuccess] = useState(false);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+
+  // Sync state to sessionStorage
+  useEffect(() => { sessionStorage.setItem('uj_currentPage', currentPage); }, [currentPage]);
+  useEffect(() => { 
+    if (selectedProduct) sessionStorage.setItem('uj_selectedProduct', JSON.stringify(selectedProduct)); 
+    else sessionStorage.removeItem('uj_selectedProduct');
+  }, [selectedProduct]);
+  useEffect(() => { sessionStorage.setItem('uj_productBackPage', productBackPage); }, [productBackPage]);
+  useEffect(() => { sessionStorage.setItem('uj_productHistory', JSON.stringify(productHistory)); }, [productHistory]);
+  useEffect(() => { 
+    if (activeCategory) sessionStorage.setItem('uj_activeCategory', activeCategory); 
+    else sessionStorage.removeItem('uj_activeCategory');
+  }, [activeCategory]);
+  useEffect(() => { 
+    if (activeCollection) sessionStorage.setItem('uj_activeCollection', activeCollection); 
+    else sessionStorage.removeItem('uj_activeCollection');
+  }, [activeCollection]);
 
   // Handle PhonePe Redirect Callback
   useEffect(() => {
@@ -237,15 +262,54 @@ export default function App() {
     checkPhonePeStatus();
   }, []);
 
-  // Restore session on mount
+  // Disable browser scroll restoration so it doesn't fight us
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
+  // Scroll to top of hero section on every page change (covers refresh + navigation)
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [currentPage]);
+
+  // Restore session on mount WITHOUT resetting page (page is already restored from sessionStorage)
   useEffect(() => {
     const savedUser = localStorage.getItem('unicorn_jewels_user');
     if (savedUser) {
       try {
         const user = JSON.parse(savedUser);
-        handleAuthSuccess(user);
+        // Restore user identity only — do NOT call handleAuthSuccess (it resets page to home)
+        setIsLoggedIn(true);
+        setCurrentUser(user);
+        setUserInitial(user.firstName[0].toUpperCase());
+        // Fetch orders silently in background
+        fetch(`http://localhost:5000/api/auth/user-orders/${user.id}`)
+          .then(r => r.ok ? r.json() : [])
+          .then(backendOrders => {
+            const formattedOrders = backendOrders.map(o => ({
+              id: o.order_id,
+              date: new Date(o.order_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+              status: o.status,
+              total: o.price,
+              item: o.product_name,
+              image: o.image_url,
+              productId: o.product_id,
+              quantity: o.quantity || 1,
+              selectedSize: o.selected_size || '',
+              timestamp: new Date(o.order_date).getTime()
+            }));
+            setOrders(formattedOrders);
+          })
+          .catch(err => console.error('Failed to fetch orders:', err));
+        // Fetch addresses silently
+        fetch(`http://localhost:5000/api/auth/user-addresses/${user.id}`)
+          .then(r => r.ok ? r.json() : [])
+          .then(setUserAddresses)
+          .catch(err => console.error('Failed to fetch addresses:', err));
       } catch (err) {
-        console.error("Failed to restore session:", err);
+        console.error('Failed to restore session:', err);
         localStorage.removeItem('unicorn_jewels_user');
       }
     }
@@ -795,7 +859,7 @@ export default function App() {
           <button onClick={goBackFromProduct} className="text-xs tracking-[0.25em] uppercase text-gray-500 hover:text-black transition-colors flex items-center gap-2">
             <span>← Back</span>
           </button>
-          <div className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0" onClick={() => setCurrentPage('home')}>
+          <div className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0" onClick={() => { setCurrentPage('home'); window.scrollTo(0, 0); }}>
             <ImageWithFallback src={logoImage} alt="Unicorn Jewels Logo" className="h-12 md:h-14 w-auto object-contain" />
           </div>
           <div className="flex items-center gap-5">
@@ -874,6 +938,18 @@ export default function App() {
       window.scrollTo(0, 0);
       setCurrentPage('home');
     }} bannerContent={dynamicBanner} />;
+  }
+  if (currentPage === 'privacy-policy') {
+    return <PrivacyPolicyPage onBack={() => {
+      window.scrollTo(0, 0);
+      setCurrentPage('home');
+    }} />;
+  }
+  if (currentPage === 'terms-of-service') {
+    return <TermsOfServicePage onBack={() => {
+      window.scrollTo(0, 0);
+      setCurrentPage('home');
+    }} />;
   }
   const handleDownloadReceipt = (order) => {
     const doc = new jsPDF();
@@ -1207,7 +1283,7 @@ export default function App() {
           <button onClick={() => setCurrentPage('home')} className="text-xs tracking-[0.25em] uppercase text-gray-500 hover:text-black transition-colors flex items-center gap-2">
             <span>← Back</span>
           </button>
-          <div className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0" onClick={() => setCurrentPage('home')}>
+          <div className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0" onClick={() => { setCurrentPage('home'); window.scrollTo(0, 0); }}>
             <ImageWithFallback src={logoImage} alt="Unicorn Jewels Logo" className="h-12 md:h-14 w-auto object-contain" />
           </div>
           <div className="flex items-center gap-5">
@@ -1288,7 +1364,7 @@ export default function App() {
           <button onClick={() => setCurrentPage('home')} className="text-xs tracking-[0.25em] uppercase text-gray-500 hover:text-black transition-colors flex items-center gap-2">
             <span>← Back</span>
           </button>
-          <div className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0" onClick={() => setCurrentPage('home')}>
+          <div className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0" onClick={() => { setCurrentPage('home'); window.scrollTo(0, 0); }}>
             <ImageWithFallback src={logoImage} alt="Unicorn Jewels Logo" className="h-12 md:h-14 w-auto object-contain" />
           </div>
           <div className="flex items-center gap-5">
@@ -1360,7 +1436,7 @@ export default function App() {
           <button onClick={() => setCurrentPage('home')} className="text-xs tracking-[0.25em] uppercase text-gray-500 hover:text-black transition-colors flex items-center gap-2">
             <span>← Back</span>
           </button>
-          <div className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0" onClick={() => setCurrentPage('home')}>
+          <div className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0" onClick={() => { setCurrentPage('home'); window.scrollTo(0, 0); }}>
             <ImageWithFallback src={logoImage} alt="Unicorn Jewels Logo" className="h-12 md:h-14 w-auto object-contain" />
           </div>
           <div className="flex items-center gap-5">
@@ -2064,7 +2140,12 @@ export default function App() {
               <p className="text-base sm:text-lg text-gray-600" style={{ fontWeight: 300, lineHeight: 1.8 }}>
                 {editorial.description}
               </p>
-              <button className="flex items-center gap-2 text-black border-b-2 border-black pb-1 hover:text-gray-600 hover:border-gray-600 transition-colors text-sm sm:text-base tap-target">
+              <button onClick={() => {
+                const targetSection = editorial.button_link || 'eternally-desired';
+                document.getElementById(targetSection).scrollIntoView({
+                  behavior: 'smooth'
+                });
+              }} className="flex items-center gap-2 text-black border-b-2 border-black pb-1 hover:text-gray-600 hover:border-gray-600 transition-colors text-sm sm:text-base tap-target">
                 <span className="tracking-wider">{editorial.button_text}</span>
                 <ChevronRight size={18} className="sm:w-[20px] sm:h-[20px]" />
               </button>
@@ -2405,7 +2486,7 @@ export default function App() {
     </section>
 
     {/* Personal Styling & Art of Giving - Combined Editorial Spread */}
-    <section className="py-32 px-6 bg-[#fafafa]">
+    <section id="personal-styling" className="py-32 px-6 bg-[#fafafa]">
       <div className="max-w-[1400px] mx-auto">
         {dbServices
           .filter((service) => (service.button_link || '').toLowerCase() !== 'gift-guide')
@@ -2470,7 +2551,7 @@ export default function App() {
     </section>
 
     {/* Haute Joaillerie - Dark Avant-Garde Editorial */}
-    <section className="py-32 px-6 bg-[#0a0a0a] text-white">
+    <section id="vault" className="py-32 px-6 bg-[#0a0a0a] text-white">
       <div className="max-w-[1400px] mx-auto">
         <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-32">
           <motion.div initial={{
@@ -2614,11 +2695,24 @@ export default function App() {
             <ul className="space-y-2 text-gray-600" style={{
               fontWeight: 300
             }}>
-              <li><a href="#" className="hover:text-black">Engagement Rings</a></li>
-              <li><a href="#" className="hover:text-black">Necklaces</a></li>
-              <li><a href="#" className="hover:text-black">Bracelets</a></li>
-              <li><a href="#" className="hover:text-black">Earrings</a></li>
-              <li><a href="#" className="hover:text-black">Timepieces</a></li>
+              {categories.map((category) => (
+                <li key={category.name}>
+                  <button
+                    onClick={() => {
+                      setActiveCategory(category.name);
+                      setCurrentPage('category');
+                      setTimeout(() => {
+                        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                        document.documentElement.scrollTop = 0;
+                        document.body.scrollTop = 0;
+                      }, 0);
+                    }}
+                    className="hover:text-black text-left"
+                  >
+                    {category.name}
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
           <div>
@@ -2630,15 +2724,24 @@ export default function App() {
             <ul className="space-y-2 text-gray-600" style={{
               fontWeight: 300
             }}>
-              <li><a href="#" className="hover:text-black">Contact Us</a></li>
-              <li><a href="#" className="hover:text-black">Book Appointment</a></li>
               <li><button onClick={() => {
                 setCurrentPage('track-order');
                 window.scrollTo(0, 0);
               }} className="hover:text-black text-left w-full">Track Order</button></li>
-              <li><a href="#" className="hover:text-black">Shipping & Returns</a></li>
-              <li><a href="#" className="hover:text-black">Care & Repair</a></li>
-              <li><a href="#" className="hover:text-black">Size Guide</a></li>
+              <li><button onClick={() => {
+                setCurrentPage('terms-of-service');
+                setTimeout(() => {
+                  const element = document.getElementById('shipping-returns');
+                  if (element) element.scrollIntoView({ behavior: 'smooth' });
+                }, 0);
+              }} className="hover:text-black text-left w-full">Shipping & Returns</button></li>
+              <li><button onClick={() => {
+                setCurrentPage('terms-of-service');
+                setTimeout(() => {
+                  const element = document.getElementById('size-guide');
+                  if (element) element.scrollIntoView({ behavior: 'smooth' });
+                }, 0);
+              }} className="hover:text-black text-left w-full">Size Guide</button></li>
             </ul>
           </div>
           <div>
@@ -2650,11 +2753,24 @@ export default function App() {
             <ul className="space-y-2 text-gray-600" style={{
               fontWeight: 300
             }}>
-              <li><a href="#" className="hover:text-black">About Unicorn</a></li>
-              <li><a href="#" className="hover:text-black">Craftsmanship</a></li>
-              <li><a href="#" className="hover:text-black">Sustainability</a></li>
-              <li><a href="#" className="hover:text-black">Heritage</a></li>
-              <li><a href="#" className="hover:text-black">Careers</a></li>
+              <li><button onClick={() => {
+                setCurrentPage('story');
+                window.scrollTo(0, 0);
+              }} className="hover:text-black text-left w-full">Our Story</button></li>
+              <li><button onClick={() => {
+                if (currentPage !== 'home') setCurrentPage('home');
+                setTimeout(() => {
+                  const element = document.getElementById('personal-styling');
+                  if (element) element.scrollIntoView({ behavior: 'smooth' });
+                }, 0);
+              }} className="hover:text-black text-left w-full">Personal Styling</button></li>
+              <li><button onClick={() => {
+                if (currentPage !== 'home') setCurrentPage('home');
+                setTimeout(() => {
+                  const element = document.getElementById('vault');
+                  if (element) element.scrollIntoView({ behavior: 'smooth' });
+                }, 0);
+              }} className="hover:text-black text-left w-full">Vault</button></li>
             </ul>
           </div>
           <div>
@@ -2679,17 +2795,14 @@ export default function App() {
         <div className="border-t border-gray-300 pt-6 sm:pt-8 pb-2 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
           <p style={{
             fontWeight: 300
-          }}>Designed & Developed by Syntiaro</p>
+          }}>Designed & Developed by <a href="https://www.syntiaro.com" target="_blank" rel="noopener noreferrer" className="hover:text-black transition-all font-medium">SYNTIARO</a></p>
           <div className="flex gap-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-black" style={{
+            <button onClick={() => setCurrentPage('privacy-policy')} className="hover:text-black" style={{
               fontWeight: 300
-            }}>Privacy Policy</a>
-            <a href="#" className="hover:text-black" style={{
+            }}>Privacy Policy</button>
+            <button onClick={() => setCurrentPage('terms-of-service')} className="hover:text-black" style={{
               fontWeight: 300
-            }}>Terms of Service</a>
-            <a href="#" className="hover:text-black" style={{
-              fontWeight: 300
-            }}>Accessibility</a>
+            }}>Terms of Service</button>
           </div>
         </div>
       </div>

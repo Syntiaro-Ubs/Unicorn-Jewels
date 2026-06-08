@@ -384,11 +384,11 @@ export function CategoryPage({
      return data.products;
    }, [category, dbProducts, data.products]);
 
-  // Override static data with dynamic banner if it matches
-  const displayTitle = dynamicBanner?.title || category;
-  const displaySubtitle = dynamicBanner?.subtitle || data.subtitle;
-  const displayHero = dynamicBanner?.imageUrl || data.hero;
-  const displayEditorial = dynamicBanner?.description ? 'CURATED EDIT' : data.editorial;
+  // Use category's own data for the hero section
+  const displayTitle = category;
+  const displaySubtitle = data.subtitle || '';
+  const displayHero = data.hero || '';
+  const displayEditorial = data.editorial || 'CURATED EDIT';
   const [sort, setSort] = useState('Featured');
   const [sortOpen, setSortOpen] = useState(false);
   const [metalFilter, setMetalFilter] = useState('All Materials');
@@ -401,6 +401,11 @@ export function CategoryPage({
     setPriceFilter('All Prices');
     setSortOpen(false);
     setFilterDrawerOpen(false);
+    setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 0);
   }, [category]);
   const availableMetals = useMemo(() => {
     if (!categoryProducts) return ['All Materials'];

@@ -36,9 +36,9 @@ async function migrate() {
             const platinumPerfectionImg = "https://images.unsplash.com/photo-1679156271420-e6c596e9c10a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwbGF0aW51bSUyMGRpYW1vbmQlMjByaW5nJTIwbHV4dXJ5fGVufDF8fHx8MTc3Njc2NTMzNnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 
             await connection.execute(`
-                INSERT INTO home_editorials (title, description, image_url, button_text, is_reversed, order_index) VALUES 
-                ('The Silver Collection', 'Our signature silver pieces embody modern sophistication. Each design is meticulously crafted by master artisans who bring decades of expertise to every detail, creating heirlooms for generations to come.', ?, 'DISCOVER MORE', FALSE, 1),
-                ('Platinum Perfection', 'The rarest and most precious of metals, platinum represents the pinnacle of luxury. Our platinum collection showcases extraordinary diamonds set in designs that celebrate life''s most meaningful moments.', ?, 'EXPLORE COLLECTION', TRUE, 2)
+                INSERT INTO home_editorials (title, description, image_url, button_text, button_link, is_reversed, order_index) VALUES 
+                ('The Silver Collection', 'Our signature silver pieces embody modern sophistication. Each design is meticulously crafted by master artisans who bring decades of expertise to every detail, creating heirlooms for generations to come.', ?, 'DISCOVER MORE', 'personal-styling', FALSE, 1),
+                ('Platinum Perfection', 'The rarest and most precious of metals, platinum represents the pinnacle of luxury. Our platinum collection showcases extraordinary diamonds set in designs that celebrate life''s most meaningful moments.', ?, 'EXPLORE COLLECTION', 'eternally-desired', TRUE, 2)
             `, [silverCollectionFrontImg, platinumPerfectionImg]);
             console.log('Initial data seeded.');
         }

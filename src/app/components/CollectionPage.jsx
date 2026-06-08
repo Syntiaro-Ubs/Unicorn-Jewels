@@ -181,11 +181,11 @@ export function CollectionPage({
      return data.products;
    }, [collectionName, dbProducts, data.products]);
   
-  // Override static data with dynamic banner
-  const displayTitle = dynamicBanner?.title || collectionName;
-  const displaySubtitle = dynamicBanner?.subtitle || data?.subtitle;
-  const displayHero = dynamicBanner?.imageUrl || data?.hero;
-  const displayEditorial = dynamicBanner?.description ? 'CURATED COLLECTION' : data?.editorial;
+  // Use collection's own data for the hero section
+  const displayTitle = collectionName;
+  const displaySubtitle = data?.subtitle || '';
+  const displayHero = data?.hero || '';
+  const displayEditorial = data?.editorial || 'CURATED COLLECTION';
   const [sort, setSort] = useState('Featured');
   const [sortOpen, setSortOpen] = useState(false);
   const [metalFilter, setMetalFilter] = useState('All Materials');

@@ -4,7 +4,6 @@ import {
   AlertCircle,
   BookOpen,
   CheckCircle,
-  Gift,
   Image as ImageIcon,
   Loader2,
   Save,
@@ -21,12 +20,6 @@ const PAGE_OPTIONS = [
     label: 'Our Vision',
     description: 'Edit the narrative sections that appear below the hero on the vision page.',
     icon: BookOpen
-  },
-  {
-    id: 'gift-guide',
-    label: 'Gift Guide',
-    description: 'Customize the curated gift sections, packaging details, and concierge call to action.',
-    icon: Gift
   }
 ];
 
@@ -145,8 +138,7 @@ function ManagedImageField({
 export default function EditorialPagesManagement() {
   const [activePage, setActivePage] = useState('story');
   const [pageContent, setPageContent] = useState(() => ({
-    story: cloneContent(defaultPageContent.story),
-    'gift-guide': cloneContent(defaultPageContent['gift-guide'])
+    story: cloneContent(defaultPageContent.story)
   }));
   const [loading, setLoading] = useState(true);
   const [saveState, setSaveState] = useState({ pageKey: null, status: null });
@@ -461,334 +453,7 @@ export default function EditorialPagesManagement() {
     </div>
   );
 
-  const renderGiftGuideEditor = () => (
-    <div className="space-y-8">
-      <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">Hero Banner</p>
-        <p className="mt-2 text-sm text-slate-600 leading-7">
-          The hero headline, description, and lead image for the gift guide page are controlled from Banner Management using the <span className="font-semibold text-slate-900">gift-guide</span> page key.
-        </p>
-      </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-6">
-        <div>
-          <p className="text-lg text-slate-900">Hero Details</p>
-          <p className="text-sm text-slate-500 mt-1">Adjust the eyebrow, feature cards, and hero image overlay copy.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Hero Eyebrow</label>
-            <input
-              type="text"
-              value={activeContent.hero.eyebrow}
-              onChange={(e) => updateSectionField('gift-guide', 'hero', 'eyebrow', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Image Eyebrow</label>
-            <input
-              type="text"
-              value={activeContent.hero.image_eyebrow}
-              onChange={(e) => updateSectionField('gift-guide', 'hero', 'image_eyebrow', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Included Label</label>
-            <input
-              type="text"
-              value={activeContent.hero.included_label}
-              onChange={(e) => updateSectionField('gift-guide', 'hero', 'included_label', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Included Text</label>
-            <input
-              type="text"
-              value={activeContent.hero.included_text}
-              onChange={(e) => updateSectionField('gift-guide', 'hero', 'included_text', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Optional Label</label>
-            <input
-              type="text"
-              value={activeContent.hero.optional_label}
-              onChange={(e) => updateSectionField('gift-guide', 'hero', 'optional_label', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Optional Text</label>
-            <input
-              type="text"
-              value={activeContent.hero.optional_text}
-              onChange={(e) => updateSectionField('gift-guide', 'hero', 'optional_text', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className={fieldLabelClass}>Image Overlay Headline</label>
-          <textarea
-            rows={3}
-            value={activeContent.hero.image_headline}
-            onChange={(e) => updateSectionField('gift-guide', 'hero', 'image_headline', e.target.value)}
-            className={textareaClass}
-          />
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-6">
-        <div>
-          <p className="text-lg text-slate-900">Occasion Intro</p>
-          <p className="text-sm text-slate-500 mt-1">These fields control the heading above the gift category grid.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Eyebrow</label>
-            <input
-              type="text"
-              value={activeContent.occasions.eyebrow}
-              onChange={(e) => updateSectionField('gift-guide', 'occasions', 'eyebrow', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Section Title</label>
-            <input
-              type="text"
-              value={activeContent.occasions.title}
-              onChange={(e) => updateSectionField('gift-guide', 'occasions', 'title', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className={fieldLabelClass}>Description</label>
-          <textarea
-            rows={4}
-            value={activeContent.occasions.description}
-            onChange={(e) => updateSectionField('gift-guide', 'occasions', 'description', e.target.value)}
-            className={textareaClass}
-          />
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-6">
-        <div>
-          <p className="text-lg text-slate-900">Gift Categories</p>
-          <p className="text-sm text-slate-500 mt-1">Edit the cards shown in the curated occasions grid.</p>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          {activeContent.categories.map((category, index) => (
-            <div key={`${category.title}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-slate-900">Card {index + 1}</p>
-                <span className="text-[11px] uppercase tracking-[0.2em] text-slate-400">{category.pieces}</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className={fieldLabelClass}>Title</label>
-                  <input
-                    type="text"
-                    value={category.title}
-                    onChange={(e) => updateArrayField('gift-guide', 'categories', index, 'title', e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className={fieldLabelClass}>Pieces Label</label>
-                  <input
-                    type="text"
-                    value={category.pieces}
-                    onChange={(e) => updateArrayField('gift-guide', 'categories', index, 'pieces', e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className={fieldLabelClass}>Price Range</label>
-                  <input
-                    type="text"
-                    value={category.range}
-                    onChange={(e) => updateArrayField('gift-guide', 'categories', index, 'range', e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className={fieldLabelClass}>Subtitle</label>
-                <textarea
-                  rows={3}
-                  value={category.subtitle}
-                  onChange={(e) => updateArrayField('gift-guide', 'categories', index, 'subtitle', e.target.value)}
-                  className={textareaClass}
-                />
-              </div>
-              <ManagedImageField
-                label="Category Image"
-                value={category.image}
-                uploadKey={`gift-category-image-${index}`}
-                helperText="Upload the main image for this gift guide card."
-                uploading={!!uploadingFields[`gift-category-image-${index}`]}
-                error={uploadErrors[`gift-category-image-${index}`]}
-                onChange={(value) => updateArrayField('gift-guide', 'categories', index, 'image', value)}
-                onUpload={(file) => handleImageUpload(file, `gift-category-image-${index}`, (imageUrl) => {
-                  updateArrayField('gift-guide', 'categories', index, 'image', imageUrl);
-                })}
-                onRemove={() => updateArrayField('gift-guide', 'categories', index, 'image', '')}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-6">
-        <div>
-          <p className="text-lg text-slate-900">Packaging Section</p>
-          <p className="text-sm text-slate-500 mt-1">Control the section heading and the three packaging benefit cards.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Eyebrow</label>
-            <input
-              type="text"
-              value={activeContent.packaging.eyebrow}
-              onChange={(e) => updateSectionField('gift-guide', 'packaging', 'eyebrow', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Section Title</label>
-            <input
-              type="text"
-              value={activeContent.packaging.title}
-              onChange={(e) => updateSectionField('gift-guide', 'packaging', 'title', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          {activeContent.packaging.items.map((item, index) => (
-            <div key={`${item.title}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 space-y-4">
-              <p className="text-sm font-semibold text-slate-900">Packaging Card {index + 1}</p>
-              <div className="space-y-2">
-                <label className={fieldLabelClass}>Title</label>
-                <input
-                  type="text"
-                  value={item.title}
-                  onChange={(e) => updateNestedArrayField('gift-guide', 'packaging', 'items', index, 'title', e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className={fieldLabelClass}>Detail</label>
-                <textarea
-                  rows={4}
-                  value={item.detail}
-                  onChange={(e) => updateNestedArrayField('gift-guide', 'packaging', 'items', index, 'detail', e.target.value)}
-                  className={textareaClass}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className={fieldLabelClass}>Note</label>
-                <input
-                  type="text"
-                  value={item.note}
-                  onChange={(e) => updateNestedArrayField('gift-guide', 'packaging', 'items', index, 'note', e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-6">
-        <div>
-          <p className="text-lg text-slate-900">Concierge Call To Action</p>
-          <p className="text-sm text-slate-500 mt-1">Edit the black closing section and its action buttons.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Eyebrow</label>
-            <input
-              type="text"
-              value={activeContent.concierge.eyebrow}
-              onChange={(e) => updateSectionField('gift-guide', 'concierge', 'eyebrow', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Section Title</label>
-            <input
-              type="text"
-              value={activeContent.concierge.title}
-              onChange={(e) => updateSectionField('gift-guide', 'concierge', 'title', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Primary CTA Text</label>
-            <input
-              type="text"
-              value={activeContent.concierge.primary_cta_text}
-              onChange={(e) => updateSectionField('gift-guide', 'concierge', 'primary_cta_text', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Primary CTA URL</label>
-            <input
-              type="url"
-              value={activeContent.concierge.primary_cta_url}
-              onChange={(e) => updateSectionField('gift-guide', 'concierge', 'primary_cta_url', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Secondary CTA Text</label>
-            <input
-              type="text"
-              value={activeContent.concierge.secondary_cta_text}
-              onChange={(e) => updateSectionField('gift-guide', 'concierge', 'secondary_cta_text', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className={fieldLabelClass}>Secondary CTA URL</label>
-            <input
-              type="url"
-              value={activeContent.concierge.secondary_cta_url}
-              onChange={(e) => updateSectionField('gift-guide', 'concierge', 'secondary_cta_url', e.target.value)}
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className={fieldLabelClass}>Description</label>
-          <textarea
-            rows={4}
-            value={activeContent.concierge.description}
-            onChange={(e) => updateSectionField('gift-guide', 'concierge', 'description', e.target.value)}
-            className={textareaClass}
-          />
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -798,9 +463,9 @@ export default function EditorialPagesManagement() {
             <Sparkles size={16} />
             <span className="text-[11px] uppercase tracking-[0.26em] font-bold">Editorial Pages</span>
           </div>
-          <h4 className="text-2xl text-slate-900">Our Vision and Gift Guide</h4>
+          <h4 className="text-2xl text-slate-900">Our Vision</h4>
           <p className="text-sm text-slate-500 mt-2 max-w-2xl">
-            Manage the page sections beyond the hero banner. Use Banner Management for the opening headline and hero image, then use this editor for the rest of each page.
+            Manage the page sections beyond the hero banner. Use Banner Management for the opening headline and hero image, then use this editor for the rest of the page.
           </p>
         </div>
 
@@ -847,7 +512,7 @@ export default function EditorialPagesManagement() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
             >
-              {activePage === 'story' ? renderStoryEditor() : renderGiftGuideEditor()}
+              {activePage === 'story' && renderStoryEditor()}
             </motion.div>
           </div>
 
@@ -873,7 +538,7 @@ export default function EditorialPagesManagement() {
             >
               {saveState.pageKey === activePage && saveState.status === 'saving'
                 ? 'Saving...'
-                : <><Save size={18} /> Save {activePage === 'story' ? 'Vision' : 'Gift Guide'} Page</>}
+                : <><Save size={18} /> Save Vision Page</>}
             </button>
           </div>
         </>

@@ -1,4 +1,5 @@
 export const DASHBOARD_PERMISSION_OPTIONS = [
+  { id: "overview", label: "Overview" },
   { id: "home", label: "Home Page" },
   { id: "banner", label: "Banners" },
   { id: "products", label: "Products" },

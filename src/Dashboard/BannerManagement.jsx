@@ -335,7 +335,7 @@ export default function BannerManagement() {
                         Main Site Pages
                       </h4>
                       <div className="space-y-2">
-                        {["home", "jewelry", "login", "signup", "appointment", "story", "gift-guide"].map(
+                        {["home", "jewelry", "appointment", "story"].map(
                           (page) => (
                             <button
                               key={page}

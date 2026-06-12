@@ -12,7 +12,8 @@ import {
   FolderTree,
   ShieldAlert,
   Palette,
-  Package
+  Package,
+  TrendingUp
 } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router';
 import { DASHBOARD_PERMISSION_IDS } from './dashboardPermissions';
@@ -44,6 +45,7 @@ export default function DashboardLayout() {
     : (adminUser?.permissions || []);
 
   const navItems = [
+    { id: 'overview', name: 'Overview', icon: <TrendingUp size={20} />, path: '/dashboard/overview' },
     { id: 'home', name: 'Home Page', icon: <Home size={20} />, path: '/dashboard/home' },
     { id: 'banner', name: 'Banner Management', icon: <ImageIcon size={20} />, path: '/dashboard/banner' },
     { id: 'products', name: 'Products', icon: <ShoppingBag size={20} />, path: '/dashboard/products' },
@@ -53,7 +55,7 @@ export default function DashboardLayout() {
     { id: 'orders', name: 'Orders', icon: <Package size={20} />, path: '/dashboard/orders' },
     { id: 'team', name: 'Team Management', icon: <ShieldAlert size={20} />, path: '/dashboard/team' },
   ].filter(item => {
-    return userPermissions.includes(item.id);
+    return item.id === 'overview' || userPermissions.includes(item.id);
   });
 
   if (!adminUser) return null;

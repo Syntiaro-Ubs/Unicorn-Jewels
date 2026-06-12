@@ -35,7 +35,8 @@ export default function App() {
           <DashboardLayout />
         </ProtectedRoute>
       }>
-        <Route index element={<Navigate to="home" replace />} />
+        <Route index element={<Navigate to="overview" replace />} />
+        <Route path="overview" element={<Overview />} />
         <Route path="home" element={<HomeManagement />} />
         <Route path="banner" element={<BannerManagement />} />
         <Route path="products" element={<ProductManagement />} />

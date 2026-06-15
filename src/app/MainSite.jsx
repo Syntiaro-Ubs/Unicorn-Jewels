@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { jsPDF } from "jspdf";
+import { useSearchParams } from "react-router";
 const heroImage =
   "https://images.unsplash.com/photo-1729641246245-64405c363263?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2RlbCUyMHdlYXJpbmclMjBsdXh1cnklMjBkaWFtb25kJTIwamV3ZWxyeSUyMGF2YW50LWdhcmRlfGVufDF8fHx8MTc3Njc2NTMxOXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 const catRings =
@@ -177,6 +178,7 @@ const homeNewArrivals = withScopedProductIds(
   "home-new-arrivals",
 );
 export default function App() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(
     () => sessionStorage.getItem("uj_currentPage") || "home",
   );
@@ -257,8 +259,32 @@ export default function App() {
   const [homeVisionSection, setHomeVisionSection] = useState(() =>
     cloneContent(defaultPageContent["home-vision-section"]),
   );
-  const [phonepeSuccess, setPhonepeSuccess] = useState(false);
+  const [phonepeSuccess, setPhonepeSuccess] = useState(
+    () => sessionStorage.getItem("uj_phonepeSuccess") === "true",
+  );
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+
+  const handleSetPhonepeSuccess = (val) => {
+    setPhonepeSuccess(val);
+    if (val) {
+      sessionStorage.setItem("uj_phonepeSuccess", "true");
+    } else {
+      sessionStorage.removeItem("uj_phonepeSuccess");
+    }
+  };
+
+  const [trackedOrderId, setTrackedOrderId] = useState(
+    () => sessionStorage.getItem("uj_trackedOrderId") || "",
+  );
+
+  const handleSetTrackedOrderId = (id) => {
+    setTrackedOrderId(id);
+    if (id) {
+      sessionStorage.setItem("uj_trackedOrderId", id);
+    } else {
+      sessionStorage.removeItem("uj_trackedOrderId");
+    }
+  };
 
   // Sync state to sessionStorage
   useEffect(() => {
@@ -289,18 +315,35 @@ export default function App() {
     else sessionStorage.removeItem("uj_activeCollection");
   }, [activeCollection]);
 
+  // Handle Deep Linking to Order Tracking from Email
+  useEffect(() => {
+    const trackOrderIdParam = searchParams.get("track_order_id");
+    if (trackOrderIdParam) {
+      console.log(`Deep linking to track order page for order ID: ${trackOrderIdParam}`);
+      // Clear the search param so refreshes don't lock the view
+      const updatedParams = new URLSearchParams(searchParams);
+      updatedParams.delete("track_order_id");
+      setSearchParams(updatedParams, { replace: true });
+      
+      // Navigate to tracking page
+      handleSetTrackedOrderId(trackOrderIdParam);
+      setCurrentPage("track-order");
+      window.scrollTo(0, 0);
+    }
+  }, [searchParams, setSearchParams]);
+
   // Handle PhonePe Redirect Callback
   useEffect(() => {
     const checkPhonePeStatus = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const phonepeOrderId = urlParams.get("phonepe_order_id");
+      const phonepeOrderId = searchParams.get("phonepe_order_id");
 
       if (phonepeOrderId) {
         setIsVerifyingPayment(true);
         try {
-          // Remove query params from browser URL so page refreshes don't re-trigger verification
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, document.title, newUrl);
+          // Remove query params from browser URL using searchParams so page refreshes don't re-trigger verification
+          const updatedParams = new URLSearchParams(searchParams);
+          updatedParams.delete("phonepe_order_id");
+          setSearchParams(updatedParams, { replace: true });
 
           console.log(`Verifying PhonePe payment for order ${phonepeOrderId}`);
           const response = await fetch(
@@ -310,7 +353,8 @@ export default function App() {
 
           if (response.ok && data.success) {
             console.log("✅ PhonePe Payment Verified successfully!");
-            setPhonepeSuccess(true);
+            handleSetPhonepeSuccess(true);
+            handleSetTrackedOrderId(phonepeOrderId);
             setCartItems([]);
             setAddedIds(new Set());
             setCurrentPage("checkout");
@@ -332,6 +376,8 @@ export default function App() {
                     year: "numeric",
                   }),
                   status: o.status,
+                  refundStatus: o.refund_status,
+                  refundId: o.refund_id,
                   total: o.price,
                   item: o.product_name,
                   image: o.image_url,
@@ -362,7 +408,7 @@ export default function App() {
     };
 
     checkPhonePeStatus();
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   // Disable browser scroll restoration so it doesn't fight us
   useEffect(() => {
@@ -897,8 +943,67 @@ export default function App() {
     setUserInitial("");
     setOrders([]);
     localStorage.removeItem("unicorn_jewels_user");
+    sessionStorage.removeItem("uj_phonepeSuccess");
+    sessionStorage.removeItem("uj_trackedOrderId");
+    setTrackedOrderId("");
     setAccountDropdownOpen(false);
     setCurrentPage("home");
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm("Are you sure you want to cancel this order?")) {
+      return;
+    }
+    try {
+      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Cancelled" }),
+      });
+      if (response.ok) {
+        // Re-fetch user orders to ensure state (refund status, refund ID, tracking) is accurate
+        const savedUser = localStorage.getItem("unicorn_jewels_user");
+        if (savedUser) {
+          const user = JSON.parse(savedUser);
+          const ordersResponse = await fetch(
+            `http://localhost:5000/api/auth/user-orders/${user.id}`,
+          );
+          if (ordersResponse.ok) {
+            const backendOrders = await ordersResponse.json();
+            const formattedOrders = backendOrders.map((o) => ({
+              id: o.order_id,
+              date: new Date(o.order_date).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              }),
+              status: o.status,
+              refundStatus: o.refund_status,
+              refundId: o.refund_id,
+              total: o.price,
+              item: o.product_name,
+              image: o.image_url,
+              productId: o.product_id,
+              quantity: o.quantity || 1,
+              selectedSize: o.selected_size || "",
+              timestamp: new Date(o.order_date).getTime(),
+            }));
+            setOrders(formattedOrders);
+          }
+        } else {
+          setOrders((prev) =>
+            prev.map((o) => (o.id === orderId ? { ...o, status: "Cancelled" } : o))
+          );
+        }
+        alert("Order cancelled successfully.");
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Failed to cancel order.");
+      }
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      alert("An error occurred while cancelling the order.");
+    }
   };
 
   // Render auth pages
@@ -924,6 +1029,8 @@ export default function App() {
             year: "numeric",
           }),
           status: o.status,
+          refundStatus: o.refund_status,
+          refundId: o.refund_id,
           total: o.price,
           item: o.product_name,
           image: o.image_url,
@@ -1488,11 +1595,13 @@ export default function App() {
           onAddAddress={handleAddAddress}
           onUpdateAddress={handleUpdateAddress}
           onDeleteAddress={handleDeleteAddress}
-          onTrackShipment={() => {
+          onTrackShipment={(order) => {
+            handleSetTrackedOrderId(order.id);
             setCurrentPage("track-order");
             window.scrollTo(0, 0);
           }}
           onDownloadReceipt={handleDownloadReceipt}
+          onCancelOrder={handleCancelOrder}
         />
 
         <CartDrawer
@@ -1525,6 +1634,7 @@ export default function App() {
   if (currentPage === "track-order") {
     return (
       <TrackOrderPage
+        initialOrderId={trackedOrderId || undefined}
         onBack={() => {
           window.scrollTo(0, 0);
           setCurrentPage("profile");
@@ -1537,7 +1647,7 @@ export default function App() {
       <CheckoutPage
         items={cartItems}
         onBack={() => {
-          setPhonepeSuccess(false);
+          handleSetPhonepeSuccess(false);
           setCurrentPage("home");
         }}
         initialIsComplete={phonepeSuccess}
@@ -1583,8 +1693,9 @@ export default function App() {
           }
         }}
         onCompletePurchase={async () => {
+          const orderIdShared = `ORD-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 900) + 100}`;
           const newOrders = cartItems.map((item) => ({
-            id: `ORD-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 900) + 100}`,
+            id: orderIdShared,
             date: new Date().toLocaleDateString("en-US", {
               month: "long",
               day: "numeric",
@@ -1620,41 +1731,48 @@ export default function App() {
             console.error("Failed to reduce stock:", err);
           }
 
-          // If user is logged in, save to backend
+          // If user is logged in, save to backend using the consolidated API
           if (isLoggedIn && currentUser) {
-            for (const order of newOrders) {
-              try {
-                await fetch("http://localhost:5000/api/auth/user-orders", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    userId: currentUser.id,
-                    orderId: order.id,
-                    productName: order.item,
-                    price: order.total,
-                    imageUrl: order.image,
-                    productId: order.productId,
-                    quantity: order.quantity,
-                    selectedSize: order.selectedSize,
-                  }),
-                });
-              } catch (err) {
-                console.error("Failed to save order to backend:", err);
+            try {
+              const response = await fetch("http://localhost:5000/api/orders", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: currentUser.id,
+                  orderId: orderIdShared,
+                  items: newOrders.map(o => ({
+                    productName: o.item,
+                    price: o.total,
+                    imageUrl: o.image,
+                    status: o.status,
+                    productId: o.productId,
+                    quantity: o.quantity,
+                    selectedSize: o.selectedSize
+                  }))
+                })
+              });
+              if (!response.ok) {
+                console.error("Failed to save order to backend:", await response.text());
               }
+            } catch (err) {
+              console.error("Failed to save order to backend:", err);
             }
           }
 
           setOrders((prev) => [...newOrders, ...prev]);
+          if (newOrders.length > 0) {
+            handleSetTrackedOrderId(orderIdShared);
+          }
           setCartItems([]);
           setAddedIds(new Set());
         }}
         onViewTracking={() => {
-          setPhonepeSuccess(false);
+          handleSetPhonepeSuccess(false);
           setCurrentPage("track-order");
           window.scrollTo(0, 0);
         }}
         onContinueShopping={() => {
-          setPhonepeSuccess(false);
+          handleSetPhonepeSuccess(false);
           setCurrentPage("home");
         }}
       />

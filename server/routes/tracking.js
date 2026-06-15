@@ -19,6 +19,46 @@ router.get('/:query', async (req, res) => {
     // Check if the query is an Order ID (starts with 'ORD')
     if (query.toUpperCase().startsWith('ORD')) {
       orderId = query;
+    } else {
+      // It's a tracking number. Try to find the associated order ID from order_tracking
+      const [trackingRows] = await pool.query(
+        `SELECT order_id FROM order_tracking WHERE tracking_number = ? LIMIT 1`,
+        [query]
+      );
+      if (trackingRows.length > 0) {
+        orderId = trackingRows[0].order_id;
+      }
+    }
+
+    // If we have an order ID, check if the order status is Cancelled in user_orders
+    if (orderId) {
+      const [orderRows] = await pool.query(
+        `SELECT status FROM user_orders WHERE order_id = ? LIMIT 1`,
+        [orderId]
+      );
+      if (orderRows.length > 0 && (orderRows[0].status === 'Cancelled' || orderRows[0].status === 'CANCELLED')) {
+        return res.json({
+          trackingNumber: query.toUpperCase().startsWith('ORD') ? 'N/A' : query,
+          orderId: orderId,
+          status: 'Cancelled',
+          carrier: 'FedEx',
+          estimatedDelivery: null,
+          actualDelivery: null,
+          shipmentDate: null,
+          events: [
+            {
+              timestamp: new Date().toISOString(),
+              location: 'Memphis, TN, US',
+              description: 'Shipment cancelled by customer',
+              statusCode: 'CA'
+            }
+          ]
+        });
+      }
+    }
+
+    // If the query is an Order ID, continue with regular logic
+    if (query.toUpperCase().startsWith('ORD')) {
       // 1. Look up tracking record by order_id
       const [trackingRows] = await pool.query(
         `SELECT tracking_number FROM order_tracking WHERE order_id = ? LIMIT 1`,
@@ -61,7 +101,7 @@ router.get('/:query', async (req, res) => {
       const cacheAgeMs = Date.now() - new Date(cached.last_updated).getTime();
       const CACHE_EXPIRY = 30 * 60 * 1000; // 30 minutes
 
-      if (cacheAgeMs < CACHE_EXPIRY) {
+      if (cacheAgeMs < CACHE_EXPIRY || cached.status === 'Cancelled') {
         console.log(`✅ Cache hit for tracking: ${trackingNumber}`);
         
         // Fetch detailed events

@@ -126,7 +126,10 @@ export default function OrderManagement() {
         order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.user_email.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
+      // By default (All), do not show unpaid/pending checkout attempts
+      const matchesStatus = statusFilter === 'All' 
+        ? order.status !== 'Pending Payment' 
+        : order.status === statusFilter;
       
       return matchesSearch && matchesStatus;
     });
@@ -158,7 +161,7 @@ export default function OrderManagement() {
           <div>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Processing</p>
             <h4 className="text-2xl font-bold text-slate-800 mt-1">
-              {groupedOrders.filter(o => o.status === 'Processing' || o.status === 'Pending Payment').length}
+              {groupedOrders.filter(o => o.status === 'Processing').length}
             </h4>
           </div>
         </div>
@@ -247,6 +250,17 @@ export default function OrderManagement() {
                         {styles.icon}
                         {order.status}
                       </span>
+                      {order.status === 'Cancelled' && (
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold tracking-wider ${
+                          order.items[0]?.refund_status === 'SUCCESS'
+                            ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                            : order.items[0]?.refund_status === 'PENDING'
+                            ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                            : 'bg-slate-50 border border-slate-200 text-slate-600'
+                        }`}>
+                          {order.items[0]?.refund_status === 'SUCCESS' ? 'REFUNDED' : order.items[0]?.refund_status === 'PENDING' ? 'REFUND PENDING' : 'REFUND INITIATED'}
+                        </span>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400 mt-2 font-medium">
                       <span className="flex items-center gap-1.5"><User size={13} /> {order.customer_name}</span>

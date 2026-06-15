@@ -27,7 +27,8 @@ export function ProfilePage({
   onUpdateAddress,
   onDeleteAddress,
   onTrackShipment,
-  onDownloadReceipt
+  onDownloadReceipt,
+  onCancelOrder
 }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -95,7 +96,7 @@ export function ProfilePage({
           {/* Main Content Area */}
           <div className="w-full lg:w-3/4 min-h-[600px]">
             {activeTab === 'overview' && <OverviewTab user={user} onEdit={() => setIsEditingProfile(true)} />}
-            {activeTab === 'orders' && <OrdersTab orders={orders} onTrackShipment={onTrackShipment} onDownloadReceipt={onDownloadReceipt} />}
+            {activeTab === 'orders' && <OrdersTab orders={orders} onTrackShipment={onTrackShipment} onDownloadReceipt={onDownloadReceipt} onCancelOrder={onCancelOrder} />}
             {activeTab === 'wishlist' && <WishlistTab items={wishlistItems} wishlist={wishlist} toggleWishlist={toggleWishlist} addToCart={addToCart} onProductClick={onProductClick} />}
             {activeTab === 'addresses' && (
               <AddressesTab 
@@ -171,7 +172,7 @@ function OverviewTab({ user, onEdit }) {
     </motion.div>;
 }
 
-function OrdersTab({ orders = [], onTrackShipment, onDownloadReceipt }) {
+function OrdersTab({ orders = [], onTrackShipment, onDownloadReceipt, onCancelOrder }) {
   return <motion.div initial={{
     opacity: 0,
     y: 10
@@ -209,7 +210,18 @@ function OrdersTab({ orders = [], onTrackShipment, onDownloadReceipt }) {
                 </div>
                 <div className="text-left xl:text-right">
                   <p className="text-sm tracking-wider mb-3">{order.total}</p>
-                  <p className="text-[9px] tracking-[0.2em] uppercase text-[#C0C0C0] font-medium">{order.status}</p>
+                  <p className="text-[9px] tracking-[0.2em] uppercase text-[#C0C0C0] font-medium">
+                    {order.status === 'Cancelled' ? (
+                      <>
+                        <span className="text-red-500 font-semibold">Cancelled</span>
+                        {order.refundStatus === 'SUCCESS' && <span className="text-emerald-600 font-semibold ml-2">(Refunded)</span>}
+                        {order.refundStatus === 'PENDING' && <span className="text-amber-500 font-semibold ml-2">(Refund Pending)</span>}
+                        {!order.refundStatus && <span className="text-gray-400 font-semibold ml-2">(Refund Initiated)</span>}
+                      </>
+                    ) : (
+                      order.status
+                    )}
+                  </p>
                 </div>
               </div>
               
@@ -220,9 +232,16 @@ function OrdersTab({ orders = [], onTrackShipment, onDownloadReceipt }) {
                 <button onClick={() => onTrackShipment?.(order)} className="text-[9px] uppercase tracking-[0.2em] border-b border-black pb-1 hover:text-gray-500 hover:border-gray-500 transition-colors">
                   Track Shipment
                 </button>
-                <button className="text-[9px] uppercase tracking-[0.2em] border-b border-gray-300 text-gray-500 pb-1 hover:text-black hover:border-black transition-colors xl:ml-auto">
-                  Request Return
-                </button>
+                {['Processing', 'Pending Payment', 'Pending'].includes(order.status) && (
+                  <button onClick={() => onCancelOrder?.(order.id)} className="text-[9px] uppercase tracking-[0.2em] border-b border-red-300 text-red-500 pb-1 hover:text-red-700 hover:border-red-700 transition-colors">
+                    Cancel Order
+                  </button>
+                )}
+                {order.status === 'Delivered' && (
+                  <button className="text-[9px] uppercase tracking-[0.2em] border-b border-gray-300 text-gray-500 pb-1 hover:text-black hover:border-black transition-colors xl:ml-auto">
+                    Request Return
+                  </button>
+                )}
               </div>
             </div>
           </div>)}

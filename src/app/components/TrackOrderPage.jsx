@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Package, Truck, CheckCircle2, MapPin, Calendar, ArrowLeft, Search, Clock, AlertTriangle } from 'lucide-react';
+import { Package, Truck, CheckCircle2, MapPin, Calendar, ArrowLeft, Search, Clock, AlertTriangle, X } from 'lucide-react';
 
-export function TrackOrderPage({ onBack }) {
-  const [searchQuery, setSearchQuery] = useState('ORD-993-841');
+export function TrackOrderPage({ onBack, initialOrderId = 'ORD-993-841' }) {
+  const [searchQuery, setSearchQuery] = useState(initialOrderId);
   const [trackingData, setTrackingData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,10 +30,11 @@ export function TrackOrderPage({ onBack }) {
     }
   };
 
-  // Run initial track lookup on mount for the default order
+  // Run initial track lookup on mount or when initialOrderId changes
   useEffect(() => {
-    handleTrackOrder(searchQuery);
-  }, []);
+    setSearchQuery(initialOrderId);
+    handleTrackOrder(initialOrderId);
+  }, [initialOrderId]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -41,10 +42,12 @@ export function TrackOrderPage({ onBack }) {
   };
 
   // Milestones mapping
-  const stepsMap = ['Label Created', 'Picked Up', 'In Transit', 'Out for Delivery', 'Delivered'];
+  const stepsMap = trackingData?.status === 'Cancelled'
+    ? ['Label Created', 'Cancelled']
+    : ['Label Created', 'Picked Up', 'In Transit', 'Out for Delivery', 'Delivered'];
 
   const getStatusIndex = (status) => {
-    if (status === 'Exception' || status === 'Cancelled') {
+    if (status === 'Exception') {
       return 2; // Mid-way exception point
     }
     return stepsMap.indexOf(status);
@@ -62,7 +65,8 @@ export function TrackOrderPage({ onBack }) {
       'Picked Up': 'PU',
       'In Transit': 'IT',
       'Out for Delivery': 'OD',
-      'Delivered': 'DL'
+      'Delivered': 'DL',
+      'Cancelled': 'CX'
     };
 
     const targetCode = codeMap[stepName];
@@ -94,6 +98,7 @@ export function TrackOrderPage({ onBack }) {
     if (!locationText) {
       if (stepName === 'Label Created') locationText = 'Fulfillment Center';
       else if (stepName === 'Delivered') locationText = 'Destination Address';
+      else if (stepName === 'Cancelled') locationText = 'Order Cancelled';
       else locationText = isCompleted ? 'In Transit' : 'Pending Route';
     }
 
@@ -263,13 +268,17 @@ export function TrackOrderPage({ onBack }) {
                     {journeySteps.map((step, index) => (
                       <div key={index} className="relative pl-12 group">
                         {/* Indicator Circle */}
-                        <div className={`absolute left-0 top-0 w-6 h-6 rounded-full flex items-center justify-center border transition-all duration-500 z-10 ${step.completed
-                            ? 'bg-black border-black text-white'
-                            : step.current
-                              ? 'bg-white border-black text-black shadow-lg scale-125'
-                              : 'bg-white border-gray-200 text-gray-300'
+                        <div className={`absolute left-0 top-0 w-6 h-6 rounded-full flex items-center justify-center border transition-all duration-500 z-10 ${step.status === 'Cancelled'
+                            ? 'bg-red-500 border-red-500 text-white'
+                            : step.completed
+                              ? 'bg-black border-black text-white'
+                              : step.current
+                                ? 'bg-white border-black text-black shadow-lg scale-125'
+                                : 'bg-white border-gray-200 text-gray-300'
                           }`}>
-                          {step.completed ? (
+                          {step.status === 'Cancelled' ? (
+                            <X size={12} strokeWidth={2.5} />
+                          ) : step.completed ? (
                             <CheckCircle2 size={12} strokeWidth={2.5} />
                           ) : step.current ? (
                             <Clock size={12} strokeWidth={2.5} className="animate-spin" style={{ animationDuration: '4s' }} />
@@ -280,7 +289,7 @@ export function TrackOrderPage({ onBack }) {
 
                         <div className={`transition-all duration-500 ${step.completed || step.current ? 'opacity-100' : 'opacity-40'}`}>
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                            <h3 className={`text-[11px] tracking-[0.25em] uppercase font-medium ${step.current ? 'text-black' : 'text-gray-900'}`}>
+                            <h3 className={`text-[11px] tracking-[0.25em] uppercase font-medium ${step.status === 'Cancelled' ? 'text-red-500' : step.current ? 'text-black' : 'text-gray-900'}`}>
                               {step.status}
                             </h3>
                             <span className="text-[9px] tracking-[0.2em] text-gray-400 uppercase">{step.date}</span>

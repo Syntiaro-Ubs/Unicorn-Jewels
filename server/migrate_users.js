@@ -70,6 +70,20 @@ async function migrateUsers() {
             // Ignore if column already exists
         }
 
+        try {
+            await db.query('ALTER TABLE user_orders ADD COLUMN refund_id VARCHAR(100) NULL');
+            console.log('refund_id column added to user_orders table.');
+        } catch (e) {
+            // Ignore if column already exists
+        }
+
+        try {
+            await db.query('ALTER TABLE user_orders ADD COLUMN refund_status VARCHAR(50) NULL');
+            console.log('refund_status column added to user_orders table.');
+        } catch (e) {
+            // Ignore if column already exists
+        }
+
         await db.query(`
             CREATE TABLE IF NOT EXISTS user_addresses (
                 id INT AUTO_INCREMENT PRIMARY KEY,

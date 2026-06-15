@@ -49,15 +49,15 @@ export default function ProductManagement() {
     barcode: '',
     image: null,
     image_url: '',
-    hover_image: null,
-    hover_image_url: '',
     weight: 0.3
   });
 
-
+  const [additionalImages, setAdditionalImages] = useState([]);
+  const [additionalVideos, setAdditionalVideos] = useState([]);
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState([]);
+  const [additionalVideoPreviews, setAdditionalVideoPreviews] = useState([]);
 
   const [previewUrl, setPreviewUrl] = useState('');
-  const [hoverPreviewUrl, setHoverPreviewUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -141,12 +141,28 @@ export default function ProductManagement() {
     }
   };
 
-  const handleHoverImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData(prev => ({ ...prev, hover_image: file }));
-      setHoverPreviewUrl(URL.createObjectURL(file));
-    }
+  const handleAdditionalImagesChange = (e) => {
+    const files = Array.from(e.target.files);
+    setAdditionalImages(prev => [...prev, ...files]);
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setAdditionalImagePreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const handleAdditionalVideosChange = (e) => {
+    const files = Array.from(e.target.files);
+    setAdditionalVideos(prev => [...prev, ...files]);
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setAdditionalVideoPreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const removeAdditionalImage = (index) => {
+    setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+    setAdditionalImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeAdditionalVideo = (index) => {
+    setAdditionalVideos(prev => prev.filter((_, i) => i !== index));
+    setAdditionalVideoPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleAddSize = (e) => {
@@ -202,12 +218,13 @@ export default function ProductManagement() {
       barcode: '',
       image: null,
       image_url: '',
-      hover_image: null,
-      hover_image_url: '',
       weight: 0.3
     });
     setPreviewUrl('');
-    setHoverPreviewUrl('');
+    setAdditionalImages([]);
+    setAdditionalVideos([]);
+    setAdditionalImagePreviews([]);
+    setAdditionalVideoPreviews([]);
     setSizes([]);
     setNewSizeInput('');
     setIsModalOpen(true);
@@ -231,12 +248,13 @@ export default function ProductManagement() {
       barcode: product.barcode || '',
       image: null,
       image_url: product.image_url || '',
-      hover_image: null,
-      hover_image_url: product.hover_image_url || '',
       weight: product.weight || 0.3
     });
     setPreviewUrl(product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `http://localhost:5000${product.image_url}`) : '');
-    setHoverPreviewUrl(product.hover_image_url ? (product.hover_image_url.startsWith('http') ? product.hover_image_url : `http://localhost:5000${product.hover_image_url}`) : '');
+    setAdditionalImages([]);
+    setAdditionalVideos([]);
+    setAdditionalImagePreviews([]);
+    setAdditionalVideoPreviews([]);
     setNewSizeInput('');
     setSizes([]);
 
@@ -285,15 +303,23 @@ export default function ProductManagement() {
     Object.keys(formData).forEach(key => {
       if (key === 'image' && formData[key]) {
         data.append('image', formData[key]);
-      } else if (key === 'hover_image' && formData[key]) {
-        data.append('hover_image', formData[key]);
       } else if (key === 'slug') {
         data.append('slug', normalizedSlug);
       } else if (key === 'stock') {
         data.append('stock', finalStock);
-      } else if (key !== 'image' && key !== 'hover_image') {
+      } else if (key !== 'image') {
         data.append(key, formData[key]);
       }
+    });
+
+    // Add additional images
+    additionalImages.forEach((img) => {
+      data.append('additionalImages', img);
+    });
+
+    // Add additional videos
+    additionalVideos.forEach((video) => {
+      data.append('additionalVideos', video);
     });
 
     try {
@@ -705,6 +731,77 @@ export default function ProductManagement() {
                     </div>
                   </div>
 
+                  {/* Additional Images and Videos Section */}
+                  <div className="md:col-span-2 space-y-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Additional Images</label>
+                        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold transition-all">
+                          <Plus size={14} />
+                          Add Images
+                          <input 
+                            type="file" 
+                            multiple
+                            accept="image/*"
+                            onChange={handleAdditionalImagesChange}
+                            className="hidden" 
+                          />
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                        {additionalImagePreviews.map((preview, index) => (
+                          <div key={index} className="relative aspect-square rounded-lg border-2 border-slate-200 overflow-hidden group">
+                            <img src={preview} alt={`Additional ${index + 1}`} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeAdditionalImage(index)}
+                              className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      {additionalImagePreviews.length === 0 && (
+                        <p className="text-xs text-slate-400 text-center py-4">No additional images added</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Additional Videos</label>
+                        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold transition-all">
+                          <Plus size={14} />
+                          Add Videos
+                          <input 
+                            type="file" 
+                            multiple
+                            accept="video/*"
+                            onChange={handleAdditionalVideosChange}
+                            className="hidden" 
+                          />
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {additionalVideoPreviews.map((preview, index) => (
+                          <div key={index} className="relative aspect-video rounded-lg border-2 border-slate-200 overflow-hidden group bg-black">
+                            <video src={preview} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeAdditionalVideo(index)}
+                              className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      {additionalVideoPreviews.length === 0 && (
+                        <p className="text-xs text-slate-400 text-center py-4">No additional videos added</p>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2 sm:col-span-2">
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Product ID</label>
@@ -784,23 +881,45 @@ export default function ProductManagement() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Metal / Type</label>
-                    <input 
+                    <select 
                       name="metal"
                       value={formData.metal}
                       onChange={handleInputChange}
-                      placeholder="e.g. 18k White Gold"
                       className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
-                    />
+                    >
+                      <option value="">Select metal type...</option>
+                      <option value="18k Yellow Gold">18k Yellow Gold</option>
+                      <option value="18k White Gold">18k White Gold</option>
+                      <option value="18k Rose Gold">18k Rose Gold</option>
+                      <option value="14k Yellow Gold">14k Yellow Gold</option>
+                      <option value="14k White Gold">14k White Gold</option>
+                      <option value="14k Rose Gold">14k Rose Gold</option>
+                      <option value="Platinum">Platinum</option>
+                      <option value="Sterling Silver">Sterling Silver</option>
+                      <option value="Diamond">Diamond</option>
+                      <option value="Pearl">Pearl</option>
+                      <option value="Gemstone">Gemstone</option>
+                      <option value="Mixed Metals">Mixed Metals</option>
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Badge Tag</label>
-                    <input 
+                    <select 
                       name="tag"
                       value={formData.tag}
                       onChange={handleInputChange}
-                      placeholder="e.g. NEW, EXCLUSIVE"
                       className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
-                    />
+                    >
+                      <option value="">No badge</option>
+                      <option value="NEW">NEW</option>
+                      <option value="EXCLUSIVE">EXCLUSIVE</option>
+                      <option value="BESTSELLER">BESTSELLER</option>
+                      <option value="LIMITED EDITION">LIMITED EDITION</option>
+                      <option value="SALE">SALE</option>
+                      <option value="TRENDING">TRENDING</option>
+                      <option value="HANDCRAFTED">HANDCRAFTED</option>
+                      <option value="CUSTOM">CUSTOM</option>
+                    </select>
                   </div>
                 </div>
 

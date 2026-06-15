@@ -10,6 +10,7 @@ router.get('/', async (req, res) => {
         const [rows] = await db.query(`
             SELECT o.id, o.user_id, o.order_id, o.product_name, o.price, o.image_url, o.status, 
                    o.product_id, o.quantity, o.selected_size, o.order_date, o.refund_id, o.refund_status,
+                   o.cancellation_reason,
                    u.email as user_email, u.first_name, u.last_name 
             FROM user_orders o 
             LEFT JOIN users u ON o.user_id = u.id 
@@ -25,11 +26,13 @@ router.get('/', async (req, res) => {
 // UPDATE status of all items in an order
 router.put('/:orderId/status', async (req, res) => {
     const { orderId } = req.params;
-    const { status } = req.body;
+    const { status, cancellationReason } = req.body;
 
     if (!status) {
         return res.status(400).json({ message: 'Status is required' });
     }
+
+    const normalizedCancellationReason = typeof cancellationReason === 'string' ? cancellationReason.trim() : '';
 
     try {
         // Query the current items and status of this order before updating
@@ -141,10 +144,17 @@ router.put('/:orderId/status', async (req, res) => {
             }
         }
 
-        await db.query(
-            'UPDATE user_orders SET status = ? WHERE order_id = ?',
-            [status, orderId]
-        );
+        if (status === 'Cancelled') {
+            await db.query(
+                'UPDATE user_orders SET status = ?, cancellation_reason = ? WHERE order_id = ?',
+                [status, normalizedCancellationReason || null, orderId]
+            );
+        } else {
+            await db.query(
+                'UPDATE user_orders SET status = ? WHERE order_id = ?',
+                [status, orderId]
+            );
+        }
         res.json({ message: 'Order status updated successfully' });
     } catch (error) {
         console.error(error);

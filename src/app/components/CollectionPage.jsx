@@ -6,6 +6,7 @@ import { getProductHoverImage } from './productHoverImage';
 import { withScopedProductIds } from './productIdentity';
 import { ShopByLookBlock } from './ShopByLookBlock';
 import { buildShopByLookGridItems } from './shopByLookGrid';
+import { ALL_MATERIALS, buildMetalFilterOptions, productMatchesMetalFilter } from './productMetalFilters';
 export const collectionsData = {
   'Promise Bloom': {
     subtitle: 'Where love takes root and blossoms into eternity.',
@@ -71,23 +72,21 @@ export function CollectionPage({
   const displayEditorial = data?.editorial || 'CURATED COLLECTION';
   const [sort, setSort] = useState('Featured');
   const [sortOpen, setSortOpen] = useState(false);
-  const [metalFilter, setMetalFilter] = useState('All Materials');
+  const [metalFilter, setMetalFilter] = useState(ALL_MATERIALS);
   const [priceFilter, setPriceFilter] = useState('All Prices');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [openAccordion, setOpenAccordion] = useState('Collection');
   useEffect(() => {
     setSort('Featured');
-    setMetalFilter('All Materials');
+    setMetalFilter(ALL_MATERIALS);
     setPriceFilter('All Prices');
     setCategoryFilter('All Categories');
     setSortOpen(false);
     setFilterDrawerOpen(false);
   }, [collectionName]);
   const availableMetals = useMemo(() => {
-    if (!collectionProducts) return ['All Materials'];
-    const metals = new Set(collectionProducts.map(p => p.metal || ''));
-    return ['All Materials', ...Array.from(metals).sort()];
+    return buildMetalFilterOptions(collectionProducts);
   }, [collectionProducts]);
   const filteredAndSortedProducts = useMemo(() => {
     if (!collectionProducts) return [];
@@ -103,8 +102,8 @@ export function CollectionPage({
         return true;
       });
     }
-    if (metalFilter !== 'All Materials') {
-      list = list.filter(p => (p.metal || '').includes(metalFilter));
+    if (metalFilter !== ALL_MATERIALS) {
+      list = list.filter(p => productMatchesMetalFilter(p, metalFilter));
     }
     if (priceFilter !== 'All Prices') {
       if (priceFilter === 'Under $2,000') list = list.filter(p => p.priceNum < 2000);else if (priceFilter === '$2,000 - $5,000') list = list.filter(p => p.priceNum >= 2000 && p.priceNum <= 5000);else if (priceFilter === 'Over $5,000') list = list.filter(p => p.priceNum > 5000);
@@ -319,16 +318,16 @@ export function CollectionPage({
             </div>
 
             {/* Active Filters Summary */}
-            {(metalFilter !== 'All Materials' || priceFilter !== 'All Prices' || categoryFilter !== 'All Categories') && <div className="pt-4">
+            {(metalFilter !== ALL_MATERIALS || priceFilter !== 'All Prices' || categoryFilter !== 'All Categories') && <div className="pt-4">
                 <h3 className="text-xs uppercase tracking-widest text-gray-400 mb-3">Applied Filters</h3>
                 <div className="flex flex-wrap gap-2">
                   {categoryFilter !== 'All Categories' && <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-xs tracking-wide">
                       {categoryFilter}
                       <button onClick={() => setCategoryFilter('All Categories')} className="hover:text-black text-gray-500 ml-1"><X size={10} /></button>
                     </span>}
-                  {metalFilter !== 'All Materials' && <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-xs tracking-wide">
+                  {metalFilter !== ALL_MATERIALS && <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-xs tracking-wide">
                       {metalFilter}
-                      <button onClick={() => setMetalFilter('All Materials')} className="hover:text-black text-gray-500 ml-1"><X size={10} /></button>
+                      <button onClick={() => setMetalFilter(ALL_MATERIALS)} className="hover:text-black text-gray-500 ml-1"><X size={10} /></button>
                     </span>}
                   {priceFilter !== 'All Prices' && <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-xs tracking-wide">
                       {priceFilter}
@@ -336,7 +335,7 @@ export function CollectionPage({
                     </span>}
                 </div>
                 <button onClick={() => {
-              setMetalFilter('All Materials');
+              setMetalFilter(ALL_MATERIALS);
               setPriceFilter('All Prices');
               setCategoryFilter('All Categories');
             }} className="text-xs uppercase tracking-widest text-gray-500 hover:text-black mt-4 block underline underline-offset-4">
@@ -364,7 +363,7 @@ export function CollectionPage({
           }}>No products found matching your criteria.</h3>
               <button onClick={() => {
             setCategoryFilter('All Categories');
-            setMetalFilter('All Materials');
+            setMetalFilter(ALL_MATERIALS);
             setPriceFilter('All Prices');
           }} className="text-sm uppercase tracking-widest border-b border-black pb-1 hover:text-gray-600 hover:border-gray-600 transition-colors">
                 Clear Filters

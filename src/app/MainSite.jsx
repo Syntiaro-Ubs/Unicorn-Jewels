@@ -384,6 +384,7 @@ export default function App() {
                   productId: o.product_id,
                   quantity: o.quantity || 1,
                   selectedSize: o.selected_size || "",
+                  cancellationReason: o.cancellation_reason || "",
                   timestamp: new Date(o.order_date).getTime(),
                 }));
                 setOrders(formattedOrders);
@@ -450,6 +451,7 @@ export default function App() {
               productId: o.product_id,
               quantity: o.quantity || 1,
               selectedSize: o.selected_size || "",
+              cancellationReason: o.cancellation_reason || "",
               timestamp: new Date(o.order_date).getTime(),
             }));
             setOrders(formattedOrders);
@@ -950,15 +952,19 @@ export default function App() {
     setCurrentPage("home");
   };
 
-  const handleCancelOrder = async (orderId) => {
-    if (!window.confirm("Are you sure you want to cancel this order?")) {
-      return;
+  const handleCancelOrder = async (orderId, cancellationReason) => {
+    if (!cancellationReason?.trim()) {
+      alert("Please select a cancellation reason.");
+      return { success: false };
     }
     try {
       const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Cancelled" }),
+        body: JSON.stringify({
+          status: "Cancelled",
+          cancellationReason: cancellationReason.trim(),
+        }),
       });
       if (response.ok) {
         // Re-fetch user orders to ensure state (refund status, refund ID, tracking) is accurate
@@ -986,23 +992,27 @@ export default function App() {
               productId: o.product_id,
               quantity: o.quantity || 1,
               selectedSize: o.selected_size || "",
+              cancellationReason: o.cancellation_reason || "",
               timestamp: new Date(o.order_date).getTime(),
             }));
             setOrders(formattedOrders);
           }
         } else {
           setOrders((prev) =>
-            prev.map((o) => (o.id === orderId ? { ...o, status: "Cancelled" } : o))
+            prev.map((o) => (o.id === orderId ? { ...o, status: "Cancelled", cancellationReason: cancellationReason.trim() } : o))
           );
         }
         alert("Order cancelled successfully.");
+        return { success: true };
       } else {
         const errorData = await response.json();
         alert(errorData.message || "Failed to cancel order.");
+        return { success: false };
       }
     } catch (error) {
       console.error("Error cancelling order:", error);
       alert("An error occurred while cancelling the order.");
+      return { success: false };
     }
   };
 
@@ -1037,6 +1047,7 @@ export default function App() {
           productId: o.product_id,
           quantity: o.quantity || 1,
           selectedSize: o.selected_size || "",
+          cancellationReason: o.cancellation_reason || "",
           timestamp: new Date(o.order_date).getTime(),
         }));
         setOrders(formattedOrders);
@@ -2905,8 +2916,28 @@ export default function App() {
                 fontWeight: 300,
               }}
             >
-              {dynamicBanner.description}
+              {dynamicBanner.description}{" "}
+              <button
+                onClick={() => {
+                  window.scrollTo(0, 0);
+                  document.documentElement.scrollTop = 0;
+                  document.body.scrollTop = 0;
+                  setCurrentPage("story");
+                  setTimeout(() => {
+                    window.scrollTo(0, 0);
+                    document.documentElement.scrollTop = 0;
+                    document.body.scrollTop = 0;
+                  }, 50);
+                }}
+                className="text-sm sm:text-base text-white/90 hover:text-white underline decoration-white/50 hover:decoration-white transition-all cursor-pointer drop-shadow-lg inline"
+                style={{
+                  fontWeight: 300,
+                }}
+              >
+                More
+              </button>
             </p>
+           
 
             <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 md:gap-12 items-start sm:items-center mt-2">
               <button
@@ -3081,93 +3112,15 @@ export default function App() {
         </div>
       </section>
 
-      {/* Dynamic Editorial Sections */}
-      {dbEditorials.map((editorial, index) => (
-        <section
-          key={editorial.id}
-          className={`py-12 sm:py-16 md:py-20 w-full overflow-hidden ${index % 2 !== 0 ? "bg-gray-50" : ""}`}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
-            <div className="grid md:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: editorial.is_reversed ? 50 : -50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8 }}
-                viewport={{ once: true }}
-                className={`relative w-full h-[400px] sm:h-[500px] md:h-[600px] cursor-pointer overflow-hidden ${editorial.is_reversed ? "order-1 md:order-2" : ""}`}
-              >
-                <ImageWithFallback
-                  src={
-                    editorial.image_url
-                      ? editorial.image_url.startsWith("http")
-                        ? editorial.image_url
-                        : `http://localhost:5000${editorial.image_url}`
-                      : ""
-                  }
-                  alt={editorial.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-in-out hover:scale-105"
-                />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: editorial.is_reversed ? -50 : 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8 }}
-                viewport={{ once: true }}
-                className={`space-y-4 sm:space-y-6 ${editorial.is_reversed ? "order-2 md:order-1" : ""}`}
-              >
-                <h2
-                  className="text-3xl sm:text-4xl md:text-5xl"
-                  style={{ fontWeight: 300, letterSpacing: "0.05em" }}
-                >
-                  {editorial.title}
-                </h2>
-                <p
-                  className="text-base sm:text-lg text-gray-600"
-                  style={{ fontWeight: 300, lineHeight: 1.8 }}
-                >
-                  {editorial.description}
-                </p>
-                <button
-                  onClick={() => {
-                    const targetSection =
-                      editorial.button_link || "eternally-desired";
-                    document.getElementById(targetSection).scrollIntoView({
-                      behavior: "smooth",
-                    });
-                  }}
-                  className="flex items-center gap-2 text-black border-b-2 border-black pb-1 hover:text-gray-600 hover:border-gray-600 transition-colors text-sm sm:text-base tap-target"
-                >
-                  <span className="tracking-wider">
-                    {editorial.button_text}
-                  </span>
-                  <ChevronRight size={18} className="sm:w-[20px] sm:h-[20px]" />
-                </button>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-      ))}
-
       {/* Just Unveiled */}
       <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 w-full overflow-hidden">
         <div className="max-w-7xl mx-auto w-full">
           <div className="text-center mb-12 sm:mb-14 md:mb-16">
             <motion.div
-              initial={{
-                opacity: 0,
-                y: 20,
-              }}
-              whileInView={{
-                opacity: 1,
-                y: 0,
-              }}
-              transition={{
-                duration: 0.6,
-              }}
-              viewport={{
-                once: true,
-              }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
             >
               <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <Sparkles
@@ -3176,9 +3129,7 @@ export default function App() {
                 />
                 <span
                   className="text-xs sm:text-sm tracking-[0.3em] text-gray-400"
-                  style={{
-                    fontWeight: 400,
-                  }}
+                  style={{ fontWeight: 400 }}
                 >
                   JUST ARRIVED
                 </span>
@@ -3189,18 +3140,13 @@ export default function App() {
               </div>
               <h2
                 className="text-2xl sm:text-3xl md:text-4xl mb-3 sm:mb-4"
-                style={{
-                  fontWeight: 300,
-                  letterSpacing: "0.1em",
-                }}
+                style={{ fontWeight: 300, letterSpacing: "0.1em" }}
               >
                 Just Unveiled
               </h2>
               <p
                 className="text-base sm:text-lg text-gray-600 max-w-xl mx-auto px-4"
-                style={{
-                  fontWeight: 300,
-                }}
+                style={{ fontWeight: 300 }}
               >
                 Be the first to discover our latest creations, fresh from the
                 atelier
@@ -3212,7 +3158,7 @@ export default function App() {
             const sliderProducts = dbJustUnveiled;
             if (sliderProducts.length === 0) return null;
 
-            const maxIndex = Math.max(0, sliderProducts.length - 3); // Assumes 3 items per view on desktop
+            const maxIndex = Math.max(0, sliderProducts.length - 3);
 
             return (
               <div className="relative group px-4 sm:px-12">
@@ -3296,7 +3242,6 @@ export default function App() {
                   </motion.div>
                 </div>
 
-                {/* Navigation Arrows */}
                 {sliderProducts.length > 3 && (
                   <>
                     <button
@@ -3324,6 +3269,74 @@ export default function App() {
           })()}
         </div>
       </section>
+
+      {/* Dynamic Editorial Sections */}
+      {dbEditorials.map((editorial, index) => (
+        <section
+          key={editorial.id}
+          className={`py-12 sm:py-16 md:py-20 w-full overflow-hidden ${index % 2 !== 0 ? "bg-gray-50" : ""}`}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
+            <div className="grid md:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center">
+              <motion.div
+                initial={{ opacity: 0, x: editorial.is_reversed ? 50 : -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className={`relative w-full h-[400px] sm:h-[500px] md:h-[600px] cursor-pointer overflow-hidden ${editorial.is_reversed ? "order-1 md:order-2" : ""}`}
+              >
+                <ImageWithFallback
+                  src={
+                    editorial.image_url
+                      ? editorial.image_url.startsWith("http")
+                        ? editorial.image_url
+                        : `http://localhost:5000${editorial.image_url}`
+                      : ""
+                  }
+                  alt={editorial.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-in-out hover:scale-105"
+                />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: editorial.is_reversed ? -50 : 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className={`space-y-4 sm:space-y-6 ${editorial.is_reversed ? "order-2 md:order-1" : ""}`}
+              >
+                <h2
+                  className="text-3xl sm:text-4xl md:text-5xl"
+                  style={{ fontWeight: 300, letterSpacing: "0.05em" }}
+                >
+                  {editorial.title}
+                </h2>
+                <p
+                  className="text-base sm:text-lg text-gray-600"
+                  style={{ fontWeight: 300, lineHeight: 1.8 }}
+                >
+                  {editorial.description}
+                </p>
+                <button
+                  onClick={() => {
+                    const targetSection =
+                      editorial.button_link || "eternally-desired";
+                    document.getElementById(targetSection).scrollIntoView({
+                      behavior: "smooth",
+                    });
+                  }}
+                  className="flex items-center gap-2 text-black border-b-2 border-black pb-1 hover:text-gray-600 hover:border-gray-600 transition-colors text-sm sm:text-base tap-target"
+                >
+                  <span className="tracking-wider">
+                    {editorial.button_text}
+                  </span>
+                  <ChevronRight size={18} className="sm:w-[20px] sm:h-[20px]" />
+                </button>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+      ))}
 
       {/* Our Vision - Asymmetric Editorial */}
       <section className="py-32 px-6 bg-[#0a0a0a] text-white">

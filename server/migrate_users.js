@@ -35,6 +35,7 @@ async function migrateUsers() {
                 product_id VARCHAR(100) NULL,
                 quantity INT DEFAULT 1,
                 selected_size VARCHAR(50) NULL,
+                cancellation_reason TEXT NULL,
                 order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
@@ -80,6 +81,13 @@ async function migrateUsers() {
         try {
             await db.query('ALTER TABLE user_orders ADD COLUMN refund_status VARCHAR(50) NULL');
             console.log('refund_status column added to user_orders table.');
+        } catch (e) {
+            // Ignore if column already exists
+        }
+
+        try {
+            await db.query('ALTER TABLE user_orders ADD COLUMN cancellation_reason TEXT NULL');
+            console.log('cancellation_reason column added to user_orders table.');
         } catch (e) {
             // Ignore if column already exists
         }

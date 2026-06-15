@@ -83,25 +83,52 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST new product
-router.post('/', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'hover_image', maxCount: 1 }]), async (req, res) => {
+router.post('/', upload.fields([
+    { name: 'image', maxCount: 1 }, 
+    { name: 'additionalImages', maxCount: 10 },
+    { name: 'additionalVideos', maxCount: 5 }
+]), async (req, res) => {
     const { name, slug, price, price_num, description, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight } = req.body;
     let image_url = req.body.image_url || '';
-    let hover_image_url = req.body.hover_image_url || '';
+    let additional_images = [];
+    let additional_videos = [];
 
     if (req.files && req.files['image'] && req.files['image'][0]) {
         image_url = `/uploads/${req.files['image'][0].filename}`;
     }
 
-    if (req.files && req.files['hover_image'] && req.files['hover_image'][0]) {
-        hover_image_url = `/uploads/${req.files['hover_image'][0].filename}`;
+    if (req.files && req.files['additionalImages']) {
+        additional_images = req.files['additionalImages'].map(file => `/uploads/${file.filename}`);
+    }
+
+    if (req.files && req.files['additionalVideos']) {
+        additional_videos = req.files['additionalVideos'].map(file => `/uploads/${file.filename}`);
     }
 
     try {
         const normalizedSlug = await getUniqueProductSlug(slug, name);
         const [result] = await db.query(
-            `INSERT INTO products (name, slug, price, price_num, description, image_url, hover_image_url, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [name, normalizedSlug, price, price_num, description, image_url, hover_image_url, category_id || null, collection_id || null, metal, tag, is_featured === 'true', is_new_arrival === 'true', stock || 0, barcode || '', weight || 0.3]
+            `INSERT INTO products (name, slug, price, price_num, description, image_url, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight, additional_images, additional_videos) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                name, 
+                normalizedSlug, 
+                price, 
+                price_num, 
+                description, 
+                image_url, 
+                category_id || null, 
+                collection_id || null, 
+                metal, 
+                tag, 
+                is_featured === 'true', 
+                is_new_arrival === 'true', 
+                stock || 0, 
+                barcode || '', 
+                weight || 0.3,
+                JSON.stringify(additional_images),
+                JSON.stringify(additional_videos)
+            ]
         );
         res.status(201).json({ id: result.insertId, slug: normalizedSlug, message: 'Product created successfully' });
     } catch (error) {

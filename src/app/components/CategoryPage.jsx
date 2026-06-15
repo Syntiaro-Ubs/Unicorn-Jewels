@@ -8,321 +8,43 @@ import { withScopedProductIds } from './productIdentity';
 import { buildShopByLookGridItems } from './shopByLookGrid';
 import { collectionsData } from './CollectionPage';
 
-/* ─── Types ──────────────────────────────────────────── */
-
-/* ─── Product catalogue ───────────────────────────────── */
+/* ─── Types ──────────────────────────────────── */
 const catalogue = {
   Rings: {
     hero: 'https://images.unsplash.com/photo-1662434921251-a6eba45ac40c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBkaWFtb25kJTIwcmluZ3MlMjB3aGl0ZSUyMGJhY2tncm91bmQlMjBqZXdlbHJ5fGVufDF8fHx8MTc3NDI0NjY0OXww&ixlib=rb-4.1.0&q=80&w=1080',
     subtitle: 'From solitaires to eternity bands, each ring is a promise in platinum and gold.',
     editorial: 'Icons of Desire',
-    products: [{
-      id: 101,
-      name: 'Round Brilliant Solitaire',
-      price: '$8,500',
-      priceNum: 8500,
-      metal: 'Platinum · Round Brilliant',
-      image: 'https://images.unsplash.com/photo-1662434921251-a6eba45ac40c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBkaWFtb25kJTIwcmluZ3MlMjB3aGl0ZSUyMGJhY2tncm91bmQlMjBqZXdlbHJ5fGVufDF8fHx8MTc3NDI0NjY0OXww&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'ICONIC'
-    }, {
-      id: 102,
-      name: 'Sapphire Halo Ring',
-      price: '$12,800',
-      priceNum: 12800,
-      metal: '18k White Gold · Oval Sapphire',
-      image: 'https://images.unsplash.com/photo-1735480165158-e645caaf1695?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYXBwaGlyZSUyMGdvbGQlMjByaW5nJTIwbHV4dXJ5JTIwamV3ZWxyeSUyMGVkaXRvcmlhbHxlbnwxfHx8fDE3NzQyNDY2NTN8MA&ixlib=rb-4.1.0&q=80&w=400',
-      isNew: true
-    }, {
-      id: 103,
-      name: 'Ruby Cocktail Ring',
-      price: '$15,200',
-      priceNum: 15200,
-      metal: '18k Rose Gold · Burmese Ruby',
-      image: 'https://images.unsplash.com/photo-1636730510270-292129a416f1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxydWJ5JTIwZ2Vtc3RvbmUlMjBjb2NrdGFpbCUyMHJpbmclMjBnb2xkJTIwbHV4dXJ5fGVufDF8fHx8MTc3NDI0NjY2MXww&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 104,
-      name: 'Diamond Eternity Band',
-      price: '$9,600',
-      priceNum: 9600,
-      metal: 'Platinum · Pavé Set',
-      image: 'https://images.unsplash.com/photo-1648564585735-19491888545c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxldGVybml0eSUyMGJhbmQlMjB3ZWRkaW5nJTIwcmluZyUyMGRpYW1vbmRzJTIwbHV4dXJ5fGVufDF8fHx8MTc3NDI0NjY2Mnww&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 105,
-      name: 'Three-Stone Diamond',
-      price: '$22,000',
-      priceNum: 22000,
-      metal: 'Platinum · 3.2ct Total',
-      image: 'https://images.unsplash.com/photo-1736154577794-65871df026ea?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0aHJlZSUyMHN0b25lJTIwZW5nYWdlbWVudCUyMHJpbmclMjBkaWFtb25kJTIwcGxhdGludW18ZW58MXx8fHwxNzc0MjQ2NjYyfDA&ixlib=rb-4.1.0&q=80&w=400',
-      isNew: true
-    }, {
-      id: 106,
-      name: 'Platinum Band Ring',
-      price: '$4,200',
-      priceNum: 4200,
-      metal: 'Platinum · Minimal',
-      image: 'https://images.unsplash.com/photo-1599481805056-1c61a8975797?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwbGF0aW51bSUyMGJhbmQlMjByaW5nJTIwbWluaW1hbCUyMGZpbmUlMjBqZXdlbHJ5fGVufDF8fHx8MTc3NDI0NjY1NHww&ixlib=rb-4.1.0&q=80&w=400'
-    }]
+    products: []
   },
   Necklaces: {
     hero: 'https://images.unsplash.com/photo-1736436789706-005f2218a96d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwbmVja2xhY2UlMjBsdXh1cnklMjBwZW5kYW50JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDF8fHx8MTc3NDI0NjY0OXww&ixlib=rb-4.1.0&q=80&w=1080',
     subtitle: 'Pendants, chains and statement collars to be worn and treasured forever.',
     editorial: 'Worn Close to the Heart',
-    products: [{
-      id: 201,
-      name: 'Diamond Solitaire Pendant',
-      price: '$3,800',
-      priceNum: 3800,
-      metal: 'Platinum · 0.5ct',
-      image: 'https://images.unsplash.com/photo-1773913753908-860293e9deef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwc29saXRhaXJlJTIwbmVja2xhY2UlMjBmaW5lJTIwamV3ZWxyeSUyMG1pbmltYWx8ZW58MXx8fHwxNzc0MjQ2NjYxfDA&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'BESTSELLER'
-    }, {
-      id: 202,
-      name: 'Gold Chain Layered Set',
-      price: '$5,200',
-      priceNum: 5200,
-      metal: '18k Yellow Gold · 3 Layers',
-      image: 'https://images.unsplash.com/photo-1722410180670-b6d5a2e704fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwY2hhaW4lMjBsYXllcmVkJTIwbmVja2xhY2UlMjBsdXh1cnklMjB3b21hbnxlbnwxfHx8fDE3NzQyNDY2NTV8MA&ixlib=rb-4.1.0&q=80&w=400',
-      isNew: true
-    }, {
-      id: 203,
-      name: 'Emerald Drop Pendant',
-      price: '$8,900',
-      priceNum: 8900,
-      metal: '18k White Gold · Colombian Emerald',
-      image: 'https://images.unsplash.com/photo-1583937443351-f2f669fbe2cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbWVyYWxkJTIwY3V0JTIwZGlhbW9uZCUyMHBlbmRhbnQlMjBuZWNrbGFjZSUyMHdoaXRlJTIwZ29sZHxlbnwxfHx8fDE3NzQyNDY2NTR8MA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 204,
-      name: 'Luxury Pendant Necklace',
-      price: '$7,100',
-      priceNum: 7100,
-      metal: '18k Gold · Signature',
-      image: 'https://images.unsplash.com/photo-1736436789706-005f2218a96d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwbmVja2xhY2UlMjBsdXh1cnklMjBwZW5kYW50JTIwd2hpdGUlMjBiYWNrZ3JvdW5kfGVufDF8fHx8MTc3NDI0NjY0OXww&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'EXCLUSIVE'
-    }, {
-      id: 205,
-      name: 'Diamond Cluster Pendant',
-      price: '$12,500',
-      priceNum: 12500,
-      metal: 'Platinum · 1.8ct Cluster',
-      image: 'https://images.unsplash.com/photo-1773913490635-44e688001528?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBqZXdlbHJ5JTIwc2V0JTIwbmVja2xhY2UlMjBlYXJyaW5ncyUyMGJyYWNlbGV0fGVufDF8fHx8MTc3NDI0NjY1MXww&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 206,
-      name: 'Pearl Rope Necklace',
-      price: '$6,200',
-      priceNum: 6200,
-      metal: '18k Gold · Akoya Pearl',
-      image: 'https://images.unsplash.com/photo-1682822749969-61a63203c501?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZWFybCUyMGRyb3AlMjBlYXJyaW5ncyUyMGx1eHVyeSUyMGVkaXRvcmlhbHxlbnwxfHx8fDE3NzQyNDY2NTB8MA&ixlib=rb-4.1.0&q=80&w=400',
-      isNew: true
-    }]
+    products: []
   },
   Bracelets: {
     hero: 'https://images.unsplash.com/photo-1763029513623-37d488cb97b1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwdGVubmlzJTIwYnJhY2VsZXQlMjBsdXh1cnklMjBqZXdlbHJ5fGVufDF8fHx8MTc3NDI0NjY1MHww&ixlib=rb-4.1.0&q=80&w=1080',
     subtitle: 'Bangles, cuffs and tennis bracelets that transform every gesture.',
     editorial: 'Adorned at Every Turn',
-    products: [{
-      id: 301,
-      name: 'Diamond Tennis Bracelet',
-      price: '$18,500',
-      priceNum: 18500,
-      metal: 'Platinum · 5ct Total',
-      image: 'https://images.unsplash.com/photo-1763029513623-37d488cb97b1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwdGVubmlzJTIwYnJhY2VsZXQlMjBsdXh1cnklMjBqZXdlbHJ5fGVufDF8fHx8MTc3NDI0NjY1MHww&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'ICONIC'
-    }, {
-      id: 302,
-      name: 'Gold Bangle Stack',
-      price: '$4,800',
-      priceNum: 4800,
-      metal: '18k Yellow Gold · Set of 3',
-      image: 'https://images.unsplash.com/photo-1758995116383-f51775896add?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwYmFuZ2xlJTIwYnJhY2VsZXQlMjBzdGFjayUyMHdyaXN0JTIwbHV4dXJ5fGVufDF8fHx8MTc3NDI0NjY1Nnww&ixlib=rb-4.1.0&q=80&w=400',
-      isNew: true
-    }, {
-      id: 303,
-      name: 'Pearl Charm Bracelet',
-      price: '$3,200',
-      priceNum: 3200,
-      metal: '18k Gold · Freshwater Pearl',
-      image: 'https://images.unsplash.com/photo-1682822749969-61a63203c501?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZWFybCUyMGRyb3AlMjBlYXJyaW5ncyUyMGx1eHVyeSUyMGVkaXRvcmlhbHxlbnwxfHx8fDE3NzQyNDY2NTB8MA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 304,
-      name: 'Sapphire Cuff',
-      price: '$9,600',
-      priceNum: 9600,
-      metal: '18k White Gold · Ceylon Sapphire',
-      image: 'https://images.unsplash.com/photo-1735480165158-e645caaf1695?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYXBwaGlyZSUyMGdvbGQlMjByaW5nJTIwbHV4dXJ5JTIwamV3ZWxyeSUyMGVkaXRvcmlhbHxlbnwxfHx8fDE3NzQyNDY2NTN8MA&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'EXCLUSIVE'
-    }, {
-      id: 305,
-      name: 'Diamond Pavé Cuff',
-      price: '$14,200',
-      priceNum: 14200,
-      metal: 'Platinum · Full Pavé',
-      image: 'https://images.unsplash.com/photo-1648564585735-19491888545c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxldGVybml0eSUyMGJhbmQlMjB3ZWRkaW5nJTIwcmluZyUyMGRpYW1vbmRzJTIwbHV4dXJ5fGVufDF8fHx8MTc3NDI0NjY2Mnww&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 306,
-      name: 'Jewelry Signature Set',
-      price: '$8,800',
-      priceNum: 8800,
-      metal: '18k Gold · Exclusive',
-      image: 'https://images.unsplash.com/photo-1773913490635-44e688001528?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBqZXdlbHJ5JTIwc2V0JTIwbmVja2xhY2UlMjBlYXJyaW5ncyUyMGJyYWNlbGV0fGVufDF8fHx8MTc3NDI0NjY1MXww&ixlib=rb-4.1.0&q=80&w=400',
-      isNew: true
-    }]
+    products: []
   },
   Earrings: {
     hero: 'https://images.unsplash.com/photo-1682822749969-61a63203c501?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZWFybCUyMGRyb3AlMjBlYXJyaW5ncyUyMGx1eHVyeSUyMGVkaXRvcmlhbHxlbnwxfHx8fDE3NzQyNDY2NTB8MA&ixlib=rb-4.1.0&q=80&w=1080',
     subtitle: 'Studs, drops and chandeliers that illuminate every face with brilliance.',
     editorial: 'Framing Perfection',
-    products: [{
-      id: 401,
-      name: 'Pearl Drop Earrings',
-      price: '$4,600',
-      priceNum: 4600,
-      metal: '18k Gold · South Sea Pearl',
-      image: 'https://images.unsplash.com/photo-1682822749969-61a63203c501?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZWFybCUyMGRyb3AlMjBlYXJyaW5ncyUyMGx1eHVyeSUyMGVkaXRvcmlhbHxlbnwxfHx8fDE3NzQyNDY2NTB8MA&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'BESTSELLER'
-    }, {
-      id: 402,
-      name: 'Diamond Hoop Earrings',
-      price: '$7,200',
-      priceNum: 7200,
-      metal: '18k Yellow Gold · Pavé',
-      image: 'https://images.unsplash.com/photo-1625516152414-8f33eef3d660?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwaG9vcCUyMGVhcnJpbmdzJTIwZ29sZCUyMGx1eHVyeSUyMGNsb3NlJTIwdXB8ZW58MXx8fHwxNzc0MjQ2NjU2fDA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 403,
-      name: 'Cluster Stud Earrings',
-      price: '$5,400',
-      priceNum: 5400,
-      metal: '18k White Gold · 1.2ct Cluster',
-      image: 'https://images.unsplash.com/photo-1723361656146-f201d215c49c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjbHVzdGVyJTIwZGlhbW9uZCUyMHN0dWQlMjBlYXJyaW5ncyUyMHdoaXRlJTIwZ29sZHxlbnwxfHx8fDE3NzQyNDY2NjJ8MA&ixlib=rb-4.1.0&q=80&w=400',
-      isNew: true
-    }, {
-      id: 404,
-      name: 'Sapphire Drop Earrings',
-      price: '$9,800',
-      priceNum: 9800,
-      metal: 'Platinum · Oval Sapphire',
-      image: 'https://images.unsplash.com/photo-1735480165158-e645caaf1695?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYXBwaGlyZSUyMGdvbGQlMjByaW5nJTIwbHV4dXJ5JTIwamV3ZWxyeSUyMGVkaXRvcmlhbHxlbnwxfHx8fDE3NzQyNDY2NTN8MA&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'EXCLUSIVE'
-    }, {
-      id: 405,
-      name: 'Ruby Chandelier Earrings',
-      price: '$11,500',
-      priceNum: 11500,
-      metal: '18k Gold · Pigeon Blood Ruby',
-      image: 'https://images.unsplash.com/photo-1636730510270-292129a416f1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxydWJ5JTIwZ2Vtc3RvbmUlMjBjb2NrdGFpbCUyMHJpbmclMjBnb2xkJTIwbHV4dXJ5fGVufDF8fHx8MTc3NDI0NjY2MXww&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 406,
-      name: 'Diamond Stud Solitaire',
-      price: '$6,400',
-      priceNum: 6400,
-      metal: 'Platinum · 0.8ct Each',
-      image: 'https://images.unsplash.com/photo-1773913753908-860293e9deef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwc29saXRhaXJlJTIwbmVja2xhY2UlMjBmaW5lJTIwamV3ZWxyeSUyMG1pbmltYWx8ZW58MXx8fHwxNzc0MjQ2NjYxfDA&ixlib=rb-4.1.0&q=80&w=400',
-      isNew: true
-    }]
+    products: []
   },
   Engagement: {
     hero: 'https://images.unsplash.com/photo-1613945409199-1b5527d31fe8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbmdhZ2VtZW50JTIwcmluZyUyMHNvbGl0YWlyZSUyMGRpYW1vbmQlMjBjbG9zZSUyMHVwfGVufDF8fHx8MTc3NDI0NjY1MXww&ixlib=rb-4.1.0&q=80&w=1080',
     subtitle: 'Rings that mark the beginning of forever, chosen with uncompromising care.',
     editorial: 'Begin With a Promise',
-    products: [{
-      id: 501,
-      name: 'Classic Solitaire Ring',
-      price: '$14,500',
-      priceNum: 14500,
-      metal: 'Platinum · Round Brilliant 1.5ct',
-      image: 'https://images.unsplash.com/photo-1613945409199-1b5527d31fe8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbmdhZ2VtZW50JTIwcmluZyUyMHNvbGl0YWlyZSUyMGRpYW1vbmQlMjBjbG9zZSUyMHVwfGVufDF8fHx8MTc3NDI0NjY1MXww&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'ICONIC'
-    }, {
-      id: 502,
-      name: 'Halo Diamond Ring',
-      price: '$18,800',
-      priceNum: 18800,
-      metal: 'Platinum · 2.0ct Centre',
-      image: 'https://images.unsplash.com/photo-1662434921251-a6eba45ac40c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBkaWFtb25kJTIwcmluZ3MlMjB3aGl0ZSUyMGJhY2tncm91bmQlMjBqZXdlbHJ5fGVufDF8fHx8MTc3NDI0NjY0OXww&ixlib=rb-4.1.0&q=80&w=400',
-      isNew: true
-    }, {
-      id: 503,
-      name: 'Three-Stone Eternity',
-      price: '$26,000',
-      priceNum: 26000,
-      metal: 'Platinum · Past Present Future',
-      image: 'https://images.unsplash.com/photo-1736154577794-65871df026ea?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0aHJlZSUyMHN0b25lJTIwZW5nYWdlbWVudCUyMHJpbmclMjBkaWFtb25kJTIwcGxhdGludW18ZW58MXx8fHwxNzc0MjQ2NjYyfDA&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'EXCLUSIVE'
-    }, {
-      id: 504,
-      name: 'Sapphire Engagement Ring',
-      price: '$22,400',
-      priceNum: 22400,
-      metal: '18k White Gold · Royal Blue',
-      image: 'https://images.unsplash.com/photo-1735480165158-e645caaf1695?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYXBwaGlyZSUyMGdvbGQlMjByaW5nJTIwbHV4dXJ5JTIwamV3ZWxyeSUyMGVkaXRvcmlhbHxlbnwxfHx8fDE3NzQyNDY2NTN8MA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 505,
-      name: 'Bridal Diamond Band',
-      price: '$9,800',
-      priceNum: 9800,
-      metal: 'Platinum · Eternity Style',
-      image: 'https://images.unsplash.com/photo-1648564585735-19491888545c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxldGVybml0eSUyMGJhbmQlMjB3ZWRkaW5nJTIwcmluZyUyMGRpYW1vbmRzJTIwbHV4dXJ5fGVufDF8fHx8MTc3NDI0NjY2Mnww&ixlib=rb-4.1.0&q=80&w=400',
-      isNew: true
-    }, {
-      id: 506,
-      name: 'Emerald Cut Solitaire',
-      price: '$31,500',
-      priceNum: 31500,
-      metal: 'Platinum · 3.5ct Emerald Cut',
-      image: 'https://images.unsplash.com/photo-1709980378295-790d8a3c37e7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBqZXdlbHJ5JTIwYnJpZGFsJTIwc2V0JTIwcmluZ3MlMjBlZGl0b3JpYWx8ZW58MXx8fHwxNzc0MjQ2NjYzfDA&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'RARE'
-    }]
+    products: []
   },
   Sets: {
-    hero: 'https://images.unsplash.com/photo-1773913490635-44e688001528?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBqZXdlbHJ5JTIwc2V0JTIwbmVja2xhY2UlMjBlYXJyaW5ncyUyMGJyYWNlbGV0fGVufDF8fHx8MTc3NDI0NjY1MXww&ixlib=rb-4.1.0&q=80&w=1080',
+    hero: 'https://images.unsplash.com/photo-1773913490635-44e688001528?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBqZXdlbHJ5.c2V0JTIwbmVja2xhY2UlMjBlYXJyaW5ncyUyMGJyYWNlbGV0fGVufDF8fHx8MTc3NDI0NjY1MXww&ixlib=rb-4.1.0&q=80&w=1080',
     subtitle: 'Perfectly curated sets — every piece made to complement, to elevate, to last.',
     editorial: 'The Complete Story',
-    products: [{
-      id: 601,
-      name: 'Diamond Suite Set',
-      price: '$42,000',
-      priceNum: 42000,
-      metal: 'Platinum · Necklace, Earrings, Ring',
-      image: 'https://images.unsplash.com/photo-1773913490635-44e688001528?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBqZXdlbHJ5JTIwc2V0JTIwbmVja2xhY2UlMjBlYXJyaW5ncyUyMGJyYWNlbGV0fGVufDF8fHx8MTc3NDI0NjY1MXww&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'EXCLUSIVE'
-    }, {
-      id: 602,
-      name: 'Pearl Signature Set',
-      price: '$18,500',
-      priceNum: 18500,
-      metal: '18k Gold · Pearl Collection',
-      image: 'https://images.unsplash.com/photo-1682822749969-61a63203c501?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZWFybCUyMGRyb3AlMjBlYXJyaW5ncyUyMGx1eHVyeSUyMGVkaXRvcmlhbHxlbnwxfHx8fDE3NzQyNDY2NTB8MA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 603,
-      name: 'Sapphire Parure Set',
-      price: '$55,000',
-      priceNum: 55000,
-      metal: 'Platinum · Royal Blue Sapphire',
-      image: 'https://images.unsplash.com/photo-1735480165158-e645caaf1695?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYXBwaGlyZSUyMGdvbGQlMjByaW5nJTIwbHV4dXJ5JTIwamV3ZWxyeSUyMGVkaXRvcmlhbHxlbnwxfHx8fDE3NzQyNDY2NTN8MA&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'RARE'
-    }, {
-      id: 604,
-      name: 'Bridal Complete Set',
-      price: '$38,000',
-      priceNum: 38000,
-      metal: 'Platinum · Engagement & Wedding',
-      image: 'https://images.unsplash.com/photo-1709980378295-790d8a3c37e7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBqZXdlbHJ5JTIwYnJpZGFsJTIwc2V0JTIwcmluZ3MlMjBlZGl0b3JpYWx8ZW58MXx8fHwxNzc0MjQ2NjYzfDA&ixlib=rb-4.1.0&q=80&w=400',
-      isNew: true
-    }, {
-      id: 605,
-      name: 'Classic Gold Set',
-      price: '$22,800',
-      priceNum: 22800,
-      metal: '18k Yellow Gold · 4-Piece',
-      image: 'https://images.unsplash.com/photo-1758995116383-f51775896add?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwYmFuZ2xlJTIwYnJhY2VsZXQlMjBzdGFjayUyMHdyaXN0JTIwbHV4dXJ5fGVufDF8fHx8MTc3NDI0NjY1Nnww&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 606,
-      name: 'Ruby Parure Collection',
-      price: '$64,000',
-      priceNum: 64000,
-      metal: '18k Gold · Burmese Ruby Suite',
-      image: 'https://images.unsplash.com/photo-1636730510270-292129a416f1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxydWJ5JTIwZ2Vtc3RvbmUlMjBjb2NrdGFpbCUyMHJpbmclMjBnb2xkJTIwbHV4dXJ5fGVufDF8fHx8MTc3NDI0NjY2MXww&ixlib=rb-4.1.0&q=80&w=400',
-      tag: 'RARE'
-    }]
+    products: []
   }
 };
 Object.keys(catalogue).forEach(name => {
@@ -358,31 +80,24 @@ export function CategoryPage({
  }) {
    const data = catalogue[category] || { products: [], hero: '', subtitle: '', editorial: '' };
  
-   // Merge dynamic products with static catalogue for this category
+   // Get dynamic products for this category from the database
    const categoryProducts = useMemo(() => {
      if (category === 'Jewelry') {
-       const dbAll = dbProducts.map(p => ({
+       return dbProducts.map(p => ({
          ...p,
          priceNum: p.price_num,
-         image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : (data.products[0]?.image || '')
+         image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : ''
        }));
-       return [...dbAll, ...data.products];
      }
 
-     const dbFiltered = dbProducts.filter(p => 
+     return dbProducts.filter(p => 
        p.category_name && p.category_name.toLowerCase() === category.toLowerCase()
      ).map(p => ({
        ...p,
        priceNum: p.price_num,
-       image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : (data.products[0]?.image || '')
+       image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : ''
      }));
-
-     // If we have DB products, we might want to prioritize them or merge them.
-     if (dbFiltered.length > 0) {
-       return dbFiltered;
-     }
-     return data.products;
-   }, [category, dbProducts, data.products]);
+   }, [category, dbProducts]);
 
   // Use category's own data for the hero section
   const displayTitle = category;
@@ -427,7 +142,7 @@ export function CategoryPage({
     if (sort === 'Price: High to Low') list.sort((a, b) => b.priceNum - a.priceNum);
     if (sort === 'New Arrivals') list = [...list.filter(p => p.isNew), ...list.filter(p => !p.isNew)];
     return list;
-  }, [data.products, sort, metalFilter, priceFilter]);
+  }, [categoryProducts, sort, metalFilter, priceFilter]);
   const finalItems = useMemo(() => buildShopByLookGridItems(filtered, {
     enabled: category !== 'Jewelry'
   }), [filtered, category]);

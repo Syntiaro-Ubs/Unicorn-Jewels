@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
+const db = require('../db');
 
 // Create transporter
 let transporter = null;
@@ -266,6 +267,282 @@ async function sendAppointmentEmail(details) {
   };
 }
 
+/**
+ * Send a consolidated order confirmation email with item details and track order link
+ * @param {string} orderId 
+ */
+async function sendOrderConfirmationEmail(orderId) {
+  try {
+    // 1. Fetch order items
+    const [items] = await db.query(
+      'SELECT * FROM user_orders WHERE order_id = ?',
+      [orderId]
+    );
+
+    if (items.length === 0) {
+      console.error(`❌ sendOrderConfirmationEmail: Order ${orderId} not found.`);
+      return { success: false, error: 'Order not found' };
+    }
+
+    const userId = items[0].user_id;
+
+    // 2. Fetch user details
+    const [users] = await db.query(
+      'SELECT first_name, last_name, email FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (users.length === 0) {
+      console.error(`❌ sendOrderConfirmationEmail: User ${userId} not found.`);
+      return { success: false, error: 'User not found' };
+    }
+
+    const user = users[0];
+    const customerEmail = user.email;
+    const customerName = `${user.first_name} ${user.last_name}`;
+
+    // 3. Calculate totals (matching front-end/back-end exactly)
+    const subtotal = items.reduce((sum, item) => {
+      const priceVal = parseFloat((item.price || '').replace(/[^0-9.]/g, '')) || 0;
+      return sum + priceVal;
+    }, 0);
+
+    const shipping = subtotal > 500 ? 0 : 25;
+    const taxes = subtotal * 0.08;
+    const total = subtotal + shipping + taxes;
+
+    const formatCurrency = (amount) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0
+      }).format(amount);
+    };
+
+    // 4. Construct track order link
+    const hostUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const trackingLink = `${hostUrl}/?track_order_id=${orderId}`;
+
+    const activeTransporter = await getTransporter();
+
+    // Helper to resolve absolute image URLs for emails
+    const resolveImageUrl = (url) => {
+      if (!url) return 'https://images.unsplash.com/photo-1724937721228-f7bf3df2a4d8';
+      if (url.startsWith('http')) return url;
+      return `http://localhost:5000${url}`;
+    };
+
+    // Construct order items list
+    const itemsHtml = items.map(item => `
+      <div class="item-row" style="display: flex; align-items: center; padding: 15px 0; border-bottom: 1px solid #f9f9f9;">
+        <div class="item-image" style="width: 70px; height: 70px; background-color: #fafafa; border: 1px solid #f0f0f0; padding: 5px; margin-right: 20px; text-align: center; display: inline-block; vertical-align: middle;">
+          <img src="${resolveImageUrl(item.image_url)}" alt="${item.product_name}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+        </div>
+        <div class="item-details" style="flex: 1; display: inline-block; vertical-align: middle;">
+          <div class="item-name" style="font-size: 13px; font-weight: 500; color: #111111; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">${item.product_name}</div>
+          <div class="item-meta" style="font-size: 11px; color: #888888; text-transform: uppercase; letter-spacing: 0.05em;">
+            ${item.selected_size ? `Size: ${item.selected_size} &middot; ` : ''}Qty: ${item.quantity || 1}
+          </div>
+        </div>
+        <div class="item-price" style="font-size: 13px; font-weight: bold; color: #222222; text-align: right; flex-shrink: 0; display: inline-block; float: right; margin-top: 25px;">${item.price}</div>
+        <div style="clear: both;"></div>
+      </div>
+    `).join('');
+
+    const subject = `✨ Your Unicorn Jewels Order Confirmation - ${orderId}`;
+
+    const htmlBody = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #fcfcfc;
+            color: #222222;
+            margin: 0;
+            padding: 40px 20px;
+          }
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border: 1px solid #eaeaea;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+          }
+          .header {
+            text-align: center;
+            border-bottom: 1px solid #eaeaea;
+            padding-bottom: 25px;
+            margin-bottom: 30px;
+          }
+          .header h1 {
+            font-family: 'Georgia', serif;
+            font-size: 26px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin: 0;
+            color: #111111;
+            font-weight: 300;
+          }
+          .header p {
+            font-size: 9px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: #999999;
+            margin: 10px 0 0 0;
+          }
+          .greeting {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            font-weight: 300;
+            color: #555555;
+          }
+          .section-title {
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #c9a66b;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #f5f5f5;
+            padding-bottom: 6px;
+          }
+          .summary-box {
+            margin-top: 30px;
+            background-color: #fafafa;
+            padding: 20px;
+            border: 1px solid #f5f5f5;
+          }
+          .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            padding: 6px 0;
+            color: #555555;
+          }
+          .summary-row.total {
+            font-size: 16px;
+            font-weight: bold;
+            color: #111111;
+            border-top: 1px solid #eaeaea;
+            padding-top: 12px;
+            margin-top: 6px;
+          }
+          .cta-container {
+            text-align: center;
+            margin: 40px 0;
+          }
+          .cta-button {
+            display: inline-block;
+            background-color: #111111;
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 16px 36px;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            border: 1px solid #111111;
+          }
+          .footer {
+            margin-top: 50px;
+            border-top: 1px solid #eaeaea;
+            padding-top: 25px;
+            text-align: center;
+            font-size: 10px;
+            color: #aaaaaa;
+            letter-spacing: 0.05em;
+            line-height: 1.8;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #eaeaea; padding: 40px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);">
+          <div class="header" style="text-align: center; border-bottom: 1px solid #eaeaea; padding-bottom: 25px; margin-bottom: 30px;">
+            <h1 style="font-family: 'Georgia', serif; font-size: 26px; letter-spacing: 0.15em; text-transform: uppercase; margin: 0; color: #111111; font-weight: 300;">Unicorn Jewels</h1>
+            <p style="font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: #999999; margin: 10px 0 0 0;">Order Confirmation</p>
+          </div>
+          
+          <div class="greeting" style="font-size: 14px; line-height: 1.6; margin-bottom: 30px; font-weight: 300; color: #555555;">
+            Thank you for your acquisition, <strong>${customerName}</strong>.<br />
+            Your request has been successfully recorded. Below are the details of your order.
+          </div>
+          
+          <div class="section-title" style="font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #c9a66b; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #f5f5f5; padding-bottom: 6px;">Order #${orderId} Details</div>
+          <div>
+            ${itemsHtml}
+          </div>
+          
+          <div class="summary-box" style="margin-top: 30px; background-color: #fafafa; padding: 20px; border: 1px solid #f5f5f5;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; color: #555555;">
+              <tr>
+                <td style="padding: 6px 0;">Subtotal</td>
+                <td style="text-align: right; padding: 6px 0;">${formatCurrency(subtotal)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0;">Shipping</td>
+                <td style="text-align: right; padding: 6px 0;">${shipping === 0 ? 'Complimentary' : formatCurrency(shipping)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0;">Estimated Tax</td>
+                <td style="text-align: right; padding: 6px 0;">${formatCurrency(taxes)}</td>
+              </tr>
+              <tr style="font-size: 16px; font-weight: bold; color: #111111; border-top: 1px solid #eaeaea;">
+                <td style="padding: 12px 0 0 0;">Total Bill</td>
+                <td style="text-align: right; padding: 12px 0 0 0;">${formatCurrency(total)}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <div class="cta-container" style="text-align: center; margin: 40px 0;">
+            <a href="${trackingLink}" class="cta-button" style="display: inline-block; background-color: #111111; color: #ffffff !important; text-decoration: none; padding: 16px 36px; font-size: 10px; font-weight: bold; letter-spacing: 0.25em; text-transform: uppercase; border: 1px solid #111111;">Track Order</a>
+          </div>
+          
+          <div class="footer" style="margin-top: 50px; border-top: 1px solid #eaeaea; padding-top: 25px; text-align: center; font-size: 10px; color: #aaaaaa; letter-spacing: 0.05em; line-height: 1.8;">
+            This is an automated correspondence from Unicorn Jewels.<br />
+            For any custom styling inquiries or scheduling assistance, please contact boutique support.<br />
+            &copy; ${new Date().getFullYear()} Unicorn Jewels. All Rights Reserved.
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const info = await activeTransporter.sendMail({
+      from: `"Unicorn Jewels" <${process.env.EMAIL_USER || 'no-reply@unicornjewels.com'}>`,
+      to: customerEmail,
+      subject: subject,
+      text: `Thank you for your order, ${customerName}!\n\nOrder ID: ${orderId}\nTotal: ${formatCurrency(total)}\n\nTrack your order here: ${trackingLink}`,
+      html: htmlBody,
+    });
+
+    if (nodemailer.getTestMessageUrl(info)) {
+      console.log('----------------------------------------------------');
+      console.log('✉️ Order email preview URL:', nodemailer.getTestMessageUrl(info));
+      console.log('----------------------------------------------------');
+      return {
+        success: true,
+        messageId: info.messageId,
+        previewUrl: nodemailer.getTestMessageUrl(info)
+      };
+    }
+
+    console.log(`✉️ Order confirmation email successfully sent to ${customerEmail}. ID: ${info.messageId}`);
+    return {
+      success: true,
+      messageId: info.messageId
+    };
+  } catch (error) {
+    console.error(`❌ Error sending order confirmation email for ${orderId}:`, error);
+    return { success: false, error: error.message };
+  }
+}
+
 module.exports = {
-  sendAppointmentEmail
+  sendAppointmentEmail,
+  sendOrderConfirmationEmail
 };

@@ -1,8 +1,8 @@
-// routes/payment.js
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const phonePeService = require('../services/phonepeService');
+const emailService = require('../services/emailService');
 
 // POST /api/payment/phonepe/initiate
 router.post('/phonepe/initiate', async (req, res) => {
@@ -102,6 +102,12 @@ router.get('/phonepe/status/:orderId', async (req, res) => {
             }
           }
         }
+
+        // Trigger order confirmation email
+        console.log(`PhonePe Payment successful for ${orderId}. Triggering order confirmation email...`);
+        emailService.sendOrderConfirmationEmail(orderId).catch(err => {
+            console.error(`Error in sendOrderConfirmationEmail background task for order ${orderId}:`, err);
+        });
       }
 
       return res.json({ success: true, status: 'COMPLETED' });

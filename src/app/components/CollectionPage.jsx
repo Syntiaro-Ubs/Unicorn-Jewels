@@ -11,137 +11,25 @@ export const collectionsData = {
     subtitle: 'Where love takes root and blossoms into eternity.',
     editorial: 'Floral Elegance',
     hero: 'https://images.unsplash.com/photo-1743560834737-e350c159d992?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9taXNlJTIwYmxvb20lMjBqZXdlbHJ5fGVufDF8fHx8MTc3NDM0OTYxN3ww&ixlib=rb-4.1.0&q=80&w=1080',
-    products: [{
-      id: 401,
-      name: 'Bloom Solitaire Ring',
-      price: '$4,200',
-      priceNum: 4200,
-      metal: 'Platinum',
-      image: 'https://images.unsplash.com/photo-1605100804763-247f67b2548e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyb21hbnRpYyUyMHJpbmd8ZW58MXx8fHwxNzc0MzUyMTQxfDA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 402,
-      name: 'Petal Diamond Earrings',
-      price: '$2,800',
-      priceNum: 2800,
-      metal: '18k White Gold',
-      image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYWludHklMjBlYXJyaW5nc3xlbnwxfHx8fDE3NzQzNTIxNjV8MA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 403,
-      name: 'Rose Diamond Pendant',
-      price: '$3,100',
-      priceNum: 3100,
-      metal: '18k Rose Gold',
-      image: 'https://images.unsplash.com/photo-1599643478514-4a7190d6ec34?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZW5kYW50fGVufDF8fHx8MTc3NDM1MjE4M3ww&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 404,
-      name: 'Vine Diamond Bracelet',
-      price: '$6,500',
-      priceNum: 6500,
-      metal: 'Platinum',
-      image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwYnJhY2VsZXR8ZW58MXx8fHwxNzc0MzUyMjExfDA&ixlib=rb-4.1.0&q=80&w=400'
-    }]
+    products: []
   },
   'The Vanguard': {
     subtitle: 'Bold geometries for the modern visionary.',
     editorial: 'Architectural Form',
     hero: 'https://images.unsplash.com/photo-1762505464397-6abf1a645981?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwcmluZ3MlMjBlbGVnYW50JTIwamV3ZWxyeXxlbnwxfHx8fDE3NzQzNDk2MTF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    products: [{
-      id: 405,
-      name: 'Vanguard Angle Ring',
-      price: '$5,500',
-      priceNum: 5500,
-      metal: '18k Yellow Gold',
-      image: 'https://images.unsplash.com/photo-1622398925373-3f91b1e275f5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwcmluZ3xlbnwxfHx8fDE3NzQzNTIyMzZ8MA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 406,
-      name: 'Geometric Hoop Earrings',
-      price: '$3,400',
-      priceNum: 3400,
-      metal: '18k Yellow Gold',
-      image: 'https://images.unsplash.com/photo-1590548784585-643d2b9f2925?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob29wJTIwZWFycmluZ3N8ZW58MXx8fHwxNzc0MzUyMjYyfDA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 407,
-      name: 'Structured Link Necklace',
-      price: '$12,000',
-      priceNum: 12000,
-      metal: '18k Yellow Gold',
-      image: 'https://images.unsplash.com/photo-1599643477874-ce44fb6b4f74?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwbmVja2xhY2V8ZW58MXx8fHwxNzc0MzUyMjkwfDA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 408,
-      name: 'Vanguard Cuff',
-      price: '$8,900',
-      priceNum: 8900,
-      metal: '18k Yellow Gold',
-      image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwY3VmZnxlbnwxfHx8fDE3NzQzNTIzMjJ8MA&ixlib=rb-4.1.0&q=80&w=400'
-    }]
+    products: []
   },
   'Lumina Letter': {
     subtitle: 'Personalization refined to its most radiant state.',
     editorial: 'Signature Spark',
     hero: 'https://images.unsplash.com/photo-1772571092191-eb7010126fd1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzaWx2ZXIlMjBuZWNrbGFjZSUyMHBlbmRhbnQlMjBsdXh1cnl8ZW58MXx8fHwxNzc0MzQ5NjIzfDA&ixlib=rb-4.1.0&q=80&w=1080',
-    products: [{
-      id: 409,
-      name: 'Initial Diamond Pendant',
-      price: '$1,800',
-      priceNum: 1800,
-      metal: '18k Rose Gold',
-      image: 'https://images.unsplash.com/photo-1599643478514-4a7190d6ec34?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZW5kYW50fGVufDF8fHx8MTc3NDM1MjE4M3ww&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 410,
-      name: 'Lumina Charm Bracelet',
-      price: '$2,200',
-      priceNum: 2200,
-      metal: '18k White Gold',
-      image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwYnJhY2VsZXR8ZW58MXx8fHwxNzc0MzUyMjExfDA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 411,
-      name: 'Engravable Signet Ring',
-      price: '$2,900',
-      priceNum: 2900,
-      metal: '18k Yellow Gold',
-      image: 'https://images.unsplash.com/photo-1622398925373-3f91b1e275f5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwcmluZ3xlbnwxfHx8fDE3NzQzNTIyMzZ8MA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 412,
-      name: 'Letter Drop Earrings',
-      price: '$1,500',
-      priceNum: 1500,
-      metal: '18k Rose Gold',
-      image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYWludHklMjBlYXJyaW5nc3xlbnwxfHx8fDE3NzQzNTIxNjV8MA&ixlib=rb-4.1.0&q=80&w=400'
-    }]
+    products: []
   },
   'Aura Everyday': {
     subtitle: 'Effortless radiance designed for the diurnal rhythm.',
     editorial: 'Daily Brilliance',
     hero: 'https://images.unsplash.com/photo-1721206624552-d945fc1a3b8a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwYnJhY2VsZXQlMjBtb2Rlcm4lMjBkZXNpZ258ZW58MXx8fHwxNzc0MzQ5NjI2fDA&ixlib=rb-4.1.0&q=80&w=1080',
-    products: [{
-      id: 413,
-      name: 'Aura Minimalist Chain',
-      price: '$950',
-      priceNum: 950,
-      metal: '18k Yellow Gold',
-      image: 'https://images.unsplash.com/photo-1599643477874-ce44fb6b4f74?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb2xkJTIwbmVja2xhY2V8ZW58MXx8fHwxNzc0MzUyMjkwfDA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 414,
-      name: 'Essential Studs',
-      price: '$800',
-      priceNum: 800,
-      metal: 'Platinum',
-      image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYWludHklMjBlYXJyaW5nc3xlbnwxfHx8fDE3NzQzNTIxNjV8MA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 415,
-      name: 'Aura Stacking Ring',
-      price: '$1,200',
-      priceNum: 1200,
-      metal: '18k White Gold',
-      image: 'https://images.unsplash.com/photo-1605100804763-247f67b2548e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyb21hbnRpYyUyMHJpbmd8ZW58MXx8fHwxNzc0MzUyMTQxfDA&ixlib=rb-4.1.0&q=80&w=400'
-    }, {
-      id: 416,
-      name: 'Delicate Bangle',
-      price: '$1,800',
-      priceNum: 1800,
-      metal: '18k Rose Gold',
-      image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwYnJhY2VsZXR8ZW58MXx8fHwxNzc0MzUyMjExfDA&ixlib=rb-4.1.0&q=80&w=400'
-    }]
+    products: []
   }
 };
 Object.keys(collectionsData).forEach(name => {
@@ -165,21 +53,16 @@ export function CollectionPage({
  }) {
    const data = collectionsData[collectionName] || { products: [], hero: '', subtitle: '', editorial: '' };
  
-   // Merge dynamic products with static collections for this collection
-   const collectionProducts = useMemo(() => {
-     const dbFiltered = dbProducts.filter(p => 
-       p.collection_name && p.collection_name.toLowerCase() === collectionName.toLowerCase()
-     ).map(p => ({
-       ...p,
-       priceNum: p.price_num,
-       image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : (data.products[0]?.image || '')
-     }));
- 
-     if (dbFiltered.length > 0) {
-       return dbFiltered;
-     }
-     return data.products;
-   }, [collectionName, dbProducts, data.products]);
+    // Get dynamic products for this collection from the database
+    const collectionProducts = useMemo(() => {
+      return dbProducts.filter(p => 
+        p.collection_name && p.collection_name.toLowerCase() === collectionName.toLowerCase()
+      ).map(p => ({
+        ...p,
+        priceNum: p.price_num,
+        image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : ''
+      }));
+    }, [collectionName, dbProducts]);
   
   // Use collection's own data for the hero section
   const displayTitle = collectionName;
@@ -232,7 +115,7 @@ export function CollectionPage({
       list.sort((a, b) => b.priceNum - a.priceNum);
     }
     return list;
-  }, [data, sort, metalFilter, priceFilter, categoryFilter]);
+  }, [collectionProducts, sort, metalFilter, priceFilter, categoryFilter]);
   const finalItems = useMemo(() => buildShopByLookGridItems(filteredAndSortedProducts), [filteredAndSortedProducts]);
 
   // If collection name doesn't match our data, just return a fallback.

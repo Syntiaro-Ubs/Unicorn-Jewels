@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Lock, CreditCard, ShieldCheck, CheckCircle2, ArrowRight } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -14,6 +14,11 @@ export function CheckoutPage({
 }) {
   const [activeSection, setActiveSection] = useState(1);
   const [isComplete, setIsComplete] = useState(initialIsComplete);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setIsComplete(initialIsComplete);
+  }, [initialIsComplete]);
   const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' or 'phonepe'
   const subtotal = items.reduce((sum, item) => sum + item.priceNum * item.quantity, 0);
   const shipping = subtotal > 500 ? 0 : 25;
@@ -236,14 +241,22 @@ export function CheckoutPage({
                     )}
 
                     <button 
-                      onClick={() => {
-                        if (paymentMethod === 'phonepe') {
-                          onPhonePeCheckout(total);
-                        } else {
-                          handlePlaceOrder();
+                      disabled={isSubmitting}
+                      onClick={async () => {
+                        setIsSubmitting(true);
+                        try {
+                          if (paymentMethod === 'phonepe') {
+                            await onPhonePeCheckout(total);
+                          } else {
+                            await handlePlaceOrder();
+                          }
+                        } catch (err) {
+                          console.error("Checkout submission failed:", err);
+                        } finally {
+                          setIsSubmitting(false);
                         }
                       }} 
-                      className="w-full bg-black text-white py-4 mt-8 flex items-center justify-center gap-3 text-[11px] tracking-[0.3em] uppercase hover:bg-[#1a1a1a] transition-colors" 
+                      className="w-full bg-black text-white py-4 mt-8 flex items-center justify-center gap-3 text-[11px] tracking-[0.3em] uppercase hover:bg-[#1a1a1a] transition-colors disabled:opacity-50" 
                       style={{
                         fontFamily: "'Cormorant Garamond', serif",
                         fontWeight: 400,
@@ -251,7 +264,7 @@ export function CheckoutPage({
                       }}
                     >
                       <Lock size={14} className="mb-0.5" /> 
-                      {paymentMethod === 'phonepe' ? 'Pay with PhonePe' : 'Complete Purchase'}
+                      {isSubmitting ? 'Processing...' : (paymentMethod === 'phonepe' ? 'Pay with PhonePe' : 'Complete Purchase')}
                     </button>
                   </motion.div>}
               </div>

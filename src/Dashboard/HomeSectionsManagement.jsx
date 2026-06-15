@@ -302,7 +302,7 @@ export default function HomeSectionsManagement({ giftGuideSection, onEditGiftGui
                     label="Primary Image"
                     value={sectionContent.primary_image_url}
                     uploadKey="home-vision-primary-image"
-                    helperText="This is the main portrait image on the left side of the section."
+                    helperText="Portrait image for the left side. Recommended: 1200×1600px or 3:4 ratio (minimum 900px tall)."
                     uploading={!!uploadingFields['home-vision-primary-image']}
                     error={uploadErrors['home-vision-primary-image']}
                     onChange={(value) => updateField('primary_image_url', value)}

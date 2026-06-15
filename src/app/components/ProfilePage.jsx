@@ -9,6 +9,16 @@ const imgPendant = "https://images.unsplash.com/photo-1623448585160-48b86b876b32
 const imgEarrings = "https://images.unsplash.com/photo-1774504347388-3d01f7cac097?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwc3R1ZCUyMGVhcnJpbmdzfGVufDF8fHx8MTc3NTY5NzYzM3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 const imgPortrait = "https://images.unsplash.com/photo-1694463814421-5eff6fd605c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoYW5kc29tZSUyMG1hbiUyMHN1aXQlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzU2ODIwMjh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 
+const cancellationReasons = [
+  'Ordered by mistake',
+  'Need to change shipping address',
+  'Found a better price elsewhere',
+  'Delivery will take too long',
+  'Changed my mind',
+  'Payment or billing issue',
+  'Other'
+];
+
 export function ProfilePage({
   onBack,
   onLogout,
@@ -173,6 +183,43 @@ function OverviewTab({ user, onEdit }) {
 }
 
 function OrdersTab({ orders = [], onTrackShipment, onDownloadReceipt, onCancelOrder }) {
+  const [orderToCancel, setOrderToCancel] = useState(null);
+  const [selectedReason, setSelectedReason] = useState('');
+  const [otherReason, setOtherReason] = useState('');
+  const [cancellingOrderId, setCancellingOrderId] = useState(null);
+
+  const handleCancelSubmit = async (reason) => {
+    const result = await onCancelOrder?.(orderToCancel.id, reason);
+    if (!result || result.success) {
+      setOrderToCancel(null);
+      setSelectedReason('');
+      setOtherReason('');
+    }
+    return result;
+  };
+
+  const openCancellationReason = (order) => {
+    setOrderToCancel(order);
+    setSelectedReason('');
+    setOtherReason('');
+  };
+
+  const closeCancellationReason = () => {
+    setOrderToCancel(null);
+    setSelectedReason('');
+    setOtherReason('');
+  };
+
+  const submitCancellationReason = async (e) => {
+    e.preventDefault();
+    if (!orderToCancel) return;
+    const finalReason = selectedReason === 'Other' ? otherReason.trim() : selectedReason;
+    if (!finalReason) return;
+    setCancellingOrderId(orderToCancel.id);
+    await handleCancelSubmit(finalReason);
+    setCancellingOrderId(null);
+  };
+
   return <motion.div initial={{
     opacity: 0,
     y: 10
@@ -233,7 +280,7 @@ function OrdersTab({ orders = [], onTrackShipment, onDownloadReceipt, onCancelOr
                   Track Shipment
                 </button>
                 {['Processing', 'Pending Payment', 'Pending'].includes(order.status) && (
-                  <button onClick={() => onCancelOrder?.(order.id)} className="text-[9px] uppercase tracking-[0.2em] border-b border-red-300 text-red-500 pb-1 hover:text-red-700 hover:border-red-700 transition-colors">
+                  <button onClick={() => openCancellationReason(order)} className="text-[9px] uppercase tracking-[0.2em] border-b border-red-300 text-red-500 pb-1 hover:text-red-700 hover:border-red-700 transition-colors">
                     Cancel Order
                   </button>
                 )}
@@ -243,6 +290,49 @@ function OrdersTab({ orders = [], onTrackShipment, onDownloadReceipt, onCancelOr
                   </button>
                 )}
               </div>
+              {orderToCancel?.id === order.id && (
+                <form onSubmit={submitCancellationReason} className="border-t border-gray-100 pt-8 mt-2 space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 lg:items-end">
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-3 block">Reason for Cancellation</label>
+                      <select
+                        value={selectedReason}
+                        onChange={(e) => {
+                          setSelectedReason(e.target.value);
+                          if (e.target.value !== 'Other') setOtherReason('');
+                        }}
+                        className="w-full border border-gray-200 bg-white px-4 py-4 text-sm tracking-wide focus:border-black outline-none transition-colors"
+                        required
+                      >
+                        <option value="">Choose a reason</option>
+                        {cancellationReasons.map((reason) => (
+                          <option key={reason} value={reason}>{reason}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex gap-4">
+                      <button type="button" onClick={closeCancellationReason} disabled={cancellingOrderId === order.id} className="border border-gray-200 px-6 py-4 text-[9px] uppercase tracking-[0.2em] hover:border-black transition-colors disabled:opacity-50">
+                        Close
+                      </button>
+                      <button disabled={cancellingOrderId === order.id || !selectedReason || (selectedReason === 'Other' && !otherReason.trim())} type="submit" className="bg-red-600 text-white px-6 py-4 text-[9px] uppercase tracking-[0.2em] hover:bg-red-700 transition-colors disabled:opacity-50">
+                        {cancellingOrderId === order.id ? 'Cancelling...' : 'Submit'}
+                      </button>
+                    </div>
+                  </div>
+                  {selectedReason === 'Other' && (
+                    <div>
+                      <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-3 block">Tell us more</label>
+                      <textarea
+                        value={otherReason}
+                        onChange={(e) => setOtherReason(e.target.value)}
+                        className="w-full min-h-24 border border-gray-200 p-4 text-sm tracking-wide focus:border-black outline-none transition-colors resize-none"
+                        placeholder="Write your cancellation reason"
+                        required
+                      />
+                    </div>
+                  )}
+                </form>
+              )}
             </div>
           </div>)}
       </div>

@@ -16,6 +16,7 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 import { ImageWithFallback } from '../app/components/figma/ImageWithFallback';
+import { API_BASE } from '@/config';
 
 const STATUS_OPTIONS = ['Pending Payment', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
@@ -38,7 +39,7 @@ const getStatusStyles = (status) => {
 
 const resolveImageSource = (value = '') => {
   if (!value) return '';
-  return value.startsWith('http') ? value : `http://localhost:5000${value}`;
+  return value.startsWith('http') ? value : `${API_BASE}${value}`;
 };
 
 export default function OrderManagement() {
@@ -56,7 +57,7 @@ export default function OrderManagement() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/orders');
+      const response = await fetch(`${API_BASE}/api/orders`);
       if (response.ok) {
         const data = await response.json();
         setOrders(data);
@@ -71,7 +72,7 @@ export default function OrderManagement() {
   const handleUpdateStatus = async (orderId, newStatus) => {
     setUpdatingStatus(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      const response = await fetch(`${API_BASE}/api/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })

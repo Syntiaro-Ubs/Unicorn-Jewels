@@ -16,7 +16,9 @@ import {
 } from 'lucide-react';
 import { DASHBOARD_PERMISSION_OPTIONS } from './dashboardPermissions';
 
-const API_BASE = 'http://localhost:5000/api/admins-mgmt';
+import { API_BASE as API_BASE_URL } from '@/config';
+
+const API_BASE = `${API_BASE_URL}/api/admins-mgmt`;
 
 export default function TeamManagement() {
   const [admins, setAdmins] = useState([]);

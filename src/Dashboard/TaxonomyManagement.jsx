@@ -16,7 +16,9 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api';
+import { API_BASE } from '@/config';
+
+const API_URL = `${API_BASE}/api`;
 
 export default function TaxonomyManagement() {
   const [activeTab, setActiveTab] = useState('categories'); // 'categories' or 'collections'
@@ -237,7 +239,7 @@ export default function TaxonomyManagement() {
                 <div className="aspect-[4/3] bg-slate-50 relative overflow-hidden">
                   {item.image_url ? (
                     <img 
-                      src={item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`} 
+                      src={item.image_url.startsWith('http') ? item.image_url : `${API_BASE}${item.image_url}`} 
                       alt={item.name} 
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
@@ -379,7 +381,7 @@ export default function TaxonomyManagement() {
                       {formData.image ? (
                         <img src={URL.createObjectURL(formData.image)} className="w-full h-full object-cover" />
                       ) : formData.image_url ? (
-                        <img src={formData.image_url.startsWith('http') ? formData.image_url : `http://localhost:5000${formData.image_url}`} className="w-full h-full object-cover" />
+                        <img src={formData.image_url.startsWith('http') ? formData.image_url : `${API_BASE}${formData.image_url}`} className="w-full h-full object-cover" />
                       ) : (
                         <>
                           <Upload className="text-slate-400 mb-2" size={24} />

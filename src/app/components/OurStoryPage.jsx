@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { API_BASE } from '@/config';
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -65,7 +66,7 @@ export const OurStoryPage = ({ onBack, bannerContent }) => {
 
     const fetchPageContent = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/content/page-content/story');
+        const response = await fetch(`${API_BASE}/api/content/page-content/story`);
         if (!response.ok) {
           return;
         }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { API_BASE } from '@/config';
 import { motion, AnimatePresence } from 'motion/react';
 import { Heart, Plus, Minus, Ruler, Info, X, ChevronDown, Instagram } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -77,7 +78,7 @@ export function ProductPage({
     const fetchVariants = async () => {
       setIsLoadingVariants(true);
       try {
-        const response = await fetch(`http://localhost:5000/api/products/${product.id}/variants`);
+        const response = await fetch(`${API_BASE}/api/products/${product.id}/variants`);
         if (response.ok) {
           const data = await response.json();
           setVariants(data);
@@ -130,7 +131,7 @@ export function ProductPage({
     const fetchSimilarProducts = async () => {
       setIsLoadingSimilar(true);
       try {
-        const response = await fetch('http://localhost:5000/api/products');
+        const response = await fetch(`${API_BASE}/api/products`);
         if (response.ok) {
           const allProducts = await response.json();
           
@@ -284,7 +285,7 @@ export function ProductPage({
         }} transition={{
           duration: 1
         }} className="w-full min-h-[50vh] sm:min-h-[60vh] lg:min-h-screen flex items-center justify-center p-6 sm:p-8 md:p-10 lg:p-12 relative">
-            <ImageWithFallback src={product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `http://localhost:5000${product.image_url}`) : product.image} alt={product.name} className="w-full max-w-2xl object-contain mix-blend-multiply" />
+            <ImageWithFallback src={product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `${API_BASE}${product.image_url}`) : product.image} alt={product.name} className="w-full max-w-2xl object-contain mix-blend-multiply" />
             {product.instagram_link && (
               <a
                 href={product.instagram_link}
@@ -528,7 +529,7 @@ export function ProductPage({
                   {additionalImages.map((imgUrl, index) => (
                     <div key={`img-${index}`} className="w-full bg-[#f7f7f7] border border-gray-100 overflow-hidden rounded-sm group relative">
                       <img 
-                        src={imgUrl.startsWith('http') ? imgUrl : `http://localhost:5000${imgUrl}`} 
+                        src={imgUrl.startsWith('http') ? imgUrl : `${API_BASE}${imgUrl}`} 
                         alt={`Product gallery ${index + 1}`} 
                         className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-105" 
                       />
@@ -537,7 +538,7 @@ export function ProductPage({
                   {additionalVideos.map((videoUrl, index) => (
                     <div key={`vid-${index}`} className="w-full aspect-video bg-black border border-gray-100 overflow-hidden rounded-sm relative">
                       <video 
-                        src={videoUrl.startsWith('http') ? videoUrl : `http://localhost:5000${videoUrl}`} 
+                        src={videoUrl.startsWith('http') ? videoUrl : `${API_BASE}${videoUrl}`} 
                         controls 
                         className="w-full h-full object-cover"
                       />
@@ -581,7 +582,7 @@ export function ProductPage({
                 >
                   <div className="relative aspect-square bg-[#f7f7f7] mb-3 sm:mb-4 overflow-hidden">
                     <ImageWithFallback
-                      src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : item.image}
+                      src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `${API_BASE}${item.image_url}`) : item.image}
                       alt={item.name}
                       className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-500 group-hover:scale-105"
                     />

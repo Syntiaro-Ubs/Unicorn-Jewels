@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { API_BASE } from '@/config';
 import { motion } from 'motion/react';
 import { Heart, ChevronDown, SlidersHorizontal, X, Check } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -61,7 +62,7 @@ export function CollectionPage({
       ).map(p => ({
         ...p,
         priceNum: p.price_num,
-        image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `http://localhost:5000${p.image_url}`) : ''
+        image: p.image_url ? (p.image_url.startsWith('http') ? p.image_url : `${API_BASE}${p.image_url}`) : ''
       }));
     }, [collectionName, dbProducts]);
   

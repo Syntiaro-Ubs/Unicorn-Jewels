@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE } from '@/config';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, 
@@ -88,7 +89,7 @@ export default function HomeManagement() {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/categories');
+      const response = await fetch(`${API_BASE}/api/categories`);
       if (response.ok) setCategories(await response.json());
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -99,7 +100,7 @@ export default function HomeManagement() {
 
   const fetchEditorials = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/editorials');
+      const response = await fetch(`${API_BASE}/api/editorials`);
       if (response.ok) setEditorials(await response.json());
     } catch (error) {
       console.error('Error fetching editorials:', error);
@@ -108,7 +109,7 @@ export default function HomeManagement() {
 
   const fetchDiamondEdit = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/diamond-edit');
+      const response = await fetch(`${API_BASE}/api/diamond-edit`);
       if (response.ok) setDiamondEditItems(await response.json());
     } catch (error) {
       console.error('Error fetching diamond edit items:', error);
@@ -117,7 +118,7 @@ export default function HomeManagement() {
 
   const fetchJustUnveiled = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/just-unveiled');
+      const response = await fetch(`${API_BASE}/api/just-unveiled`);
       if (response.ok) setJustUnveiledItems(await response.json());
     } catch (error) {
       console.error('Error fetching just unveiled items:', error);
@@ -126,7 +127,7 @@ export default function HomeManagement() {
   
   const fetchServices = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/services');
+      const response = await fetch(`${API_BASE}/api/services`);
       if (response.ok) setServices(await response.json());
     } catch (error) {
       console.error('Error fetching services:', error);
@@ -135,7 +136,7 @@ export default function HomeManagement() {
   
   const fetchInstagramPosts = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/instagram');
+      const response = await fetch(`${API_BASE}/api/instagram`);
       if (response.ok) setInstagramPosts(await response.json());
     } catch (error) {
       console.error('Error fetching instagram posts:', error);
@@ -144,7 +145,7 @@ export default function HomeManagement() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/products');
+      const response = await fetch(`${API_BASE}/api/products`);
       if (response.ok) setProducts(await response.json());
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -153,7 +154,7 @@ export default function HomeManagement() {
 
   const toggleSliderStatus = async (productId, currentStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/products/${productId}/toggle-new-arrival`, {
+      const response = await fetch(`${API_BASE}/api/products/${productId}/toggle-new-arrival`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_new_arrival: !currentStatus })
@@ -166,7 +167,7 @@ export default function HomeManagement() {
 
   const toggleFeaturedStatus = async (productId, currentStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/products/${productId}/toggle-featured`, {
+      const response = await fetch(`${API_BASE}/api/products/${productId}/toggle-featured`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_featured: !currentStatus })
@@ -190,14 +191,14 @@ export default function HomeManagement() {
     setEditingCategory(category);
     setFormData({ name: category.name, slug: category.slug, image_url: category.image_url || '' });
     setSelectedFile(null);
-    setPreviewUrl(category.image_url ? (category.image_url.startsWith('http') ? category.image_url : `http://localhost:5000${category.image_url}`) : '');
+    setPreviewUrl(category.image_url ? (category.image_url.startsWith('http') ? category.image_url : `${API_BASE}${category.image_url}`) : '');
     setIsModalOpen(true);
   };
 
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete the category "${name}"?`)) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/categories/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE}/api/categories/${id}`, { method: 'DELETE' });
       if (response.ok) fetchCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -215,7 +216,7 @@ export default function HomeManagement() {
     if (selectedFile) submitData.append('image', selectedFile);
 
     try {
-      const url = editingCategory ? `http://localhost:5000/api/categories/${editingCategory.id}` : `http://localhost:5000/api/categories`;
+      const url = editingCategory ? `${API_BASE}/api/categories/${editingCategory.id}` : `${API_BASE}/api/categories`;
       const response = await fetch(url, { method: editingCategory ? 'PUT' : 'POST', body: submitData });
       if (response.ok) {
         setSaveStatus('success');
@@ -242,14 +243,14 @@ export default function HomeManagement() {
       button_link: editorial.button_link || '', image_url: editorial.image_url || '', is_reversed: editorial.is_reversed, order_index: editorial.order_index 
     });
     setSelectedFile(null);
-    setPreviewUrl(editorial.image_url ? (editorial.image_url.startsWith('http') ? editorial.image_url : `http://localhost:5000${editorial.image_url}`) : '');
+    setPreviewUrl(editorial.image_url ? (editorial.image_url.startsWith('http') ? editorial.image_url : `${API_BASE}${editorial.image_url}`) : '');
     setIsEditorialModalOpen(true);
   };
 
   const handleDeleteEditorial = async (id, title) => {
     if (!window.confirm(`Are you sure you want to delete the editorial "${title}"?`)) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/editorials/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE}/api/editorials/${id}`, { method: 'DELETE' });
       if (response.ok) fetchEditorials();
     } catch (error) {
       console.error('Error deleting editorial:', error);
@@ -271,7 +272,7 @@ export default function HomeManagement() {
     if (selectedFile) submitData.append('image', selectedFile);
 
     try {
-      const url = editingEditorial ? `http://localhost:5000/api/editorials/${editingEditorial.id}` : `http://localhost:5000/api/editorials`;
+      const url = editingEditorial ? `${API_BASE}/api/editorials/${editingEditorial.id}` : `${API_BASE}/api/editorials`;
       const response = await fetch(url, { method: editingEditorial ? 'PUT' : 'POST', body: submitData });
       if (response.ok) {
         setSaveStatus('success');
@@ -295,14 +296,14 @@ export default function HomeManagement() {
     setEditingDiamond(item);
     setDiamondFormData({ title: item.title, subtitle: item.subtitle || '', image_url: item.image_url || '', order_index: item.order_index });
     setSelectedFile(null);
-    setPreviewUrl(item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : '');
+    setPreviewUrl(item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `${API_BASE}${item.image_url}`) : '');
     setIsDiamondModalOpen(true);
   };
 
   const handleDeleteDiamond = async (id, title) => {
     if (!window.confirm(`Are you sure you want to delete the Diamond Edit item "${title}"?`)) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/diamond-edit/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE}/api/diamond-edit/${id}`, { method: 'DELETE' });
       if (response.ok) fetchDiamondEdit();
     } catch (error) {
       console.error('Error deleting diamond edit item:', error);
@@ -321,7 +322,7 @@ export default function HomeManagement() {
     if (selectedFile) submitData.append('image', selectedFile);
 
     try {
-      const url = editingDiamond ? `http://localhost:5000/api/diamond-edit/${editingDiamond.id}` : `http://localhost:5000/api/diamond-edit`;
+      const url = editingDiamond ? `${API_BASE}/api/diamond-edit/${editingDiamond.id}` : `${API_BASE}/api/diamond-edit`;
       const response = await fetch(url, { method: editingDiamond ? 'PUT' : 'POST', body: submitData });
       if (response.ok) {
         setSaveStatus('success');
@@ -349,14 +350,14 @@ export default function HomeManagement() {
     setEditingJustUnveiled(item);
     setJustUnveiledFormData({ title: item.title, subtitle: item.subtitle || '', image_url: item.image_url || '', order_index: item.order_index });
     setSelectedFile(null);
-    setPreviewUrl(item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : '');
+    setPreviewUrl(item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `${API_BASE}${item.image_url}`) : '');
     setIsJustUnveiledModalOpen(true);
   };
 
   const handleDeleteJustUnveiled = async (id, title) => {
     if (!window.confirm(`Are you sure you want to delete the Just Unveiled item "${title}"?`)) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/just-unveiled/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE}/api/just-unveiled/${id}`, { method: 'DELETE' });
       if (response.ok) fetchJustUnveiled();
     } catch (error) {
       console.error('Error deleting just unveiled item:', error);
@@ -375,7 +376,7 @@ export default function HomeManagement() {
     if (selectedFile) submitData.append('image', selectedFile);
 
     try {
-      const url = editingJustUnveiled ? `http://localhost:5000/api/just-unveiled/${editingJustUnveiled.id}` : `http://localhost:5000/api/just-unveiled`;
+      const url = editingJustUnveiled ? `${API_BASE}/api/just-unveiled/${editingJustUnveiled.id}` : `${API_BASE}/api/just-unveiled`;
       const response = await fetch(url, { method: editingJustUnveiled ? 'PUT' : 'POST', body: submitData });
       if (response.ok) {
         setSaveStatus('success');
@@ -406,7 +407,7 @@ export default function HomeManagement() {
       button_link: service.button_link || '', image_url: service.image_url || '', is_reversed: !!service.is_reversed, order_index: service.order_index 
     });
     setSelectedFile(null);
-    setPreviewUrl(service.image_url ? (service.image_url.startsWith('http') ? service.image_url : `http://localhost:5000${service.image_url}`) : '');
+    setPreviewUrl(service.image_url ? (service.image_url.startsWith('http') ? service.image_url : `${API_BASE}${service.image_url}`) : '');
     setIsServiceModalOpen(true);
   };
 
@@ -435,7 +436,7 @@ export default function HomeManagement() {
   const handleDeleteService = async (id, title) => {
     if (!window.confirm(`Are you sure you want to delete the service "${title}"?`)) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/services/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE}/api/services/${id}`, { method: 'DELETE' });
       if (response.ok) fetchServices();
     } catch (error) {
       console.error('Error deleting service:', error);
@@ -458,7 +459,7 @@ export default function HomeManagement() {
     if (selectedFile) submitData.append('image', selectedFile);
     
     try {
-      const url = editingService ? `http://localhost:5000/api/services/${editingService.id}` : `http://localhost:5000/api/services`;
+      const url = editingService ? `${API_BASE}/api/services/${editingService.id}` : `${API_BASE}/api/services`;
       const response = await fetch(url, { method: editingService ? 'PUT' : 'POST', body: submitData });
       if (response.ok) {
         setSaveStatus('success');
@@ -482,14 +483,14 @@ export default function HomeManagement() {
     setEditingInstagram(post);
     setInstagramFormData({ post_url: post.post_url, image_url: post.image_url || '', order_index: post.order_index });
     setSelectedFile(null);
-    setPreviewUrl(post.image_url ? (post.image_url.startsWith('http') ? post.image_url : `http://localhost:5000${post.image_url}`) : '');
+    setPreviewUrl(post.image_url ? (post.image_url.startsWith('http') ? post.image_url : `${API_BASE}${post.image_url}`) : '');
     setIsInstagramModalOpen(true);
   };
   
   const handleDeleteInstagram = async (id) => {
     if (!window.confirm(`Are you sure you want to delete this Instagram post?`)) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/instagram/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE}/api/instagram/${id}`, { method: 'DELETE' });
       if (response.ok) fetchInstagramPosts();
     } catch (error) {
       console.error('Error deleting instagram post:', error);
@@ -507,7 +508,7 @@ export default function HomeManagement() {
     if (selectedFile) submitData.append('image', selectedFile);
     
     try {
-      const url = editingInstagram ? `http://localhost:5000/api/instagram/${editingInstagram.id}` : `http://localhost:5000/api/instagram`;
+      const url = editingInstagram ? `${API_BASE}/api/instagram/${editingInstagram.id}` : `${API_BASE}/api/instagram`;
       const response = await fetch(url, { method: editingInstagram ? 'PUT' : 'POST', body: submitData });
       if (response.ok) {
         setSaveStatus('success');
@@ -550,7 +551,7 @@ export default function HomeManagement() {
           {filteredCategories.map((category) => (
             <div key={category.id} className="group relative bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all">
               <div className="aspect-square w-full bg-slate-50 relative overflow-hidden">
-                <ImageWithFallback src={category.image_url ? (category.image_url.startsWith('http') ? category.image_url : `http://localhost:5000${category.image_url}`) : ''} alt={category.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <ImageWithFallback src={category.image_url ? (category.image_url.startsWith('http') ? category.image_url : `${API_BASE}${category.image_url}`) : ''} alt={category.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
               <div className="p-4 flex items-center justify-between">
@@ -584,7 +585,7 @@ export default function HomeManagement() {
           {editorials.map((editorial) => (
             <div key={editorial.id} className="p-6 flex flex-col md:flex-row gap-6 items-center hover:bg-slate-50/50 transition-colors group">
               <div className="w-full md:w-48 aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                <ImageWithFallback src={editorial.image_url ? (editorial.image_url.startsWith('http') ? editorial.image_url : `http://localhost:5000${editorial.image_url}`) : ''} alt={editorial.title} className="w-full h-full object-cover" />
+                <ImageWithFallback src={editorial.image_url ? (editorial.image_url.startsWith('http') ? editorial.image_url : `${API_BASE}${editorial.image_url}`) : ''} alt={editorial.title} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-3">
@@ -633,7 +634,7 @@ export default function HomeManagement() {
           {justUnveiledItems.map((item) => (
             <div key={item.id} className="group relative bg-white border border-slate-200 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-500">
               <div className="aspect-[3/4] w-full bg-slate-50 relative overflow-hidden">
-                <ImageWithFallback src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : ''} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <ImageWithFallback src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `${API_BASE}${item.image_url}`) : ''} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
                   <div className="flex gap-3 justify-center">
                     <button onClick={() => openEditJustUnveiledModal(item)} className="bg-white/20 backdrop-blur-md text-white p-3 rounded-2xl hover:bg-white hover:text-slate-900 transition-all shadow-lg"><Edit2 size={20} /></button>
@@ -678,7 +679,7 @@ export default function HomeManagement() {
                 className={`p-3 border rounded-xl cursor-pointer transition-all flex items-center gap-3 ${product.is_featured ? 'border-amber-500 bg-amber-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
               >
                 <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-100 shrink-0">
-                  <ImageWithFallback src={product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `http://localhost:5000${product.image_url}`) : ''} alt={product.name} className="w-full h-full object-cover" />
+                  <ImageWithFallback src={product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `${API_BASE}${product.image_url}`) : ''} alt={product.name} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h5 className="font-bold text-slate-800 text-sm truncate">{product.name}</h5>
@@ -709,7 +710,7 @@ export default function HomeManagement() {
           {diamondEditItems.map((item) => (
             <div key={item.id} className="group relative bg-white border border-slate-200 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-500">
               <div className="aspect-[3/4] w-full bg-slate-50 relative overflow-hidden">
-                <ImageWithFallback src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : ''} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <ImageWithFallback src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `${API_BASE}${item.image_url}`) : ''} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
                   <div className="flex gap-3 justify-center">
                     <button onClick={() => openEditDiamondModal(item)} className="bg-white/20 backdrop-blur-md text-white p-3 rounded-2xl hover:bg-white hover:text-slate-900 transition-all shadow-lg"><Edit2 size={20} /></button>
@@ -750,7 +751,7 @@ export default function HomeManagement() {
           {services.map((service) => (
             <div key={service.id} className="p-6 flex flex-col md:flex-row gap-6 items-center hover:bg-slate-50/50 transition-colors group">
               <div className="w-full md:w-48 aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                <ImageWithFallback src={service.image_url ? (service.image_url.startsWith('http') ? service.image_url : `http://localhost:5000${service.image_url}`) : ''} alt={service.title} className="w-full h-full object-cover" />
+                <ImageWithFallback src={service.image_url ? (service.image_url.startsWith('http') ? service.image_url : `${API_BASE}${service.image_url}`) : ''} alt={service.title} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-3">
@@ -798,7 +799,7 @@ export default function HomeManagement() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {instagramPosts.map((post) => (
               <div key={post.id} className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-                <ImageWithFallback src={post.image_url ? (post.image_url.startsWith('http') ? post.image_url : `http://localhost:5000${post.image_url}`) : ''} alt="Instagram" className="w-full h-full object-cover" />
+                <ImageWithFallback src={post.image_url ? (post.image_url.startsWith('http') ? post.image_url : `${API_BASE}${post.image_url}`) : ''} alt="Instagram" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 backdrop-blur-[2px]">
                   <button onClick={() => openEditInstagramModal(post)} className="p-2 bg-white text-slate-800 rounded-lg hover:scale-110 transition-transform"><Edit2 size={16} /></button>
                   <button onClick={() => handleDeleteInstagram(post.id)} className="p-2 bg-white text-red-600 rounded-lg hover:scale-110 transition-transform"><Trash2 size={16} /></button>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { API_BASE } from '@/config';
 import { 
   Plus, 
   Search, 
@@ -76,9 +77,9 @@ export default function ProductManagement() {
     setIsLoading(true);
     try {
       const [prodRes, catRes, collRes] = await Promise.all([
-        fetch('http://localhost:5000/api/products'),
-        fetch('http://localhost:5000/api/categories'),
-        fetch('http://localhost:5000/api/collections')
+        fetch(`${API_BASE}/api/products`),
+        fetch(`${API_BASE}/api/categories`),
+        fetch(`${API_BASE}/api/collections`)
       ]);
 
       const [prods, cats, colls] = await Promise.all([
@@ -181,7 +182,7 @@ export default function ProductManagement() {
         setAdditionalImages(prev => prev.filter((_, i) => i !== fileIndex));
       }
     } else {
-      const rawPath = previewToRemove.replace('http://localhost:5000', '');
+      const rawPath = previewToRemove.replace(API_BASE, '');
       setExistingAdditionalImages(prev => prev.filter(p => p !== rawPath));
     }
     
@@ -199,7 +200,7 @@ export default function ProductManagement() {
         setAdditionalVideos(prev => prev.filter((_, i) => i !== fileIndex));
       }
     } else {
-      const rawPath = previewToRemove.replace('http://localhost:5000', '');
+      const rawPath = previewToRemove.replace(API_BASE, '');
       setExistingAdditionalVideos(prev => prev.filter(p => p !== rawPath));
     }
     
@@ -332,8 +333,8 @@ export default function ProductManagement() {
       weight: product.weight || 0.3,
       instagram_link: product.instagram_link || ''
     });
-    setPreviewUrl(product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `http://localhost:5000${product.image_url}`) : '');
-    setHoverPreviewUrl(product.hover_image_url ? (product.hover_image_url.startsWith('http') ? product.hover_image_url : `http://localhost:5000${product.hover_image_url}`) : '');
+    setPreviewUrl(product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `${API_BASE}${product.image_url}`) : '');
+    setHoverPreviewUrl(product.hover_image_url ? (product.hover_image_url.startsWith('http') ? product.hover_image_url : `${API_BASE}${product.hover_image_url}`) : '');
 
     // Parse existing additional images
     let existingImgs = [];
@@ -343,7 +344,7 @@ export default function ProductManagement() {
       console.error(e);
     }
     setExistingAdditionalImages(existingImgs);
-    setAdditionalImagePreviews(existingImgs.map(img => img.startsWith('http') ? img : `http://localhost:5000${img}`));
+    setAdditionalImagePreviews(existingImgs.map(img => img.startsWith('http') ? img : `${API_BASE}${img}`));
 
     // Parse existing additional videos
     let existingVids = [];
@@ -353,7 +354,7 @@ export default function ProductManagement() {
       console.error(e);
     }
     setExistingAdditionalVideos(existingVids);
-    setAdditionalVideoPreviews(existingVids.map(vid => vid.startsWith('http') ? vid : `http://localhost:5000${vid}`));
+    setAdditionalVideoPreviews(existingVids.map(vid => vid.startsWith('http') ? vid : `${API_BASE}${vid}`));
 
     setAdditionalImages([]);
     setAdditionalVideos([]);
@@ -361,7 +362,7 @@ export default function ProductManagement() {
     setSizes([]);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/products/${product.id}/variants`);
+      const response = await fetch(`${API_BASE}/api/products/${product.id}/variants`);
       if (response.ok) {
         const data = await response.json();
         const extractedSizes = data.filter(v => v.size).map(v => {
@@ -447,8 +448,8 @@ export default function ProductManagement() {
 
     try {
       const url = editingProduct 
-        ? `http://localhost:5000/api/products/${editingProduct.id}`
-        : 'http://localhost:5000/api/products';
+        ? `${API_BASE}/api/products/${editingProduct.id}`
+        : `${API_BASE}/api/products`;
       
       const method = editingProduct ? 'PUT' : 'POST';
 
@@ -464,7 +465,7 @@ export default function ProductManagement() {
         if (savedProductId) {
           // If editing, clear existing variants first
           if (editingProduct) {
-            await fetch(`http://localhost:5000/api/products/${savedProductId}/variants`, {
+            await fetch(`${API_BASE}/api/products/${savedProductId}/variants`, {
               method: 'DELETE'
             }).catch(err => console.error('Error clearing variants:', err));
           }
@@ -484,7 +485,7 @@ export default function ProductManagement() {
                 weights: JSON.stringify(mappedWeights)
               };
 
-              await fetch('http://localhost:5000/api/products/variants', {
+              await fetch(`${API_BASE}/api/products/variants`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json'
@@ -513,7 +514,7 @@ export default function ProductManagement() {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/products/${id}`, {
+      const response = await fetch(`${API_BASE}/api/products/${id}`, {
         method: 'DELETE'
       });
 
@@ -652,7 +653,7 @@ export default function ProductManagement() {
                         <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-100">
                           {product.image_url ? (
                             <img 
-                              src={product.image_url.startsWith('http') ? product.image_url : `http://localhost:5000${product.image_url}`} 
+                              src={product.image_url.startsWith('http') ? product.image_url : `${API_BASE}${product.image_url}`} 
                               alt={product.name} 
                               className="w-full h-full object-cover"
                             />

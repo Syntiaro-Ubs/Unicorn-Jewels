@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { API_BASE } from '@/config';
 import { motion } from 'motion/react';
 import { ArrowLeft, ArrowRight, Diamond, Check, MapPin, ChevronLeft, ChevronRight, Gem, Sparkles, Wrench, MoreHorizontal } from 'lucide-react';
 const logoImg = "https://images.unsplash.com/photo-1610187390406-9d24b55ea697?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhdmFudCUyMGdhcmRlJTIwbG9nbyUyMGpld2VscnklMjBicmFuZHxlbnwxfHx8fDE3NzY3NjUzMzZ8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
@@ -139,7 +140,7 @@ export function AppointmentPage({
   const handleConfirmBooking = async () => {
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:5000/api/appointments', {
+      const response = await fetch(`${API_BASE}/api/appointments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

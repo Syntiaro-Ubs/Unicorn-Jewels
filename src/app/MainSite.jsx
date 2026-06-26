@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { API_BASE } from '@/config';
 import { jsPDF } from "jspdf";
 import { useSearchParams } from "react-router";
 const heroImage =
@@ -105,7 +106,7 @@ const resolveManagedImage = (value) =>
   value
     ? value.startsWith("http")
       ? value
-      : `http://localhost:5000${value}`
+      : `${API_BASE}${value}`
     : "";
 
 const featuredCollectionCards = withScopedProductIds(
@@ -350,7 +351,7 @@ export default function App() {
 
           console.log(`Verifying PhonePe payment for order ${phonepeOrderId}`);
           const response = await fetch(
-            `http://localhost:5000/api/payment/phonepe/status/${phonepeOrderId}`,
+            `${API_BASE}/api/payment/phonepe/status/${phonepeOrderId}`,
           );
           const data = await response.json();
 
@@ -367,7 +368,7 @@ export default function App() {
             if (savedUser) {
               const user = JSON.parse(savedUser);
               const ordersResponse = await fetch(
-                `http://localhost:5000/api/auth/user-orders/${user.id}`,
+                `${API_BASE}/api/auth/user-orders/${user.id}`,
               );
               if (ordersResponse.ok) {
                 const backendOrders = await ordersResponse.json();
@@ -437,7 +438,7 @@ export default function App() {
         setCurrentUser(user);
         setUserInitial(user.firstName[0].toUpperCase());
         // Fetch orders silently in background
-        fetch(`http://localhost:5000/api/auth/user-orders/${user.id}`)
+        fetch(`${API_BASE}/api/auth/user-orders/${user.id}`)
           .then((r) => (r.ok ? r.json() : []))
           .then((backendOrders) => {
             const formattedOrders = backendOrders.map((o) => ({
@@ -462,7 +463,7 @@ export default function App() {
           })
           .catch((err) => console.error("Failed to fetch orders:", err));
         // Fetch addresses silently
-        fetch(`http://localhost:5000/api/auth/user-addresses/${user.id}`)
+        fetch(`${API_BASE}/api/auth/user-addresses/${user.id}`)
           .then((r) => (r.ok ? r.json() : []))
           .then(setUserAddresses)
           .catch((err) => console.error("Failed to fetch addresses:", err));
@@ -515,7 +516,7 @@ export default function App() {
     }
 
     // Fetch dynamic banner content for the specific page
-    fetch(`http://localhost:5000/api/content/banner/${pageKey}`)
+    fetch(`${API_BASE}/api/content/banner/${pageKey}`)
       .then((res) => res.json())
       .then((data) => {
         if (data && data.page_key) {
@@ -526,7 +527,7 @@ export default function App() {
             imageUrl: data.image_url
               ? data.image_url.startsWith("http")
                 ? data.image_url
-                : `http://localhost:5000${data.image_url}`
+                : `${API_BASE}${data.image_url}`
               : pageKey === "home"
                 ? heroImage
                 : pageKey === "appointment"
@@ -544,7 +545,7 @@ export default function App() {
     const fetchHomeVisionSection = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/content/page-content/home-vision-section",
+          `${API_BASE}/api/content/page-content/home-vision-section`,
         );
         if (!response.ok) {
           throw new Error("Failed to fetch home vision section");
@@ -568,12 +569,12 @@ export default function App() {
       try {
         const [prodRes, catRes, collRes, editRes, diamondRes, justUnveiledRes] =
           await Promise.all([
-            fetch("http://localhost:5000/api/products"),
-            fetch("http://localhost:5000/api/categories"),
-            fetch("http://localhost:5000/api/collections"),
-            fetch("http://localhost:5000/api/editorials"),
-            fetch("http://localhost:5000/api/diamond-edit"),
-            fetch("http://localhost:5000/api/just-unveiled"),
+            fetch(`${API_BASE}/api/products`),
+            fetch(`${API_BASE}/api/categories`),
+            fetch(`${API_BASE}/api/collections`),
+            fetch(`${API_BASE}/api/editorials`),
+            fetch(`${API_BASE}/api/diamond-edit`),
+            fetch(`${API_BASE}/api/just-unveiled`),
           ]);
 
         const [prods, cats, colls, edits, diamondItems, justUnveiledItems] =
@@ -586,10 +587,10 @@ export default function App() {
             justUnveiledRes.json(),
           ]);
 
-        const servicesRes = await fetch("http://localhost:5000/api/services");
+        const servicesRes = await fetch(`${API_BASE}/api/services`);
         const servicesItems = await servicesRes.json();
 
-        const instaRes = await fetch("http://localhost:5000/api/instagram");
+        const instaRes = await fetch(`${API_BASE}/api/instagram`);
         const instaPosts = await instaRes.json();
 
         setDbProducts(prods);
@@ -730,7 +731,7 @@ export default function App() {
                           const productImg = product.image_url
                             ? product.image_url.startsWith("http")
                               ? product.image_url
-                              : `http://localhost:5000${product.image_url}`
+                              : `${API_BASE}${product.image_url}`
                             : product.image || eternallyDesired1;
 
                           return (
@@ -978,7 +979,7 @@ export default function App() {
       return { success: false };
     }
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      const response = await fetch(`${API_BASE}/api/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -992,7 +993,7 @@ export default function App() {
         if (savedUser) {
           const user = JSON.parse(savedUser);
           const ordersResponse = await fetch(
-            `http://localhost:5000/api/auth/user-orders/${user.id}`,
+            `${API_BASE}/api/auth/user-orders/${user.id}`,
           );
           if (ordersResponse.ok) {
             const backendOrders = await ordersResponse.json();
@@ -1048,7 +1049,7 @@ export default function App() {
     // Fetch orders from backend
     try {
       const response = await fetch(
-        `http://localhost:5000/api/auth/user-orders/${user.id}`,
+        `${API_BASE}/api/auth/user-orders/${user.id}`,
       );
       if (response.ok) {
         const backendOrders = await response.json();
@@ -1081,7 +1082,7 @@ export default function App() {
     // Fetch addresses from backend
     try {
       const response = await fetch(
-        `http://localhost:5000/api/auth/user-addresses/${user.id}`,
+        `${API_BASE}/api/auth/user-addresses/${user.id}`,
       );
       if (response.ok) {
         const backendAddresses = await response.json();
@@ -1095,7 +1096,7 @@ export default function App() {
   const handleUpdateProfile = async (updatedData) => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/auth/update-profile",
+        `${API_BASE}/api/auth/update-profile`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -1119,7 +1120,7 @@ export default function App() {
   const handleAddAddress = async (addressData) => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/auth/user-addresses",
+        `${API_BASE}/api/auth/user-addresses`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1133,7 +1134,7 @@ export default function App() {
         const data = await response.json();
         // Re-fetch addresses to ensure state is correct (especially primary flag)
         const refreshResponse = await fetch(
-          `http://localhost:5000/api/auth/user-addresses/${currentUser.id}`,
+          `${API_BASE}/api/auth/user-addresses/${currentUser.id}`,
         );
         if (refreshResponse.ok) {
           const freshAddresses = await refreshResponse.json();
@@ -1150,7 +1151,7 @@ export default function App() {
   const handleUpdateAddress = async (addressId, addressData) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/auth/user-addresses/${addressId}`,
+        `${API_BASE}/api/auth/user-addresses/${addressId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -1162,7 +1163,7 @@ export default function App() {
       );
       if (response.ok) {
         const refreshResponse = await fetch(
-          `http://localhost:5000/api/auth/user-addresses/${currentUser.id}`,
+          `${API_BASE}/api/auth/user-addresses/${currentUser.id}`,
         );
         if (refreshResponse.ok) {
           const freshAddresses = await refreshResponse.json();
@@ -1179,7 +1180,7 @@ export default function App() {
   const handleDeleteAddress = async (addressId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/auth/user-addresses/${addressId}`,
+        `${API_BASE}/api/auth/user-addresses/${addressId}`,
         {
           method: "DELETE",
         },
@@ -1695,7 +1696,7 @@ export default function App() {
           try {
             console.log(`Initiating PhonePe payment for amount: ${total} USD`);
             const response = await fetch(
-              "http://localhost:5000/api/payment/phonepe/initiate",
+              `${API_BASE}/api/payment/phonepe/initiate`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -1764,7 +1765,7 @@ export default function App() {
               selectedSize: item.selectedSize || "",
               selectedWeight: item.selectedWeight || "",
             }));
-            await fetch("http://localhost:5000/api/products/reduce-stock", {
+            await fetch(`${API_BASE}/api/products/reduce-stock`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ items: stockItems }),
@@ -1776,7 +1777,7 @@ export default function App() {
           // If user is logged in, save to backend using the consolidated API
           if (isLoggedIn && currentUser) {
             try {
-              const response = await fetch("http://localhost:5000/api/orders", {
+              const response = await fetch(`${API_BASE}/api/orders`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -2247,7 +2248,7 @@ export default function App() {
           image: cat.image_url
             ? cat.image_url.startsWith("http")
               ? cat.image_url
-              : `http://localhost:5000${cat.image_url}`
+              : `${API_BASE}${cat.image_url}`
             : cat.name === "Rings"
               ? catRings
               : cat.name === "Necklaces"
@@ -2296,7 +2297,7 @@ export default function App() {
             image: p.image_url
               ? p.image_url.startsWith("http")
                 ? p.image_url
-                : `http://localhost:5000${p.image_url}`
+                : `${API_BASE}${p.image_url}`
               : eternallyDesired1,
           }))
       : [
@@ -2340,7 +2341,7 @@ export default function App() {
           image: post.image_url
             ? post.image_url.startsWith("http")
               ? post.image_url
-              : `http://localhost:5000${post.image_url}`
+              : `${API_BASE}${post.image_url}`
             : catRings,
           link: post.post_url,
         }))
@@ -2362,7 +2363,7 @@ export default function App() {
             image: p.image_url
               ? p.image_url.startsWith("http")
                 ? p.image_url
-                : `http://localhost:5000${p.image_url}`
+                : `${API_BASE}${p.image_url}`
               : justUnveiledBlue,
           }))
       : [
@@ -3242,7 +3243,7 @@ export default function App() {
                                 item.image_url
                                   ? item.image_url.startsWith("http")
                                     ? item.image_url
-                                    : `http://localhost:5000${item.image_url}`
+                                    : `${API_BASE}${item.image_url}`
                                   : ""
                               }
                               alt={item.title}
@@ -3322,7 +3323,7 @@ export default function App() {
                     editorial.image_url
                       ? editorial.image_url.startsWith("http")
                         ? editorial.image_url
-                        : `http://localhost:5000${editorial.image_url}`
+                        : `${API_BASE}${editorial.image_url}`
                       : ""
                   }
                   alt={editorial.title}
@@ -3552,7 +3553,7 @@ export default function App() {
                                 product.image_url
                                   ? product.image_url.startsWith("http")
                                     ? product.image_url
-                                    : `http://localhost:5000${product.image_url}`
+                                    : `${API_BASE}${product.image_url}`
                                   : ""
                               }
                               alt={product.name}
@@ -3675,7 +3676,7 @@ export default function App() {
                         stone.image_url
                           ? stone.image_url.startsWith("http")
                             ? stone.image_url
-                            : `http://localhost:5000${stone.image_url}`
+                            : `${API_BASE}${stone.image_url}`
                           : ""
                       }
                       alt={stone.title}
@@ -3789,7 +3790,7 @@ export default function App() {
                       service.image_url
                         ? service.image_url.startsWith("http")
                           ? service.image_url
-                          : `http://localhost:5000${service.image_url}`
+                          : `${API_BASE}${service.image_url}`
                         : ""
                     }
                     alt={service.title}

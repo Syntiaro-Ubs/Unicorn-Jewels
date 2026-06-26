@@ -17,7 +17,9 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-const API_BASE = 'http://localhost:5000/api/users';
+import { API_BASE as API_BASE_URL } from '@/config';
+
+const API_BASE = `${API_BASE_URL}/api/users`;
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);

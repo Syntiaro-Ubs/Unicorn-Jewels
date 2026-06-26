@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { API_BASE } from '@/config';
 import { motion } from 'motion/react';
 import {
   AlertCircle,
@@ -48,7 +49,7 @@ const textareaClass = `${inputClass} resize-none`;
 
 const resolveImageSource = (value = '') => {
   if (!value) return '';
-  return value.startsWith('http') ? value : `http://localhost:5000${value}`;
+  return value.startsWith('http') ? value : `${API_BASE}${value}`;
 };
 
 function ManagedImageField({
@@ -152,7 +153,7 @@ export default function EditorialPagesManagement() {
       try {
         const results = await Promise.all(
           PAGE_OPTIONS.map(async ({ id }) => {
-            const response = await fetch(`http://localhost:5000/api/content/page-content/${id}`);
+            const response = await fetch(`${API_BASE}/api/content/page-content/${id}`);
             if (!response.ok) {
               throw new Error(`Failed to fetch ${id} page content`);
             }
@@ -205,7 +206,7 @@ export default function EditorialPagesManagement() {
     setSaveState({ pageKey: activePage, status: 'saving' });
 
     try {
-      const response = await fetch(`http://localhost:5000/api/content/page-content/${activePage}`, {
+      const response = await fetch(`${API_BASE}/api/content/page-content/${activePage}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pageContent[activePage])
@@ -233,7 +234,7 @@ export default function EditorialPagesManagement() {
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await fetch('http://localhost:5000/api/content/page-content-image', {
+      const response = await fetch(`${API_BASE}/api/content/page-content-image`, {
         method: 'POST',
         body: formData
       });

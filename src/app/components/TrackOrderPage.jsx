@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE } from '@/config';
 import { motion } from 'motion/react';
 import { Package, Truck, CheckCircle2, MapPin, Calendar, ArrowLeft, Search, Clock, AlertTriangle, X } from 'lucide-react';
 
@@ -14,7 +15,7 @@ export function TrackOrderPage({ onBack, initialOrderId = 'ORD-993-841' }) {
     setError('');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/tracking/${query.trim()}`);
+      const res = await fetch(`${API_BASE}/api/tracking/${query.trim()}`);
       const data = await res.json();
 
       if (!res.ok) {

@@ -14,6 +14,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { ImageWithFallback } from "../app/components/figma/ImageWithFallback";
+import { API_BASE } from "@/config";
 
 export default function ShopByLookManagement() {
   const [cards, setCards] = useState([]);
@@ -43,7 +44,7 @@ export default function ShopByLookManagement() {
   const fetchCards = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/content/shop-by-look");
+      const response = await fetch(`${API_BASE}/api/content/shop-by-look`);
       const data = await response.json();
       if (response.ok || Array.isArray(data)) {
         setCards(data);
@@ -85,7 +86,7 @@ export default function ShopByLookManagement() {
       card.image_url
         ? card.image_url.startsWith("http")
           ? card.image_url
-          : `http://localhost:5000${card.image_url}`
+          : `${API_BASE}${card.image_url}`
         : "",
     );
     setIsModalOpen(true);
@@ -97,7 +98,7 @@ export default function ShopByLookManagement() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/content/shop-by-look/${variant}`,
+        `${API_BASE}/api/content/shop-by-look/${variant}`,
         {
           method: "DELETE",
           headers: {
@@ -141,8 +142,8 @@ export default function ShopByLookManagement() {
 
     try {
       const url = editingCard
-        ? `http://localhost:5000/api/content/shop-by-look/${editingCard.variant}`
-        : `http://localhost:5000/api/content/shop-by-look`;
+        ? `${API_BASE}/api/content/shop-by-look/${editingCard.variant}`
+        : `${API_BASE}/api/content/shop-by-look`;
 
       const method = editingCard ? "PUT" : "POST";
 
@@ -200,7 +201,7 @@ export default function ShopByLookManagement() {
         display_order: index + 1,
       }));
 
-      await fetch("http://localhost:5000/api/content/shop-by-look-order", {
+      await fetch(`${API_BASE}/api/content/shop-by-look-order`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -279,7 +280,7 @@ export default function ShopByLookManagement() {
                       card.image_url
                         ? card.image_url.startsWith("http")
                           ? card.image_url
-                          : `http://localhost:5000${card.image_url}`
+                          : `${API_BASE}${card.image_url}`
                         : ""
                     }
                     alt="Preview"

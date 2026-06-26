@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_BASE } from '@/config';
 import { motion } from 'motion/react';
 import { Shield, Lock, User, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -16,7 +17,7 @@ export default function DashboardLogin() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

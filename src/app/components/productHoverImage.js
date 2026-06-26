@@ -1,3 +1,4 @@
+import { API_BASE } from '@/config';
 const MODEL_IMAGE_POOLS = {
   rings: [
     'https://images.unsplash.com/photo-1729641246245-64405c363263?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2RlbCUyMHdlYXJpbmclMjBsdXh1cnklMjBkaWFtb25kJTIwamV3ZWxyeSUyMGF2YW50LWdhcmRlfGVufDF8fHx8MTc3Njc2NTMxOXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
@@ -57,7 +58,7 @@ function inferProductFamily(product) {
 
 export function getProductHoverImage(product) {
   if (product.hover_image_url) {
-    return product.hover_image_url.startsWith('http') ? product.hover_image_url : `http://localhost:5000${product.hover_image_url}`;
+    return product.hover_image_url.startsWith('http') ? product.hover_image_url : `${API_BASE}${product.hover_image_url}`;
   }
 
   if (product.hoverImage) {

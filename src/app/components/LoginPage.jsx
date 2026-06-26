@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_BASE } from '@/config';
 import { motion } from 'motion/react';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 const logoImg = "https://images.unsplash.com/photo-1610187390406-9d24b55ea697?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhdmFudCUyMGdhcmRlJTIwbG9nbyUyMGpld2VscnklMjBicmFuZHxlbnwxfHx8fDE3NzY3NjUzMzZ8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
@@ -34,7 +35,7 @@ export function LoginPage({
     setLoading(true);
     const normalizedEmail = email.trim().toLowerCase();
     try {
-      const response = await fetch('http://localhost:5000/api/auth/user-login', {
+      const response = await fetch(`${API_BASE}/api/auth/user-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

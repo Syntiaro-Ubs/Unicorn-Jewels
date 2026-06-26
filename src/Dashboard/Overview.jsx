@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'motion/react';
+import { API_BASE } from '@/config';
 import { 
   Users, 
   ShoppingCart, 
@@ -20,9 +21,9 @@ export default function Overview() {
     const fetchStats = async () => {
       try {
         const [ordersRes, productsRes, customersRes] = await Promise.all([
-          fetch('http://localhost:5000/api/orders'),
-          fetch('http://localhost:5000/api/products'),
-          fetch('http://localhost:5000/api/users')
+          fetch(`${API_BASE}/api/orders`),
+          fetch(`${API_BASE}/api/products`),
+          fetch(`${API_BASE}/api/users`)
         ]);
         
         if (ordersRes.ok) setOrders(await ordersRes.json());

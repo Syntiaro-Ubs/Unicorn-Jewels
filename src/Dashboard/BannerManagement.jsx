@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_BASE } from '@/config';
 import { motion, AnimatePresence } from "motion/react";
 import {
   Plus,
@@ -44,7 +45,7 @@ export default function BannerManagement() {
   const fetchBanners = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/content/banners");
+      const response = await fetch(`${API_BASE}/api/content/banners`);
       const data = await response.json();
       if (response.ok) {
         setBanners(data);
@@ -85,7 +86,7 @@ export default function BannerManagement() {
       banner.image_url
         ? banner.image_url.startsWith("http")
           ? banner.image_url
-          : `http://localhost:5000${banner.image_url}`
+          : `${API_BASE}${banner.image_url}`
         : "",
     );
     setModalStep(2); // Go straight to form
@@ -102,7 +103,7 @@ export default function BannerManagement() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/content/banner/${pageKey}`,
+        `${API_BASE}/api/content/banner/${pageKey}`,
         {
           method: "DELETE",
           headers: {
@@ -133,7 +134,7 @@ export default function BannerManagement() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/content/banner/${formData.page_key}`,
+        `${API_BASE}/api/content/banner/${formData.page_key}`,
         {
           method: "PUT",
           body: submitData,
@@ -246,7 +247,7 @@ export default function BannerManagement() {
                           banner.image_url
                             ? banner.image_url.startsWith("http")
                               ? banner.image_url
-                              : `http://localhost:5000${banner.image_url}`
+                              : `${API_BASE}${banner.image_url}`
                             : ""
                         }
                         alt="Preview"

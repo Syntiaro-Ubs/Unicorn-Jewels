@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_BASE } from '@/config';
 import { motion } from 'motion/react';
 import { Eye, EyeOff, ArrowLeft, Diamond, Check } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -62,7 +63,7 @@ export function SignUpPage({
     setLoading(true);
     const normalizedEmail = fields.email.value.trim().toLowerCase();
     try {
-      const signupResponse = await fetch('http://localhost:5000/api/auth/signup', {
+      const signupResponse = await fetch(`${API_BASE}/api/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -77,7 +78,7 @@ export function SignUpPage({
       const signupData = await signupResponse.json();
       if (signupResponse.ok) {
         // Automatically login after signup
-        const loginResponse = await fetch('http://localhost:5000/api/auth/user-login', {
+        const loginResponse = await fetch(`${API_BASE}/api/auth/user-login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

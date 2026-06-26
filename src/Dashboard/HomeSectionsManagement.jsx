@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { API_BASE } from '@/config';
 import {
   AlertCircle,
   BookOpen,
@@ -38,7 +39,7 @@ const mergeWithDefaults = (defaults, incoming) => {
 
 const resolveImageSource = (value = '') => {
   if (!value) return '';
-  return value.startsWith('http') ? value : `http://localhost:5000${value}`;
+  return value.startsWith('http') ? value : `${API_BASE}${value}`;
 };
 
 function ManagedImageField({
@@ -135,7 +136,7 @@ export default function HomeSectionsManagement({ giftGuideSection, onEditGiftGui
       setLoading(true);
 
       try {
-        const response = await fetch('http://localhost:5000/api/content/page-content/home-vision-section');
+        const response = await fetch(`${API_BASE}/api/content/page-content/home-vision-section`);
         if (!response.ok) {
           throw new Error('Failed to fetch home vision section');
         }
@@ -160,7 +161,7 @@ export default function HomeSectionsManagement({ giftGuideSection, onEditGiftGui
     setSaveState('saving');
 
     try {
-      const response = await fetch('http://localhost:5000/api/content/page-content/home-vision-section', {
+      const response = await fetch(`${API_BASE}/api/content/page-content/home-vision-section`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sectionContent)
@@ -186,7 +187,7 @@ export default function HomeSectionsManagement({ giftGuideSection, onEditGiftGui
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await fetch('http://localhost:5000/api/content/page-content-image', {
+      const response = await fetch(`${API_BASE}/api/content/page-content-image`, {
         method: 'POST',
         body: formData
       });

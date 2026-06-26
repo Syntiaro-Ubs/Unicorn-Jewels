@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
     try {
         const [rows] = await db.query(`
             SELECT o.id, o.user_id, o.order_id, o.product_name, o.price, o.image_url, o.status, 
-                   o.product_id, o.quantity, o.selected_size, o.order_date, o.refund_id, o.refund_status,
+                   o.product_id, o.quantity, o.selected_size, o.selected_weight, o.order_date, o.refund_id, o.refund_status,
                    o.cancellation_reason,
                    u.email as user_email, u.first_name, u.last_name 
             FROM user_orders o 
@@ -67,6 +67,35 @@ router.put('/:orderId/status', async (req, res) => {
                                     'UPDATE product_variants SET stock = stock + ? WHERE product_id = ? AND size = ?',
                                     [item.quantity, numericId, item.selected_size]
                                 );
+
+                                if (item.selected_weight !== undefined && item.selected_weight !== null && item.selected_weight !== '') {
+                                    const [variants] = await db.query(
+                                        'SELECT id, weights FROM product_variants WHERE product_id = ? AND size = ?',
+                                        [numericId, item.selected_size]
+                                    );
+                                    if (variants.length > 0) {
+                                        try {
+                                            let weightsArr = [];
+                                            if (variants[0].weights) {
+                                                weightsArr = JSON.parse(variants[0].weights);
+                                            }
+                                            if (!Array.isArray(weightsArr)) {
+                                                weightsArr = [];
+                                            }
+                                            const parsedWeight = parseFloat(item.selected_weight);
+                                            const qty = item.quantity || 1;
+                                            for (let i = 0; i < qty; i++) {
+                                                weightsArr.push(parsedWeight);
+                                            }
+                                            await db.query(
+                                                'UPDATE product_variants SET weights = ? WHERE id = ?',
+                                                [JSON.stringify(weightsArr), variants[0].id]
+                                            );
+                                        } catch (e) {
+                                            console.error('Error replenishing variant weights array on order cancellation:', e);
+                                        }
+                                    }
+                                }
                             }
                             console.log(`Replenished stock by ${item.quantity} (Size: ${item.selected_size || 'None'}) for product ID: ${numericId}`);
                         }
@@ -178,11 +207,12 @@ router.post('/', async (req, res) => {
             const prodId = item.productId || null;
             const qty = item.quantity || 1;
             const sz = item.selectedSize || null;
+            const wt = item.selectedWeight || null;
 
             await db.query(
-                `INSERT INTO user_orders (user_id, order_id, product_name, price, image_url, status, product_id, quantity, selected_size)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [userId, orderId, item.productName, item.price, item.imageUrl, orderStatus, prodId, qty, sz]
+                `INSERT INTO user_orders (user_id, order_id, product_name, price, image_url, status, product_id, quantity, selected_size, selected_weight)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [userId, orderId, item.productName, item.price, item.imageUrl, orderStatus, prodId, qty, sz, wt]
             );
         }
 

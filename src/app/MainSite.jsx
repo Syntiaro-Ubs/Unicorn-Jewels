@@ -183,6 +183,9 @@ export default function App() {
     () => sessionStorage.getItem("uj_currentPage") || "home",
   );
   const [appointmentMode, setAppointmentMode] = useState("standard");
+  const [appointmentServiceId, setAppointmentServiceId] = useState(null);
+  const [appointmentNotes, setAppointmentNotes] = useState('');
+  const [appointmentBackPage, setAppointmentBackPage] = useState('home');
   const [selectedProduct, setSelectedProduct] = useState(() => {
     const saved = sessionStorage.getItem("uj_selectedProduct");
     return saved ? JSON.parse(saved) : null;
@@ -451,6 +454,7 @@ export default function App() {
               productId: o.product_id,
               quantity: o.quantity || 1,
               selectedSize: o.selected_size || "",
+              selectedWeight: o.selected_weight || "",
               cancellationReason: o.cancellation_reason || "",
               timestamp: new Date(o.order_date).getTime(),
             }));
@@ -603,6 +607,18 @@ export default function App() {
 
     fetchStoreData();
   }, []);
+
+  useEffect(() => {
+    if (selectedProduct && dbProducts.length > 0) {
+      const freshProduct = dbProducts.find(p => String(p.id) === String(selectedProduct.id));
+      if (freshProduct) {
+        const hasChanged = Object.keys(freshProduct).some(key => freshProduct[key] !== selectedProduct[key]);
+        if (hasChanged) {
+          setSelectedProduct(freshProduct);
+        }
+      }
+    }
+  }, [dbProducts, selectedProduct]);
 
   const productIndex = useMemo(() => {
     const allProducts = [
@@ -800,12 +816,13 @@ export default function App() {
       return nextWishlist;
     });
   };
-  const addToCart = (item, selectedSize, sizeStock) => {
+  const addToCart = (item, selectedSize, sizeStock, selectedWeight) => {
     if (!isLoggedIn) {
       setCurrentPage("login");
       return;
     }
     const cartSize = selectedSize || item.selectedSize || "";
+    const cartWeight = selectedWeight || item.selectedWeight || "";
     const cartStock =
       sizeStock !== undefined
         ? sizeStock
@@ -815,7 +832,7 @@ export default function App() {
 
     setCartItems((prev) => {
       const existing = prev.find(
-        (i) => i.id === item.id && (i.selectedSize || "") === cartSize,
+        (i) => i.id === item.id && (i.selectedSize || "") === cartSize && (i.selectedWeight || "") === cartWeight,
       );
       if (existing) {
         if (
@@ -823,11 +840,11 @@ export default function App() {
           cartStock !== null &&
           existing.quantity >= cartStock
         ) {
-          alert(`You can only purchase up to ${cartStock} items of this size.`);
+          alert(`You can only purchase up to ${cartStock} items of this weight.`);
           return prev;
         }
         return prev.map((i) =>
-          i.id === item.id && (i.selectedSize || "") === cartSize
+          i.id === item.id && (i.selectedSize || "") === cartSize && (i.selectedWeight || "") === cartWeight
             ? {
                 ...i,
                 quantity: i.quantity + 1,
@@ -840,6 +857,7 @@ export default function App() {
         {
           ...item,
           selectedSize: cartSize,
+          selectedWeight: cartWeight,
           sizeStock: cartStock,
           quantity: 1,
         },
@@ -855,11 +873,12 @@ export default function App() {
     }, 1600);
     setCartOpen(true);
   };
-  const updateQty = (id, qty, selectedSize) => {
+  const updateQty = (id, qty, selectedSize, selectedWeight) => {
     const cartSize = selectedSize || "";
+    const cartWeight = selectedWeight || "";
     setCartItems((prev) =>
       prev.map((i) => {
-        if (i.id === id && (i.selectedSize || "") === cartSize) {
+        if (i.id === id && (i.selectedSize || "") === cartSize && (i.selectedWeight || "") === cartWeight) {
           const maxStock =
             i.sizeStock !== undefined && i.sizeStock !== null
               ? i.sizeStock
@@ -877,10 +896,11 @@ export default function App() {
       }),
     );
   };
-  const removeFromCart = (id, selectedSize) => {
+  const removeFromCart = (id, selectedSize, selectedWeight) => {
     const cartSize = selectedSize || "";
+    const cartWeight = selectedWeight || "";
     setCartItems((prev) =>
-      prev.filter((i) => !(i.id === id && (i.selectedSize || "") === cartSize)),
+      prev.filter((i) => !(i.id === id && (i.selectedSize || "") === cartSize && (i.selectedWeight || "") === cartWeight)),
     );
   };
   const openProductPage = (
@@ -992,6 +1012,7 @@ export default function App() {
               productId: o.product_id,
               quantity: o.quantity || 1,
               selectedSize: o.selected_size || "",
+              selectedWeight: o.selected_weight || "",
               cancellationReason: o.cancellation_reason || "",
               timestamp: new Date(o.order_date).getTime(),
             }));
@@ -1047,6 +1068,7 @@ export default function App() {
           productId: o.product_id,
           quantity: o.quantity || 1,
           selectedSize: o.selected_size || "",
+          selectedWeight: o.selected_weight || "",
           cancellationReason: o.cancellation_reason || "",
           timestamp: new Date(o.order_date).getTime(),
         }));
@@ -1325,7 +1347,10 @@ export default function App() {
           addToCart={addToCart}
           addedIds={addedIds}
           onProductClick={(p) => openProductPage(p, "product")}
-          onBookAppointment={() => {
+          onBookAppointment={(serviceId, notes) => {
+            setAppointmentServiceId(serviceId || null);
+            setAppointmentNotes(notes || '');
+            setAppointmentBackPage("product");
             setAppointmentMode("standard");
             setCurrentPage("appointment");
           }}
@@ -1635,9 +1660,13 @@ export default function App() {
       <AppointmentPage
         mode={appointmentMode}
         bannerContent={dynamicBanner}
+        initialServiceId={appointmentServiceId}
+        initialNotes={appointmentNotes}
         onBack={() => {
           setAppointmentMode("standard");
-          setCurrentPage("home");
+          setAppointmentServiceId(null);
+          setAppointmentNotes('');
+          setCurrentPage(appointmentBackPage || "home");
         }}
       />
     );
@@ -1723,6 +1752,7 @@ export default function App() {
             productId: item.id,
             quantity: item.quantity,
             selectedSize: item.selectedSize || "",
+            selectedWeight: item.selectedWeight || "",
             timestamp: Date.now(),
           }));
 
@@ -1732,6 +1762,7 @@ export default function App() {
               id: item.id,
               quantity: item.quantity,
               selectedSize: item.selectedSize || "",
+              selectedWeight: item.selectedWeight || "",
             }));
             await fetch("http://localhost:5000/api/products/reduce-stock", {
               method: "POST",
@@ -1758,7 +1789,8 @@ export default function App() {
                     status: o.status,
                     productId: o.productId,
                     quantity: o.quantity,
-                    selectedSize: o.selectedSize
+                    selectedSize: o.selectedSize,
+                    selectedWeight: o.selectedWeight
                   }))
                 })
               });

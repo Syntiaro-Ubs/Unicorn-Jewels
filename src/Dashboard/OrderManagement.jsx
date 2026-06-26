@@ -325,7 +325,9 @@ export default function OrderManagement() {
                         <div>
                           <h5 className="font-bold text-slate-800 text-sm tracking-wide">{item.product_name}</h5>
                           <p className="text-xs text-slate-400 mt-1 font-semibold">
-                            {item.selected_size ? `Size: ${item.selected_size} | ` : ''}Quantity: {item.quantity || 1}
+                            {item.selected_size ? `Size: ${item.selected_size} | ` : ''}
+                            {item.selected_weight ? `Weight: ${item.selected_weight}g | ` : ''}
+                            Quantity: {item.quantity || 1}
                           </p>
                         </div>
                       </div>

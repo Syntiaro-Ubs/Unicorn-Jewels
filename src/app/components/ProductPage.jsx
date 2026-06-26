@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, Plus, Minus, Ruler, Info, X, ChevronDown } from 'lucide-react';
+import { Heart, Plus, Minus, Ruler, Info, X, ChevronDown, Instagram } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 const RING_CHART_DATA = [
@@ -38,7 +38,29 @@ export function ProductPage({
   onBookAppointment
 }) {
   const [activeAccordion, setActiveAccordion] = useState('details');
+  const additionalImages = useMemo(() => {
+    if (!product.additional_images) return [];
+    if (Array.isArray(product.additional_images)) return product.additional_images;
+    try {
+      return JSON.parse(product.additional_images);
+    } catch (e) {
+      console.error('Error parsing additional_images:', e);
+      return [];
+    }
+  }, [product.additional_images]);
+
+  const additionalVideos = useMemo(() => {
+    if (!product.additional_videos) return [];
+    if (Array.isArray(product.additional_videos)) return product.additional_videos;
+    try {
+      return JSON.parse(product.additional_videos);
+    } catch (e) {
+      console.error('Error parsing additional_videos:', e);
+      return [];
+    }
+  }, [product.additional_videos]);
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedWeight, setSelectedWeight] = useState('');
   const [variants, setVariants] = useState([]);
   const [availableSizes, setAvailableSizes] = useState([]);
   const [isLoadingVariants, setIsLoadingVariants] = useState(true);
@@ -80,6 +102,28 @@ export function ProductPage({
       fetchVariants();
     }
   }, [product.id]);
+
+  useEffect(() => {
+    if (selectedSize && variants.length > 0) {
+      const activeVariant = variants.find(v => v.size === selectedSize);
+      if (activeVariant && activeVariant.weights) {
+        try {
+          const wList = Array.isArray(activeVariant.weights) 
+            ? activeVariant.weights 
+            : JSON.parse(activeVariant.weights);
+          const validWeights = wList.filter(w => w !== "" && w !== null && w !== undefined);
+          if (validWeights.length > 0) {
+            const firstFormatted = parseFloat(validWeights[0]).toFixed(2);
+            setSelectedWeight(firstFormatted);
+            return;
+          }
+        } catch (e) {
+          console.error("Error setting default weight on size change:", e);
+        }
+      }
+    }
+    setSelectedWeight('');
+  }, [selectedSize, variants]);
 
   useEffect(() => {
     // Fetch similar products from same collection (prioritize) or category
@@ -239,8 +283,20 @@ export function ProductPage({
           opacity: 1
         }} transition={{
           duration: 1
-        }} className="w-full min-h-[50vh] sm:min-h-[60vh] lg:min-h-screen flex items-center justify-center p-6 sm:p-8 md:p-10 lg:p-12">
+        }} className="w-full min-h-[50vh] sm:min-h-[60vh] lg:min-h-screen flex items-center justify-center p-6 sm:p-8 md:p-10 lg:p-12 relative">
             <ImageWithFallback src={product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `http://localhost:5000${product.image_url}`) : product.image} alt={product.name} className="w-full max-w-2xl object-contain mix-blend-multiply" />
+            {product.instagram_link && (
+              <a
+                href={product.instagram_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute top-6 right-6 z-10 w-10 h-10 bg-white hover:bg-black text-black hover:text-white rounded-full flex items-center justify-center shadow-md border border-gray-100 transition-all duration-300 group hover:scale-110 active:scale-95 cursor-pointer"
+                title="View on Instagram"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Instagram className="w-5 h-5 transition-transform duration-300 group-hover:rotate-6" />
+              </a>
+            )}
           </motion.div>
         </div>
 
@@ -294,13 +350,88 @@ export function ProductPage({
               ) : (
                 <p className="text-xs text-gray-400 italic">One size fits all</p>
               )}
+
+              <div className="mt-4 flex justify-between items-center text-xs">
+                <span className="text-gray-500 text-[10px] tracking-wide uppercase font-medium">Need a custom size?</span>
+                <button 
+                  onClick={() => onBookAppointment?.('care', `I would like to request a custom size for: ${product.name}.`)}
+                  className="text-[10px] tracking-widest text-black hover:text-gray-600 transition-colors uppercase font-bold border-b border-black pb-0.5 tap-target"
+                >
+                  Request Custom Size
+                </button>
+              </div>
             </div>
+
+            {/* Weight Selector */}
+            {(() => {
+              const activeVariant = variants.find(v => v.size === selectedSize);
+              if (!activeVariant || !activeVariant.weights) return null;
+              try {
+                const wList = Array.isArray(activeVariant.weights) 
+                  ? activeVariant.weights 
+                  : JSON.parse(activeVariant.weights);
+                const validWeights = wList.filter(w => w !== "" && w !== null && w !== undefined);
+                if (validWeights.length === 0) return null;
+
+                const weightCounts = {};
+                validWeights.forEach(w => {
+                  const formatted = parseFloat(w).toFixed(2);
+                  weightCounts[formatted] = (weightCounts[formatted] || 0) + 1;
+                });
+                const uniqueWeights = Object.keys(weightCounts);
+
+                return (
+                  <div className="mb-8 sm:mb-10">
+                    <div className="flex justify-between items-center mb-3 sm:mb-4">
+                      <span className="text-xs tracking-[0.2em] uppercase text-black font-semibold">Available Piece Weights</span>
+                      <span className="text-[10px] tracking-wide text-gray-400">Select unique piece</span>
+                    </div>
+                    <div className="relative">
+                      <select 
+                        value={selectedWeight}
+                        onChange={(e) => setSelectedWeight(e.target.value)}
+                        className="w-full bg-white text-black text-xs font-medium tracking-widest uppercase py-3.5 px-4 border border-gray-200 outline-none focus:border-black transition-colors appearance-none cursor-pointer"
+                        style={{ fontFamily: "'Inter', sans-serif" }}
+                      >
+                        {uniqueWeights.map((w) => (
+                          <option key={w} value={w}>
+                            {w} grams ({weightCounts[w]} {weightCounts[w] === 1 ? 'piece' : 'pieces'} available)
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                        <ChevronDown size={14} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              } catch (e) {
+                console.error("Error rendering weight selector:", e);
+                return null;
+              }
+            })()}
 
             {/* Action Buttons */}
             <div className="flex gap-3 sm:gap-4 mb-12 sm:mb-14 md:mb-16">
               {(() => {
                 const currentVariant = variants.find(v => v.size === selectedSize);
-                const sizeStock = currentVariant ? currentVariant.stock : (variants.length > 0 ? 0 : product.stock);
+                let sizeStock = 0;
+                if (currentVariant) {
+                  if (selectedWeight && currentVariant.weights) {
+                    try {
+                      const wList = Array.isArray(currentVariant.weights) ? currentVariant.weights : JSON.parse(currentVariant.weights);
+                      sizeStock = wList.filter(w => parseFloat(w).toFixed(2) === selectedWeight).length;
+                    } catch (e) {
+                      sizeStock = currentVariant.stock || 0;
+                    }
+                  } else {
+                    sizeStock = currentVariant.stock || 0;
+                  }
+                } else if (variants.length > 0) {
+                  sizeStock = 0;
+                } else {
+                  sizeStock = product.stock;
+                }
                 
                 if (sizeStock === 0) {
                   return (
@@ -315,7 +446,7 @@ export function ProductPage({
                 
                 return (
                   <button 
-                    onClick={() => addToCart(product, selectedSize, sizeStock)} 
+                    onClick={() => addToCart(product, selectedSize, sizeStock, selectedWeight)} 
                     className={`flex-1 py-3 sm:py-4 text-xs tracking-[0.2em] uppercase transition-all duration-300 border tap-target ${addedIds.has(product.id) ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white' : 'bg-black border-black text-white hover:bg-gray-800'}`}
                   >
                     {addedIds.has(product.id) ? 'Added to Bag' : 'Add to Bag'}
@@ -387,6 +518,34 @@ export function ProductPage({
                   </motion.div>}
               </div>
             </div>
+
+            {/* Additional Media Gallery */}
+            {(additionalImages.length > 0 || additionalVideos.length > 0) && (
+              <div className="mt-8 pt-8 border-t border-gray-200 space-y-5">
+                {/* Title */}
+                <h4 className="text-[10px] tracking-[0.2em] uppercase text-black font-semibold">Gallery</h4>
+                <div className="space-y-4">
+                  {additionalImages.map((imgUrl, index) => (
+                    <div key={`img-${index}`} className="w-full bg-[#f7f7f7] border border-gray-100 overflow-hidden rounded-sm group relative">
+                      <img 
+                        src={imgUrl.startsWith('http') ? imgUrl : `http://localhost:5000${imgUrl}`} 
+                        alt={`Product gallery ${index + 1}`} 
+                        className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-105" 
+                      />
+                    </div>
+                  ))}
+                  {additionalVideos.map((videoUrl, index) => (
+                    <div key={`vid-${index}`} className="w-full aspect-video bg-black border border-gray-100 overflow-hidden rounded-sm relative">
+                      <video 
+                        src={videoUrl.startsWith('http') ? videoUrl : `http://localhost:5000${videoUrl}`} 
+                        controls 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       </div>

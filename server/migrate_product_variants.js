@@ -12,6 +12,7 @@ const createProductVariantsTable = async () => {
       price DECIMAL(10, 2),
       images TEXT,
       is_active BOOLEAN DEFAULT TRUE,
+      weights TEXT DEFAULT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE

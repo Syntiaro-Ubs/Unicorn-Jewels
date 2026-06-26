@@ -85,16 +85,22 @@ router.get('/:id', async (req, res) => {
 // POST new product
 router.post('/', upload.fields([
     { name: 'image', maxCount: 1 }, 
+    { name: 'hover_image', maxCount: 1 }, 
     { name: 'additionalImages', maxCount: 10 },
     { name: 'additionalVideos', maxCount: 5 }
 ]), async (req, res) => {
-    const { name, slug, price, price_num, description, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight } = req.body;
+    const { name, slug, price, price_num, description, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight, instagram_link } = req.body;
     let image_url = req.body.image_url || '';
+    let hover_image_url = req.body.hover_image_url || '';
     let additional_images = [];
     let additional_videos = [];
 
     if (req.files && req.files['image'] && req.files['image'][0]) {
         image_url = `/uploads/${req.files['image'][0].filename}`;
+    }
+
+    if (req.files && req.files['hover_image'] && req.files['hover_image'][0]) {
+        hover_image_url = `/uploads/${req.files['hover_image'][0].filename}`;
     }
 
     if (req.files && req.files['additionalImages']) {
@@ -108,8 +114,8 @@ router.post('/', upload.fields([
     try {
         const normalizedSlug = await getUniqueProductSlug(slug, name);
         const [result] = await db.query(
-            `INSERT INTO products (name, slug, price, price_num, description, image_url, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight, additional_images, additional_videos) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO products (name, slug, price, price_num, description, image_url, hover_image_url, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight, additional_images, additional_videos, instagram_link) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 name, 
                 normalizedSlug, 
@@ -117,6 +123,7 @@ router.post('/', upload.fields([
                 price_num, 
                 description, 
                 image_url, 
+                hover_image_url,
                 category_id || null, 
                 collection_id || null, 
                 metal, 
@@ -127,7 +134,8 @@ router.post('/', upload.fields([
                 barcode || '', 
                 weight || 0.3,
                 JSON.stringify(additional_images),
-                JSON.stringify(additional_videos)
+                JSON.stringify(additional_videos),
+                instagram_link || null
             ]
         );
         res.status(201).json({ id: result.insertId, slug: normalizedSlug, message: 'Product created successfully' });
@@ -142,9 +150,14 @@ router.post('/', upload.fields([
 });
 
 // PUT update product
-router.put('/:id', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'hover_image', maxCount: 1 }]), async (req, res) => {
+router.put('/:id', upload.fields([
+    { name: 'image', maxCount: 1 }, 
+    { name: 'hover_image', maxCount: 1 },
+    { name: 'additionalImages', maxCount: 10 },
+    { name: 'additionalVideos', maxCount: 5 }
+]), async (req, res) => {
     const { id } = req.params;
-    const { name, slug, price, price_num, description, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight } = req.body;
+    const { name, slug, price, price_num, description, category_id, collection_id, metal, tag, is_featured, is_new_arrival, stock, barcode, weight, instagram_link } = req.body;
     let image_url = req.body.image_url;
     let hover_image_url = req.body.hover_image_url;
 
@@ -156,13 +169,60 @@ router.put('/:id', upload.fields([{ name: 'image', maxCount: 1 }, { name: 'hover
         hover_image_url = `/uploads/${req.files['hover_image'][0].filename}`;
     }
 
+    let additional_images = [];
+    if (req.body.existingAdditionalImages) {
+        try {
+            additional_images = JSON.parse(req.body.existingAdditionalImages);
+        } catch (e) {
+            additional_images = [];
+        }
+    }
+    if (req.files && req.files['additionalImages']) {
+        const new_images = req.files['additionalImages'].map(file => `/uploads/${file.filename}`);
+        additional_images = [...additional_images, ...new_images];
+    }
+
+    let additional_videos = [];
+    if (req.body.existingAdditionalVideos) {
+        try {
+            additional_videos = JSON.parse(req.body.existingAdditionalVideos);
+        } catch (e) {
+            additional_videos = [];
+        }
+    }
+    if (req.files && req.files['additionalVideos']) {
+        const new_videos = req.files['additionalVideos'].map(file => `/uploads/${file.filename}`);
+        additional_videos = [...additional_videos, ...new_videos];
+    }
+
     try {
         const normalizedSlug = await getUniqueProductSlug(slug, name, id);
-        await db.query(
-            `UPDATE products SET name = ?, slug = ?, price = ?, price_num = ?, description = ?, image_url = ?, hover_image_url = ?, category_id = ?, collection_id = ?, metal = ?, tag = ?, is_featured = ?, is_new_arrival = ?, stock = ?, barcode = ?, weight = ? 
-             WHERE id = ?`,
-            [name, normalizedSlug, price, price_num, description, image_url, hover_image_url, category_id || null, collection_id || null, metal, tag, is_featured === 'true', is_new_arrival === 'true', stock || 0, barcode || '', weight || 0.3, id]
-        );
+        
+        let queryStr = `UPDATE products SET name = ?, slug = ?, price = ?, price_num = ?, description = ?, image_url = ?, hover_image_url = ?, category_id = ?, collection_id = ?, metal = ?, tag = ?, is_featured = ?, is_new_arrival = ?, stock = ?, barcode = ?, weight = ?, additional_images = ?, additional_videos = ?, instagram_link = ? WHERE id = ?`;
+        let queryParams = [
+            name, 
+            normalizedSlug, 
+            price, 
+            price_num, 
+            description, 
+            image_url, 
+            hover_image_url, 
+            category_id || null, 
+            collection_id || null, 
+            metal, 
+            tag, 
+            is_featured === 'true', 
+            is_new_arrival === 'true', 
+            stock || 0, 
+            barcode || '', 
+            weight || 0.3,
+            JSON.stringify(additional_images),
+            JSON.stringify(additional_videos),
+            instagram_link || null,
+            id
+        ];
+
+        await db.query(queryStr, queryParams);
         res.json({ message: 'Product updated successfully', slug: normalizedSlug });
     } catch (error) {
         console.error(error);
@@ -230,6 +290,41 @@ router.post('/reduce-stock', async (req, res) => {
                         'UPDATE product_variants SET stock = stock - ? WHERE product_id = ? AND size = ?',
                         [item.quantity, numericId, item.selectedSize]
                     );
+
+                    // If selectedWeight is provided, remove it from the weights array of the variant
+                    if (item.selectedWeight !== undefined && item.selectedWeight !== null && item.selectedWeight !== '') {
+                        const [variants] = await db.query(
+                            'SELECT id, weights FROM product_variants WHERE product_id = ? AND size = ?',
+                            [numericId, item.selectedSize]
+                        );
+                        if (variants.length > 0 && variants[0].weights) {
+                            try {
+                                let weightsArr = JSON.parse(variants[0].weights);
+                                if (Array.isArray(weightsArr)) {
+                                    const parsedWeight = parseFloat(item.selectedWeight);
+                                    const qty = item.quantity || 1;
+                                    let removedCount = 0;
+                                    for (let i = 0; i < qty; i++) {
+                                        const idx = weightsArr.findIndex(w => parseFloat(w) === parsedWeight);
+                                        if (idx > -1) {
+                                            weightsArr.splice(idx, 1);
+                                            removedCount++;
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    if (removedCount > 0) {
+                                        await db.query(
+                                            'UPDATE product_variants SET weights = ? WHERE id = ?',
+                                            [JSON.stringify(weightsArr), variants[0].id]
+                                        );
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Error updating variant weights array on stock reduction:', e);
+                            }
+                        }
+                    }
                 }
             } else {
                 // Fallback for mock/string products
@@ -256,7 +351,7 @@ router.get('/:id/variants', async (req, res) => {
 
 // POST create variant
 router.post('/variants', upload.array('images', 5), async (req, res) => {
-    const { product_id, size, color, stock, sku, price, is_active } = req.body;
+    const { product_id, size, color, stock, sku, price, is_active, weights } = req.body;
     
     let images = [];
     if (req.files && req.files.length > 0) {
@@ -265,9 +360,9 @@ router.post('/variants', upload.array('images', 5), async (req, res) => {
 
     try {
         const [result] = await db.query(
-            `INSERT INTO product_variants (product_id, size, color, stock, sku, price, images, is_active) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [product_id, size || '', color || '', stock || 0, sku || '', price || 0, JSON.stringify(images), is_active === '1' || is_active === true ? 1 : 0]
+            `INSERT INTO product_variants (product_id, size, color, stock, sku, price, images, is_active, weights) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [product_id, size || '', color || '', stock || 0, sku || '', price || 0, JSON.stringify(images), is_active === '1' || is_active === true ? 1 : 0, weights || null]
         );
         res.status(201).json({ id: result.insertId, message: 'Variant created successfully' });
     } catch (error) {

@@ -31,6 +31,7 @@ export default function ProductManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sizes, setSizes] = useState([]);
   const [newSizeInput, setNewSizeInput] = useState('');
+  const [expandedWeightsSize, setExpandedWeightsSize] = useState(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -49,15 +50,21 @@ export default function ProductManagement() {
     barcode: '',
     image: null,
     image_url: '',
-    weight: 0.3
+    hover_image: null,
+    hover_image_url: '',
+    weight: 0.3,
+    instagram_link: ''
   });
 
+
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [hoverPreviewUrl, setHoverPreviewUrl] = useState('');
   const [additionalImages, setAdditionalImages] = useState([]);
   const [additionalVideos, setAdditionalVideos] = useState([]);
   const [additionalImagePreviews, setAdditionalImagePreviews] = useState([]);
   const [additionalVideoPreviews, setAdditionalVideoPreviews] = useState([]);
-
-  const [previewUrl, setPreviewUrl] = useState('');
+  const [existingAdditionalImages, setExistingAdditionalImages] = useState([]);
+  const [existingAdditionalVideos, setExistingAdditionalVideos] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -141,6 +148,14 @@ export default function ProductManagement() {
     }
   };
 
+  const handleHoverImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, hover_image: file }));
+      setHoverPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
   const handleAdditionalImagesChange = (e) => {
     const files = Array.from(e.target.files);
     setAdditionalImages(prev => [...prev, ...files]);
@@ -156,14 +171,41 @@ export default function ProductManagement() {
   };
 
   const removeAdditionalImage = (index) => {
-    setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+    const previewToRemove = additionalImagePreviews[index];
+    const isNew = previewToRemove.startsWith('blob:');
+    
+    if (isNew) {
+      const newFilePreviews = additionalImagePreviews.filter(p => p.startsWith('blob:'));
+      const fileIndex = newFilePreviews.indexOf(previewToRemove);
+      if (fileIndex > -1) {
+        setAdditionalImages(prev => prev.filter((_, i) => i !== fileIndex));
+      }
+    } else {
+      const rawPath = previewToRemove.replace('http://localhost:5000', '');
+      setExistingAdditionalImages(prev => prev.filter(p => p !== rawPath));
+    }
+    
     setAdditionalImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const removeAdditionalVideo = (index) => {
-    setAdditionalVideos(prev => prev.filter((_, i) => i !== index));
+    const previewToRemove = additionalVideoPreviews[index];
+    const isNew = previewToRemove.startsWith('blob:');
+    
+    if (isNew) {
+      const newFilePreviews = additionalVideoPreviews.filter(p => p.startsWith('blob:'));
+      const fileIndex = newFilePreviews.indexOf(previewToRemove);
+      if (fileIndex > -1) {
+        setAdditionalVideos(prev => prev.filter((_, i) => i !== fileIndex));
+      }
+    } else {
+      const rawPath = previewToRemove.replace('http://localhost:5000', '');
+      setExistingAdditionalVideos(prev => prev.filter(p => p !== rawPath));
+    }
+    
     setAdditionalVideoPreviews(prev => prev.filter((_, i) => i !== index));
   };
+
 
   const handleAddSize = (e) => {
     if (e) e.preventDefault();
@@ -182,7 +224,7 @@ export default function ProductManagement() {
     }
 
     if (!sizes.some(s => s.size === cleanSize)) {
-      setSizes(prev => [...prev, { size: cleanSize, stock: 0 }]);
+      setSizes(prev => [...prev, { size: cleanSize, stock: 0, weights: [] }]);
       setNewSizeInput('');
     }
   };
@@ -191,11 +233,42 @@ export default function ProductManagement() {
   const handleSizeStockChange = (sizeName, newStockVal) => {
     const parsed = parseInt(newStockVal, 10);
     const stockVal = isNaN(parsed) ? 0 : Math.max(0, parsed);
-    setSizes(prev => prev.map(s => s.size === sizeName ? { ...s, stock: stockVal } : s));
+    setSizes(prev => prev.map(s => {
+      if (s.size === sizeName) {
+        const currentWeights = s.weights || [];
+        let newWeights = [...currentWeights];
+        if (newWeights.length < stockVal) {
+          while (newWeights.length < stockVal) {
+            newWeights.push("");
+          }
+        } else if (newWeights.length > stockVal) {
+          newWeights = newWeights.slice(0, stockVal);
+        }
+        return { ...s, stock: stockVal, weights: newWeights };
+      }
+      return s;
+    }));
+  };
+
+  const handlePieceWeightChange = (sizeName, index, val) => {
+    setSizes(prev => prev.map(s => {
+      if (s.size === sizeName) {
+        const newWeights = [...(s.weights || [])];
+        while (newWeights.length < s.stock) {
+          newWeights.push("");
+        }
+        newWeights[index] = val === "" ? "" : val;
+        return { ...s, weights: newWeights };
+      }
+      return s;
+    }));
   };
 
   const handleRemoveSize = (sizeToRemove) => {
     setSizes(prev => prev.filter(s => s.size !== sizeToRemove));
+    if (expandedWeightsSize === sizeToRemove) {
+      setExpandedWeightsSize(null);
+    }
   };
 
 
@@ -218,13 +291,19 @@ export default function ProductManagement() {
       barcode: '',
       image: null,
       image_url: '',
-      weight: 0.3
+      hover_image: null,
+      hover_image_url: '',
+      weight: 0.3,
+      instagram_link: ''
     });
     setPreviewUrl('');
+    setHoverPreviewUrl('');
     setAdditionalImages([]);
     setAdditionalVideos([]);
     setAdditionalImagePreviews([]);
     setAdditionalVideoPreviews([]);
+    setExistingAdditionalImages([]);
+    setExistingAdditionalVideos([]);
     setSizes([]);
     setNewSizeInput('');
     setIsModalOpen(true);
@@ -248,13 +327,36 @@ export default function ProductManagement() {
       barcode: product.barcode || '',
       image: null,
       image_url: product.image_url || '',
-      weight: product.weight || 0.3
+      hover_image: null,
+      hover_image_url: product.hover_image_url || '',
+      weight: product.weight || 0.3,
+      instagram_link: product.instagram_link || ''
     });
     setPreviewUrl(product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `http://localhost:5000${product.image_url}`) : '');
+    setHoverPreviewUrl(product.hover_image_url ? (product.hover_image_url.startsWith('http') ? product.hover_image_url : `http://localhost:5000${product.hover_image_url}`) : '');
+
+    // Parse existing additional images
+    let existingImgs = [];
+    try {
+      existingImgs = product.additional_images ? (Array.isArray(product.additional_images) ? product.additional_images : JSON.parse(product.additional_images)) : [];
+    } catch (e) {
+      console.error(e);
+    }
+    setExistingAdditionalImages(existingImgs);
+    setAdditionalImagePreviews(existingImgs.map(img => img.startsWith('http') ? img : `http://localhost:5000${img}`));
+
+    // Parse existing additional videos
+    let existingVids = [];
+    try {
+      existingVids = product.additional_videos ? (Array.isArray(product.additional_videos) ? product.additional_videos : JSON.parse(product.additional_videos)) : [];
+    } catch (e) {
+      console.error(e);
+    }
+    setExistingAdditionalVideos(existingVids);
+    setAdditionalVideoPreviews(existingVids.map(vid => vid.startsWith('http') ? vid : `http://localhost:5000${vid}`));
+
     setAdditionalImages([]);
     setAdditionalVideos([]);
-    setAdditionalImagePreviews([]);
-    setAdditionalVideoPreviews([]);
     setNewSizeInput('');
     setSizes([]);
 
@@ -262,10 +364,24 @@ export default function ProductManagement() {
       const response = await fetch(`http://localhost:5000/api/products/${product.id}/variants`);
       if (response.ok) {
         const data = await response.json();
-        const extractedSizes = data.filter(v => v.size).map(v => ({
-          size: v.size,
-          stock: v.stock || 0
-        }));
+        const extractedSizes = data.filter(v => v.size).map(v => {
+          let parsedWeights = [];
+          if (v.weights) {
+            try {
+              parsedWeights = Array.isArray(v.weights) ? v.weights : JSON.parse(v.weights);
+            } catch (e) {
+              console.error("Error parsing variant weights:", e);
+            }
+          }
+          while (parsedWeights.length < (v.stock || 0)) {
+            parsedWeights.push("");
+          }
+          return {
+            size: v.size,
+            stock: v.stock || 0,
+            weights: parsedWeights
+          };
+        });
         setSizes(extractedSizes);
       }
     } catch (err) {
@@ -303,11 +419,13 @@ export default function ProductManagement() {
     Object.keys(formData).forEach(key => {
       if (key === 'image' && formData[key]) {
         data.append('image', formData[key]);
+      } else if (key === 'hover_image' && formData[key]) {
+        data.append('hover_image', formData[key]);
       } else if (key === 'slug') {
         data.append('slug', normalizedSlug);
       } else if (key === 'stock') {
         data.append('stock', finalStock);
-      } else if (key !== 'image') {
+      } else if (key !== 'image' && key !== 'hover_image') {
         data.append(key, formData[key]);
       }
     });
@@ -321,6 +439,11 @@ export default function ProductManagement() {
     additionalVideos.forEach((video) => {
       data.append('additionalVideos', video);
     });
+
+    // Add existing paths for editing merging
+    data.append('existingAdditionalImages', JSON.stringify(existingAdditionalImages));
+    data.append('existingAdditionalVideos', JSON.stringify(existingAdditionalVideos));
+
 
     try {
       const url = editingProduct 
@@ -349,6 +472,7 @@ export default function ProductManagement() {
           // Create variants for each size
           if (sizes.length > 0) {
             await Promise.all(sizes.map(async (s) => {
+              const mappedWeights = (s.weights || []).map(w => w === "" || w === undefined ? 0.3 : parseFloat(w));
               const variantData = {
                 product_id: savedProductId,
                 size: s.size,
@@ -356,7 +480,8 @@ export default function ProductManagement() {
                 stock: s.stock || 0,
                 sku: '',
                 price: formData.price_num || 0,
-                is_active: 1
+                is_active: 1,
+                weights: JSON.stringify(mappedWeights)
               };
 
               await fetch('http://localhost:5000/api/products/variants', {
@@ -641,7 +766,8 @@ export default function ProductManagement() {
               <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-8">
                 {/* Image Section */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-6">
+                    {/* Primary Image */}
                     <div className="space-y-4">
                       <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider text-center block">Primary Image</label>
                       <div 
@@ -686,121 +812,86 @@ export default function ProductManagement() {
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider text-center block">Hover Image</label>
+                    {/* Additional Images */}
+                    <div className="space-y-3">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider text-center block">Additional Images</label>
                       <div 
-                        onClick={() => document.getElementById('hoverImageInput').click()}
-                        className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-500 hover:bg-blue-50/30 transition-all overflow-hidden group relative"
+                        onClick={() => document.getElementById('additionalImagesInput').click()}
+                        className="aspect-[2.5/1] rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:border-blue-500 hover:bg-blue-50/30 transition-all overflow-hidden group relative"
                       >
-                        {hoverPreviewUrl ? (
-                          <>
-                            <img src={hoverPreviewUrl} alt="Hover Preview" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity">
-                              <span className="text-white font-bold text-xs">Change</span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setHoverPreviewUrl('');
-                                  setFormData(prev => ({ ...prev, hover_image: null, hover_image_url: '' }));
-                                }}
-                                className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors shadow-md"
-                                title="Remove Hover Image"
-                              >
-                                <X size={12} strokeWidth={3} />
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500 group-hover:bg-blue-100 transition-colors">
-                              <Plus size={20} />
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-blue-500 text-center">Upload</p>
-                          </>
-                        )}
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500 group-hover:bg-blue-100 transition-colors">
+                          <Plus size={16} />
+                        </div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-blue-500 text-center">Add Images</p>
                         <input 
                           type="file" 
-                          id="hoverImageInput" 
+                          id="additionalImagesInput" 
+                          multiple
                           accept="image/*"
-                          onChange={handleHoverImageChange}
+                          onChange={handleAdditionalImagesChange}
                           className="hidden" 
                         />
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Additional Images and Videos Section */}
-                  <div className="md:col-span-2 space-y-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Additional Images</label>
-                        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold transition-all">
-                          <Plus size={14} />
-                          Add Images
-                          <input 
-                            type="file" 
-                            multiple
-                            accept="image/*"
-                            onChange={handleAdditionalImagesChange}
-                            className="hidden" 
-                          />
-                        </label>
-                      </div>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                        {additionalImagePreviews.map((preview, index) => (
-                          <div key={index} className="relative aspect-square rounded-lg border-2 border-slate-200 overflow-hidden group">
-                            <img src={preview} alt={`Additional ${index + 1}`} className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => removeAdditionalImage(index)}
-                              className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                      {additionalImagePreviews.length === 0 && (
-                        <p className="text-xs text-slate-400 text-center py-4">No additional images added</p>
+                      
+                      {additionalImagePreviews.length > 0 && (
+                        <div className="grid grid-cols-4 gap-2 pt-1">
+                          {additionalImagePreviews.map((preview, index) => (
+                            <div key={index} className="relative aspect-square rounded-xl border border-slate-200 overflow-hidden group bg-slate-50">
+                              <img src={preview} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => removeAdditionalImage(index)}
+                                className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors shadow-sm"
+                              >
+                                <X size={10} strokeWidth={2.5} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Additional Videos</label>
-                        <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold transition-all">
-                          <Plus size={14} />
-                          Add Videos
-                          <input 
-                            type="file" 
-                            multiple
-                            accept="video/*"
-                            onChange={handleAdditionalVideosChange}
-                            className="hidden" 
-                          />
-                        </label>
+                    {/* Additional Videos */}
+                    <div className="space-y-3">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider text-center block">Additional Videos</label>
+                      <div 
+                        onClick={() => document.getElementById('additionalVideosInput').click()}
+                        className="aspect-[2.5/1] rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:border-purple-500 hover:bg-purple-50/30 transition-all overflow-hidden group relative"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-purple-500 group-hover:bg-purple-100 transition-colors">
+                          <Plus size={16} />
+                        </div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-purple-500 text-center">Add Videos</p>
+                        <input 
+                          type="file" 
+                          id="additionalVideosInput" 
+                          multiple
+                          accept="video/*"
+                          onChange={handleAdditionalVideosChange}
+                          className="hidden" 
+                        />
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                        {additionalVideoPreviews.map((preview, index) => (
-                          <div key={index} className="relative aspect-video rounded-lg border-2 border-slate-200 overflow-hidden group bg-black">
-                            <video src={preview} className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => removeAdditionalVideo(index)}
-                              className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                      {additionalVideoPreviews.length === 0 && (
-                        <p className="text-xs text-slate-400 text-center py-4">No additional videos added</p>
+                      
+                      {additionalVideoPreviews.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2 pt-1">
+                          {additionalVideoPreviews.map((preview, index) => (
+                            <div key={index} className="relative aspect-video rounded-xl border border-slate-200 overflow-hidden group bg-black">
+                              <video src={preview} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => removeAdditionalVideo(index)}
+                                className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors shadow-sm"
+                              >
+                                <X size={10} strokeWidth={2.5} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
+
+
 
                   <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2 sm:col-span-2">
@@ -924,7 +1015,7 @@ export default function ProductManagement() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Initial Stock</label>
                     <input 
                       type="number"
@@ -933,6 +1024,17 @@ export default function ProductManagement() {
                       value={formData.stock}
                       onChange={handleInputChange}
                       placeholder="e.g. 50"
+                      className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Instagram Link</label>
+                    <input 
+                      type="url"
+                      name="instagram_link"
+                      value={formData.instagram_link}
+                      onChange={handleInputChange}
+                      placeholder="e.g. https://www.instagram.com/p/..."
                       className="w-full px-4 py-3 bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 rounded-xl outline-none transition-all text-slate-800 font-medium"
                     />
                   </div>
@@ -972,31 +1074,77 @@ export default function ProductManagement() {
                         <span className="text-right">Actions</span>
                       </div>
                       
-                      {sizes.map((s) => (
-                        <div key={s.size} className="grid grid-cols-3 items-center text-sm font-semibold text-slate-700">
-                          <span className="uppercase tracking-wide">{s.size}</span>
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="number"
-                              min="0"
-                              value={s.stock}
-                              onChange={(e) => handleSizeStockChange(s.size, e.target.value)}
-                              className="w-20 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-xs font-bold outline-none focus:border-blue-500 text-center"
-                              placeholder="0"
-                            />
-                            <span className="text-[10px] font-bold text-slate-400">units</span>
+                      {sizes.map((s) => {
+                        const isExpanded = expandedWeightsSize === s.size;
+                        const filledWeights = (s.weights || []).filter(w => w !== "" && w !== undefined).length;
+                        return (
+                          <div key={s.size} className="border-b border-slate-100 last:border-b-0 py-3 first:pt-0 last:pb-0 space-y-3">
+                            <div className="grid grid-cols-3 items-center text-sm font-semibold text-slate-700">
+                              <span className="uppercase tracking-wide flex items-center gap-2">
+                                {s.size}
+                                {s.stock > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedWeightsSize(isExpanded ? null : s.size)}
+                                    className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider transition-colors ${
+                                      isExpanded 
+                                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                    }`}
+                                  >
+                                    Weights ({filledWeights}/{s.stock})
+                                  </button>
+                                )}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <input 
+                                  type="number"
+                                  min="0"
+                                  value={s.stock}
+                                  onChange={(e) => handleSizeStockChange(s.size, e.target.value)}
+                                  className="w-20 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-xs font-bold outline-none focus:border-blue-500 text-center"
+                                  placeholder="0"
+                                />
+                                <span className="text-[10px] font-bold text-slate-400">units</span>
+                              </div>
+                              <div className="text-right">
+                                <button 
+                                  type="button" 
+                                  onClick={() => handleRemoveSize(s.size)} 
+                                  className="text-red-500 hover:text-red-700 text-xs font-bold transition-colors uppercase tracking-widest"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Piece Weights Editor Sub-Panel */}
+                            {isExpanded && s.stock > 0 && (
+                              <div className="pl-4 pr-2 pb-2 bg-white border border-slate-100 rounded-xl space-y-2 mt-2">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest pt-2.5">
+                                  Assign Piece Weights (grams)
+                                </p>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                                  {Array.from({ length: s.stock }).map((_, idx) => (
+                                    <div key={idx} className="flex flex-col gap-1">
+                                      <span className="text-[9px] text-slate-400 font-bold">Piece #{idx + 1}</span>
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={s.weights?.[idx] !== undefined ? s.weights[idx] : ""}
+                                        onChange={(e) => handlePieceWeightChange(s.size, idx, e.target.value)}
+                                        placeholder="0.30"
+                                        className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-blue-500 focus:bg-slate-50/50"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="text-right">
-                            <button 
-                              type="button" 
-                              onClick={() => handleRemoveSize(s.size)} 
-                              className="text-red-500 hover:text-red-700 text-xs font-bold transition-colors uppercase tracking-widest"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       
                       <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-widest">
                         <span>Total Allocated Stock:</span>

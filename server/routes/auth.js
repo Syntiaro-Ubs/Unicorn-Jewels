@@ -164,15 +164,16 @@ router.get('/user-orders/:userId', async (req, res) => {
 
 // Create User Order
 router.post('/user-orders', async (req, res) => {
-    const { userId, orderId, productName, price, imageUrl, status, productId, quantity, selectedSize } = req.body;
+    const { userId, orderId, productName, price, imageUrl, status, productId, quantity, selectedSize, selectedWeight } = req.body;
     try {
         const orderStatus = status || 'Processing';
         const prodId = productId || null;
         const qty = quantity || 1;
         const sz = selectedSize || null;
+        const wt = selectedWeight || null;
         await db.query(
-            'INSERT INTO user_orders (user_id, order_id, product_name, price, image_url, status, product_id, quantity, selected_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [userId, orderId, productName, price, imageUrl, orderStatus, prodId, qty, sz]
+            'INSERT INTO user_orders (user_id, order_id, product_name, price, image_url, status, product_id, quantity, selected_size, selected_weight) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [userId, orderId, productName, price, imageUrl, orderStatus, prodId, qty, sz, wt]
         );
         res.status(201).json({ message: 'Order created' });
     } catch (error) {

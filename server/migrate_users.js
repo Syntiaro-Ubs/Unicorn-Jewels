@@ -92,6 +92,20 @@ async function migrateUsers() {
             // Ignore if column already exists
         }
 
+        try {
+            await db.query('ALTER TABLE user_orders ADD COLUMN selected_weight VARCHAR(50) NULL');
+            console.log('selected_weight column added to user_orders table.');
+        } catch (e) {
+            // Ignore if column already exists
+        }
+
+        try {
+            await db.query('ALTER TABLE products ADD COLUMN instagram_link VARCHAR(255) DEFAULT NULL');
+            console.log('instagram_link column added to products table.');
+        } catch (e) {
+            // Ignore if column already exists
+        }
+
         await db.query(`
             CREATE TABLE IF NOT EXISTS user_addresses (
                 id INT AUTO_INCREMENT PRIMARY KEY,

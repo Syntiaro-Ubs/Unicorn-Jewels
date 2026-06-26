@@ -252,7 +252,12 @@ function OrdersTab({ orders = [], onTrackShipment, onDownloadReceipt, onCancelOr
             <div className="flex-1 w-full flex flex-col h-full gap-8">
               <div className="flex flex-col xl:flex-row justify-between gap-6 xl:items-start border-b border-gray-100 pb-8">
                 <div>
-                  <h3 className="font-serif text-2xl mb-3">{order.item}</h3>
+                  <h3 className="font-serif text-2xl mb-2">{order.item}</h3>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-[9px] tracking-[0.12em] uppercase text-gray-400 font-bold">
+                    {order.selectedSize && <span className="text-blue-600 font-semibold">Size: {order.selectedSize}</span>}
+                    {order.selectedWeight && <span className="text-emerald-600 font-semibold">Weight: {parseFloat(order.selectedWeight).toFixed(2)}g</span>}
+                    {order.quantity && <span>Qty: {order.quantity}</span>}
+                  </div>
                   <p className="text-[9px] tracking-[0.2em] uppercase text-gray-500">Order {order.id} <span className="mx-2">•</span> {order.date}</p>
                 </div>
                 <div className="text-left xl:text-right">

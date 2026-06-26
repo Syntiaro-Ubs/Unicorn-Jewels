@@ -125,7 +125,7 @@ export function CartDrawer({
                 const maxStock = item.sizeStock !== undefined && item.sizeStock !== null ? item.sizeStock : item.stock;
                 const isLimitReached = maxStock !== undefined && maxStock !== null && item.quantity >= maxStock;
                 
-                return <div key={`${item.id}-${item.selectedSize || ''}`} className="flex gap-4 px-5 sm:px-6 py-5">
+                return <div key={`${item.id}-${item.selectedSize || ''}-${item.selectedWeight || ''}`} className="flex gap-4 px-5 sm:px-6 py-5">
                   {/* Image */}
                   <div className="w-[75px] h-[75px] flex-shrink-0 bg-[#f7f7f7] overflow-hidden">
                     <button type="button" onClick={() => onProductClick?.(item)} className="block h-full w-full cursor-pointer">
@@ -148,8 +148,11 @@ export function CartDrawer({
                         {item.selectedSize && <p className="text-[9px] tracking-[0.12em] text-blue-600 font-bold uppercase mt-1">
                             Size: {item.selectedSize}
                           </p>}
+                        {item.selectedWeight && <p className="text-[9px] tracking-[0.12em] text-emerald-600 font-bold uppercase mt-1">
+                            Weight: {parseFloat(item.selectedWeight).toFixed(2)}g
+                          </p>}
                       </div>
-                      <button onClick={() => removeFromCart(item.id, item.selectedSize)} className="text-gray-300 hover:text-black transition-colors flex-shrink-0 mt-0.5">
+                      <button onClick={() => removeFromCart(item.id, item.selectedSize, item.selectedWeight)} className="text-gray-300 hover:text-black transition-colors flex-shrink-0 mt-0.5">
                         <X size={13} strokeWidth={1.5} />
                       </button>
                     </div>
@@ -157,7 +160,7 @@ export function CartDrawer({
                     <div className="flex items-center justify-between mt-4">
                       {/* Qty Controls */}
                       <div className="flex items-center gap-0 border border-gray-200">
-                        <button onClick={() => item.quantity > 1 ? updateQty(item.id, item.quantity - 1, item.selectedSize) : removeFromCart(item.id, item.selectedSize)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-black transition-colors border-r border-gray-200">
+                        <button onClick={() => item.quantity > 1 ? updateQty(item.id, item.quantity - 1, item.selectedSize, item.selectedWeight) : removeFromCart(item.id, item.selectedSize, item.selectedWeight)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-black transition-colors border-r border-gray-200">
                           <Minus size={10} strokeWidth={1.5} />
                         </button>
                         <span className="text-xs w-8 text-center" style={{
@@ -166,7 +169,7 @@ export function CartDrawer({
                           {item.quantity}
                         </span>
                         <button 
-                          onClick={() => updateQty(item.id, item.quantity + 1, item.selectedSize)} 
+                          onClick={() => updateQty(item.id, item.quantity + 1, item.selectedSize, item.selectedWeight)} 
                           disabled={isLimitReached}
                           className={`w-8 h-8 flex items-center justify-center border-l border-gray-200 transition-colors ${
                             isLimitReached
@@ -195,7 +198,7 @@ export function CartDrawer({
                         Buy Now
                       </button>
                       <button 
-                        onClick={() => updateQty(item.id, item.quantity + 1, item.selectedSize)} 
+                        onClick={() => updateQty(item.id, item.quantity + 1, item.selectedSize, item.selectedWeight)} 
                         disabled={isLimitReached}
                         className={`flex-1 py-2 px-3 text-[8px] tracking-[0.15em] uppercase transition-colors border ${
                           isLimitReached
